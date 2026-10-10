@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import ReportsModule from "./ReportsModule";
+import ReportsIndex from "./reports";
 import CustomersScreen from "./CustomersScreen";
 import CurrenciesScreen from "./CurrenciesScreen";
 import ItemsScreen from "./ItemsScreen";
@@ -27,8 +27,7 @@ type Mode =
   | "production"
   | "salesInvoice"
   | "purchaseInvoice"
-  | "supplierReports"
-  | "cashboxReports"
+  | "reports"
   | "voucher"
   | "journal"
   | "transfer";
@@ -47,8 +46,7 @@ const modes: Array<[Mode, string]> = [
   ["voucher", "سند قبض/دفع"],
   ["journal", "قيد يومية"],
   ["transfer", "تحويل بين الصناديق"],
-  ["supplierReports", "تقارير الموردين"],
-  ["cashboxReports", "تقارير الصناديق"],
+  ["reports", "التقارير"],
 ];
 
 export default function AccountingModule() {
@@ -79,7 +77,6 @@ export default function AccountingModule() {
 
   const goMenu = () => setMode("menu");
 
-  // ===== Redirects =====
   if (mode === "customers" || mode === "suppliers")
     return <CustomersScreen kind={mode} onBack={goMenu} />;
   if (mode === "currencies") return <CurrenciesScreen onBack={goMenu} />;
@@ -93,12 +90,8 @@ export default function AccountingModule() {
   if (mode === "voucher") return <VouchersScreen onBack={goMenu} />;
   if (mode === "journal") return <JournalScreen onBack={goMenu} />;
   if (mode === "transfer") return <TransfersScreen onBack={goMenu} />;
-  if (mode === "supplierReports")
-    return <ReportsModule kind="suppliers" onBack={goMenu} />;
-  if (mode === "cashboxReports")
-    return <ReportsModule kind="cashboxes" onBack={goMenu} />;
+  if (mode === "reports") return <ReportsIndex onBack={goMenu} />;
 
-  // ===== القائمة الرئيسية =====
   return (
     <View style={styles.container}>
       <View style={styles.syncBar}>
