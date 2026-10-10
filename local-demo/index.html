@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>حساب — النظام المحاسبي</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><div class="brand-mark">ح</div><div><strong>حساب</strong><small>نظام محاسبي للأعمال</small></div></div>
+      <div class="company-switch"><span class="company-dot"></span><div><b>مؤسسة النور التجارية</b><small>السنة المالية 2026</small></div><span class="chevron">⌄</span></div>
+      <nav class="nav" id="nav">
+        <button class="nav-item active" data-page="dashboard"><span>⌂</span> لوحة التحكم</button>
+        <div class="nav-label">العمليات</div>
+        <button class="nav-item" data-page="vouchers"><span>↔</span> السندات</button>
+        <button class="nav-item" data-page="stockReceipts"><span>⇩</span> أوامر التوريد المخزني</button>
+        <button class="nav-item" data-page="invoices"><span>▤</span> فواتير المبيعات</button>
+        <button class="nav-item" data-page="production"><span>⚙</span> الإنتاج</button>
+        <button class="nav-item" data-page="recipes"><span>▧</span> وصفات الأصناف المركبة</button>
+        <div class="nav-label">البيانات</div>
+        <button class="nav-item" data-page="customers"><span>♙</span> العملاء</button>
+        <button class="nav-item" data-page="inventory"><span>▦</span> المخزون والأصناف</button>
+        <button class="nav-item" data-page="cashboxes"><span>▣</span> الصناديق الرئيسية والفرعية</button>
+        <button class="nav-item" data-page="accounts"><span>◎</span> دليل الحسابات</button>
+        <div class="nav-label">التحليل</div>
+        <button class="nav-item" data-page="reports"><span>◫</span> التقارير</button>
+        <button class="nav-item" data-page="settings"><span>⚙</span> الإعدادات</button>
+      </nav>
+      <div class="sidebar-footer"><div class="avatar">م</div><div><b>محمد العتيبي</b><small>مدير النظام</small></div><button class="icon-btn">⋮</button></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><button class="mobile-menu" id="mobileMenu">☰</button><div class="breadcrumbs"><span>الرئيسية</span><b>/</b><strong id="pageTitle">لوحة التحكم</strong></div><div class="top-actions"><button class="icon-btn" title="الإشعارات">♢<i></i></button><button class="help-btn">؟ <span>المساعدة</span></button></div></header>
+      <div id="view" class="content"></div>
+    </main>
+  </div>
+  <div id="modalRoot"></div>
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
