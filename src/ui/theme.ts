@@ -26,10 +26,9 @@ export const COLORS = {
   info: "#1E40AF",
 };
 
-export const FONTS = { heading: "Alexandria-Black", subheading: "CodecBold" };
-  regular: "Cairo-Regular",
-  bold: "Cairo-Bold",
-  black: "Cairo-Black",
+export const FONTS = {
+  heading: "Alexandria-Black",
+  subheading: "CodecBold",
 };
 
 export const RADIUS = {
