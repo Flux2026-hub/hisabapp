@@ -1,4 +1,3 @@
-// Load environment variables with proper priority (system > .env)
 import "./scripts/load-env.js";
 import type { ExpoConfig } from "expo/config";
 
@@ -11,9 +10,7 @@ const bundleId =
     .replace(/^\.+|\.+$/g, "")
     .toLowerCase()
     .split(".")
-    .map((segment) => {
-      return /^[a-zA-Z]/.test(segment) ? segment : "x" + segment;
-    })
+    .map((segment) => (/^[a-zA-Z]/.test(segment) ? segment : "x" + segment))
     .join(".") || "space.manus.app";
 
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
@@ -45,9 +42,7 @@ const publicRuntime = {
     process.env.EXPO_PUBLIC_APP_ID ??
     "",
   apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "",
-  eas: {
-    projectId: "9e9a50db-853d-4485-b0c3-40e2e8c29e51",
-  },
+  eas: { projectId: "9e9a50db-853d-4485-b0c3-40e2e8c29e51" },
 };
 
 const config: ExpoConfig = {
@@ -62,9 +57,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
-    infoPlist: {
-      ITSAppUsesNonExemptEncryption: false,
-    },
+    infoPlist: { ITSAppUsesNonExemptEncryption: false },
   },
   android: {
     adaptiveIcon: {
@@ -76,16 +69,12 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
     permissions: ["POST_NOTIFICATIONS"],
+    softwareKeyboardLayoutMode: "resize",
     intentFilters: [
       {
         action: "VIEW",
         autoVerify: true,
-        data: [
-          {
-            scheme: env.scheme,
-            host: "*",
-          },
-        ],
+        data: [{ scheme: env.scheme, host: "*" }],
         category: ["BROWSABLE", "DEFAULT"],
       },
     ],
@@ -98,19 +87,8 @@ const config: ExpoConfig = {
   plugins: [
     "expo-asset",
     "expo-router",
-    [
-      "expo-audio",
-      {
-        microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone.",
-      },
-    ],
-    [
-      "expo-video",
-      {
-        supportsBackgroundPlayback: true,
-        supportsPictureInPicture: true,
-      },
-    ],
+    ["expo-audio", { microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone." }],
+    ["expo-video", { supportsBackgroundPlayback: true, supportsPictureInPicture: true }],
     [
       "expo-splash-screen",
       {
@@ -118,9 +96,7 @@ const config: ExpoConfig = {
         imageWidth: 240,
         resizeMode: "contain",
         backgroundColor: "#FFFFFF",
-        dark: {
-          backgroundColor: "#0B2545",
-        },
+        dark: { backgroundColor: "#0B2545" },
       },
     ],
     [
@@ -133,10 +109,7 @@ const config: ExpoConfig = {
       },
     ],
   ],
-  experiments: {
-    typedRoutes: true,
-    reactCompiler: true,
-  },
+  experiments: { typedRoutes: true, reactCompiler: true },
 };
 
 export default config;

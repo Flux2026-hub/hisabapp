@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  BackHandler,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import ReportsIndex from "./reports";
 import CustomersScreen from "./CustomersScreen";
@@ -42,97 +49,20 @@ type MenuItem = {
 };
 
 const MENU: MenuItem[] = [
-  // ===== البيانات الأساسية =====
-  {
-    section: "البيانات الأساسية",
-    mode: "customers",
-    label: "العملاء",
-    icon: "account-group",
-  },
-  {
-    section: "البيانات الأساسية",
-    mode: "suppliers",
-    label: "الموردون",
-    icon: "truck-delivery",
-  },
-  {
-    section: "البيانات الأساسية",
-    mode: "cashboxes",
-    label: "الصناديق",
-    icon: "wallet-outline",
-  },
-  {
-    section: "البيانات الأساسية",
-    mode: "accounts",
-    label: "الحسابات الرئيسية",
-    icon: "file-document-outline",
-  },
-
-  // ===== المخزون والإنتاج =====
-  {
-    section: "المخزون والإنتاج",
-    mode: "items",
-    label: "الأصناف",
-    icon: "package-variant-closed",
-  },
-  {
-    section: "المخزون والإنتاج",
-    mode: "currencies",
-    label: "العملات",
-    icon: "cash-multiple",
-  },
-  {
-    section: "المخزون والإنتاج",
-    mode: "recipe",
-    label: "التركيبة",
-    icon: "cog-outline",
-  },
-  {
-    section: "المخزون والإنتاج",
-    mode: "production",
-    label: "أمر الإنتاج",
-    icon: "factory",
-  },
-
-  // ===== العمليات =====
-  {
-    section: "العمليات",
-    mode: "salesInvoice",
-    label: "فاتورة مبيعات",
-    icon: "file-document-outline",
-  },
-  {
-    section: "العمليات",
-    mode: "purchaseInvoice",
-    label: "فاتورة مشتريات",
-    icon: "file-document-multiple-outline",
-  },
-  {
-    section: "العمليات",
-    mode: "voucher",
-    label: "سند قبض/دفع",
-    icon: "swap-horizontal",
-  },
-  {
-    section: "العمليات",
-    mode: "journal",
-    label: "قيد يومية",
-    icon: "clipboard-text-outline",
-  },
-  {
-    section: "العمليات",
-    mode: "transfer",
-    label: "تحويل بين الصناديق",
-    icon: "swap-horizontal-bold",
-  },
-
-  // ===== التقارير =====
-  {
-    section: "التقارير",
-    mode: "reports",
-    label: "التقارير",
-    icon: "chart-bar",
-  },
+  { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-group" },
+  { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck-delivery" },
+  { section: "البيانات الأساسية", mode: "cashboxes", label: "الصناديق", icon: "wallet-outline" },
+  { section: "البيانات الأساسية", mode: "accounts", label: "الحسابات الرئيسية", icon: "file-document-outline" },
+  { section: "المخزون والإنتاج", mode: "items", label: "الأصناف", icon: "package-variant-closed" },
+  { section: "المخزون والإنتاج", mode: "currencies", label: "العملات", icon: "cash-multiple" },
+  { section: "المخزون والإنتاج", mode: "recipe", label: "التركيبة", icon: "cog-outline" },
+  { section: "المخزون والإنتاج", mode: "production", label: "أمر الإنتاج", icon: "factory" },
+  { section: "العمليات", mode: "salesInvoice", label: "فاتورة مبيعات", icon: "file-document-outline" },
+  { section: "العمليات", mode: "purchaseInvoice", label: "فاتورة مشتريات", icon: "file-document-multiple-outline" },
+  { section: "العمليات", mode: "voucher", label: "سند قبض/دفع", icon: "swap-horizontal" },
+  { section: "العمليات", mode: "journal", label: "قيد يومية", icon: "clipboard-text-outline" },
+  { section: "العمليات", mode: "transfer", label: "تحويل بين الصناديق", icon: "swap-horizontal-bold" },
+  { section: "التقارير", mode: "reports", label: "التقارير", icon: "chart-bar" },
 ];
 
 export default function AccountingModule() {
@@ -140,14 +70,23 @@ export default function AccountingModule() {
   const [pending, setPending] = useState(0);
 
   useEffect(() => {
-    getPendingSyncCount()
-      .then(setPending)
-      .catch(() => {});
+    getPendingSyncCount().then(setPending).catch(() => {});
   }, [mode]);
 
   const goMenu = () => setMode("menu");
 
-  // ===== Redirects =====
+  useEffect(() => {
+    const onBackPress = () => {
+      if (mode !== "menu") {
+        setMode("menu");
+        return true;
+      }
+      return false;
+    };
+    const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => sub.remove();
+  }, [mode]);
+
   if (mode === "customers" || mode === "suppliers")
     return <CustomersScreen kind={mode} onBack={goMenu} />;
   if (mode === "currencies") return <CurrenciesScreen onBack={goMenu} />;
@@ -157,8 +96,7 @@ export default function AccountingModule() {
   if (mode === "cashboxes") return <CashboxesScreen onBack={goMenu} />;
   if (mode === "accounts") return <AccountsScreen onBack={goMenu} />;
   if (mode === "salesInvoice") return <SalesInvoiceScreen onBack={goMenu} />;
-  if (mode === "purchaseInvoice")
-    return <PurchaseInvoiceScreen onBack={goMenu} />;
+  if (mode === "purchaseInvoice") return <PurchaseInvoiceScreen onBack={goMenu} />;
   if (mode === "voucher") return <VouchersScreen onBack={goMenu} />;
   if (mode === "journal") return <JournalScreen onBack={goMenu} />;
   if (mode === "transfer") return <TransfersScreen onBack={goMenu} />;
@@ -168,17 +106,14 @@ export default function AccountingModule() {
 
   return (
     <ScrollView
-      contentContainerStyle={{ paddingBottom: 20 }}
+      contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     >
-      {/* ===== شريط المزامنة ===== */}
+
       <View style={styles.syncBar}>
         <View style={styles.syncLeft}>
-          <MaterialCommunityIcons
-            name="clock-outline"
-            size={16}
-            color={COLORS.orange}
-          />
+          <MaterialCommunityIcons name="clock-outline" size={16} color={COLORS.orange} />
           <Text style={styles.pendingText}>عمليات معلقة: {pending}</Text>
         </View>
         <Pressable style={styles.syncButton}>
@@ -187,15 +122,12 @@ export default function AccountingModule() {
         </Pressable>
       </View>
 
-      {/* ===== نص توضيحي ===== */}
       <Text style={styles.hint}>
-        اختر الشاشة المطلوبة من القائمة أدناه. جميع العمليات تُحفظ محلياً
-        وتعمل بدون إنترنت.
+        اختر الشاشة المطلوبة من القائمة أدناه. جميع العمليات تُحفظ محلياً وتعمل بدون إنترنت.
       </Text>
 
-      {/* ===== الأقسام ===== */}
       {sections.map((sectionName) => (
-        <View key={sectionName}>
+        <View key={sectionName} style={styles.sectionBlock}>
           <Text style={styles.sectionLabel}>{sectionName}</Text>
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
@@ -206,9 +138,8 @@ export default function AccountingModule() {
               >
                 <MaterialCommunityIcons
                   name={item.icon as any}
-                  size={24}
+                  size={22}
                   color={COLORS.orange}
-                  style={styles.tileIcon}
                 />
                 <Text style={styles.tileText}>{item.label}</Text>
               </Pressable>
@@ -221,11 +152,11 @@ export default function AccountingModule() {
 }
 
 const styles = StyleSheet.create({
-  // ===== شريط المزامنة =====
+  scrollContent: { paddingBottom: 40, paddingHorizontal: 12 },
   syncBar: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: COLORS.bluePale,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
@@ -238,11 +169,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  pendingText: {
-    color: COLORS.blue,
-    fontSize: 12,
-    fontWeight: "700",
-  },
+  pendingText: { color: COLORS.blue, fontSize: 12, fontWeight: "700" },
   syncButton: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -252,13 +179,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
   },
-  syncButtonText: {
-    color: "#FFF",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-
-  // ===== النص التوضيحي =====
+  syncButtonText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
   hint: {
     color: COLORS.textMuted,
     fontSize: 12,
@@ -267,27 +188,24 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     paddingHorizontal: 4,
   },
-
-  // ===== عنوان القسم =====
+  sectionBlock: { width: "100%" },
   sectionLabel: {
     fontSize: 14,
     fontWeight: "800",
     color: COLORS.blue,
     textAlign: "right",
-    marginTop: 12,
+    alignSelf: "stretch",
+    width: "100%",
+    marginTop: 14,
     marginBottom: 8,
     paddingRight: 4,
   },
-
-  // ===== شبكة الأزرار =====
   grid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
     gap: 8,
     marginBottom: 4,
   },
-
-  // ===== البطاقة الواحدة =====
   tile: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -302,9 +220,6 @@ const styles = StyleSheet.create({
     minWidth: 105,
     flexGrow: 1,
     flexBasis: "30%",
-  },
-  tileIcon: {
-    marginLeft: 2,
   },
   tileText: {
     fontSize: 13,

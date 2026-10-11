@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  BackHandler,
   Image,
   Pressable,
   SafeAreaView,
@@ -10,17 +11,7 @@ import {
 } from "react-native";
 import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
-
-const colors = {
-  navy: "#0B2545",
-  blue: "#1E40AF",
-  orange: "#F97316",
-  ink: "#0F172A",
-  muted: "#8494B0",
-  bg: "#F1F5F9",
-  card: "#FFFFFF",
-  line: "#D6E3F8",
-};
+import { COLORS } from "../src/ui/theme";
 
 type Tab = "home" | "accounting" | "settings";
 
@@ -39,9 +30,27 @@ export default function HomeScreen() {
     setMenuOpen(false);
   };
 
+  // ===== زر الرجوع =====
+  useEffect(() => {
+    const onBackPress = () => {
+      if (menuOpen) {
+        setMenuOpen(false);
+        return true;
+      }
+      if (tab !== "home") {
+        setTab("home");
+        return true;
+      }
+      // من الشاشة الرئيسية → اخرج
+      return false;
+    };
+    const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => sub.remove();
+  }, [tab, menuOpen]);
+
   return (
     <SafeAreaView style={styles.root}>
-      {/* ===== الهيدر بخلفية فلوكس الداكنة ===== */}
+      {/* ===== الهيدر ===== */}
       <View style={styles.header}>
         <View style={styles.brandRow}>
           <View style={styles.brandTextWrap}>
@@ -58,12 +67,6 @@ export default function HomeScreen() {
 
       {/* ===== شريط التبويبات ===== */}
       <View style={styles.nav}>
-        <Pressable
-          style={styles.menuButton}
-          onPress={() => setMenuOpen((v) => !v)}
-        >
-          <Text style={styles.menuText}>☰ الأقسام</Text>
-        </Pressable>
         {sections.map(([key, label]) => (
           <Pressable
             key={key}
@@ -75,6 +78,12 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         ))}
+        <Pressable
+          style={styles.menuButton}
+          onPress={() => setMenuOpen((v) => !v)}
+        >
+          <Text style={styles.menuText}>☰ الأقسام</Text>
+        </Pressable>
       </View>
 
       {menuOpen && (
@@ -91,7 +100,10 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {tab === "home" && (
           <>
             <Text style={styles.title}>لوحة التحكم</Text>
@@ -160,11 +172,9 @@ function Action({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-
-  // ===== الهيدر =====
+  root: { flex: 1, backgroundColor: COLORS.bg },
   header: {
-    backgroundColor: colors.navy,
+    backgroundColor: COLORS.navy,
     paddingHorizontal: 18,
     paddingVertical: 20,
     paddingTop: 26,
@@ -174,85 +184,67 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  brandTextWrap: {
-    alignItems: "flex-end",
-  },
+  brandTextWrap: { alignItems: "flex-end" },
   brandName: {
     color: "#FFFFFF",
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "800",
     textAlign: "right",
   },
   brandSub: {
-    color: "#D6E3F8",
+    color: COLORS.blueSoft,
     fontSize: 12,
     textAlign: "right",
     marginTop: 3,
-    fontWeight: "600",
+    fontWeight: "700",
   },
-  logo: {
-    width: 100,
-    height: 80,
-  },
-
-  // ===== المحتوى =====
+  logo: { width: 100, height: 80 },
   content: { padding: 16, paddingBottom: 40 },
   title: {
-    color: colors.ink,
+    color: COLORS.text,
     fontSize: 24,
     fontWeight: "800",
     textAlign: "right",
     marginTop: 7,
   },
   hint: {
-    color: colors.muted,
+    color: COLORS.textMuted,
     fontSize: 12,
     textAlign: "right",
     marginVertical: 8,
   },
-
-  // ===== التبويبات =====
   nav: {
-    flexDirection: "row-reverse",
-    backgroundColor: colors.card,
+    flexDirection: "row",
+    backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    borderBottomColor: COLORS.border,
     paddingVertical: 10,
     alignItems: "center",
   },
   menuButton: {
     paddingHorizontal: 10,
     paddingVertical: 8,
-    backgroundColor: colors.navy,
+    backgroundColor: COLORS.navy,
     borderRadius: 8,
     marginHorizontal: 4,
   },
   menuText: { color: "#FFFFFF", fontSize: 10, fontWeight: "700" },
   navItem: { flex: 1, alignItems: "center", paddingVertical: 6 },
-  navActive: {
-    borderBottomWidth: 3,
-    borderBottomColor: colors.orange,
-  },
-  navText: { color: colors.muted, fontSize: 11, fontWeight: "600" },
-  navTextActive: {
-    color: colors.blue,
-    fontWeight: "800",
-    fontSize: 11,
-  },
-
-  // ===== القائمة المنسدلة =====
+  navActive: { borderBottomWidth: 3, borderBottomColor: COLORS.orange },
+  navText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "600" },
+  navTextActive: { color: COLORS.blue, fontWeight: "800", fontSize: 11 },
   dropdown: {
     position: "absolute",
     top: 130,
-    right: 8,
+    left: 8,
     zIndex: 20,
     elevation: 8,
-    backgroundColor: colors.card,
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: COLORS.border,
     borderRadius: 12,
     width: 210,
-    shadowColor: "#0B2545",
+    shadowColor: COLORS.navy,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -260,54 +252,46 @@ const styles = StyleSheet.create({
   dropdownItem: {
     padding: 13,
     borderBottomWidth: 1,
-    borderBottomColor: colors.bg,
+    borderBottomColor: COLORS.bg,
   },
-  dropdownText: {
-    textAlign: "right",
-    fontWeight: "700",
-    color: colors.ink,
-  },
-
-  // ===== البطاقات =====
+  dropdownText: { textAlign: "right", fontWeight: "700", color: COLORS.text },
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: COLORS.surface,
     borderRadius: 14,
     borderWidth: 1.2,
-    borderColor: colors.line,
+    borderColor: COLORS.border,
     padding: 16,
     marginTop: 14,
-    shadowColor: "#0B2545",
+    shadowColor: COLORS.navy,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
   },
   cardTitle: {
-    color: colors.ink,
-    fontSize: 15,
+    color: COLORS.text,
+    fontSize: 16,
     fontWeight: "800",
     textAlign: "right",
     marginBottom: 10,
   },
-
-  // ===== الأزرار السريعة =====
   action: {
     flexDirection: "row-reverse",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 14,
     borderTopWidth: 1,
-    borderTopColor: colors.line,
+    borderTopColor: COLORS.border,
   },
   actionLabel: {
-    color: colors.ink,
+    color: COLORS.text,
     fontWeight: "700",
     textAlign: "right",
     fontSize: 14,
   },
-  actionArrow: { color: colors.orange, fontSize: 22, fontWeight: "700" },
+  actionArrow: { color: COLORS.orange, fontSize: 22, fontWeight: "800" },
   small: {
-    color: colors.muted,
+    color: COLORS.textMuted,
     fontSize: 11,
     textAlign: "right",
     marginTop: 3,
