@@ -17,7 +17,6 @@ type InvoiceLine = {
   itemId: string;
   itemName: string;
   itemSku: string;
-  available: number;
   unit: string;
   quantity: number;
   unitPrice: number;
@@ -26,13 +25,13 @@ type InvoiceLine = {
 const newId = () =>
   `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
-export default function SalesInv({ onBack }: { onBack: () => void }) {
-  const [customers, setCustomers] = useState<Row[]>([]);
+export default function PurchaseInv({ onBack }: { onBack: () => void }) {
+  const [suppliers, setSuppliers] = useState<Row[]>([]);
   const [currencies, setCurrencies] = useState<Row[]>([]);
   const [cashboxes, setCashboxes] = useState<Row[]>([]);
   const [items, setItems] = useState<Row[]>([]);
 
-  const [customer, setCustomer] = useState<Row | null>(null);
+  const [supplier, setSupplier] = useState<Row | null>(null);
   const [currency, setCurrency] = useState<Row | null>(null);
   const [paymentType, setPaymentType] = useState<PaymentType>("cash");
   const [cashbox, setCashbox] = useState<Row | null>(null);
@@ -43,7 +42,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const [pickQty, setPickQty] = useState("");
   const [pickPrice, setPickPrice] = useState("");
 
-  const [showCustomerPicker, setShowCustomerPicker] = useState(false);
+  const [showSupplierPicker, setShowSupplierPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showCashboxPicker, setShowCashboxPicker] = useState(false);
   const [showItemPicker, setShowItemPicker] = useState(false);
@@ -54,8 +53,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     (async () => {
       try {
-        const c: any = await sqlite.getAllAsync(
-          "SELECT id, code, name, phone, balance FROM customers ORDER BY name"
+        const s: any = await sqlite.getAllAsync(
+          "SELECT id, code, name, phone, balance FROM suppliers ORDER BY name"
         );
         const cur: any = await sqlite.getAllAsync(
           "SELECT id, code, name, symbol, exchange_rate, is_base FROM currencies ORDER BY is_base DESC, code"
@@ -63,7 +62,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         const cb: any = await sqlite.getAllAsync(
           "SELECT id, code, name, balance FROM cashboxes ORDER BY name"
         );
-        setCustomers(c || []);
+        setSuppliers(s || []);
         setCashboxes(cb || []);
 
         const normalizedCurrencies = (cur || []).map((x: any) => ({
@@ -89,7 +88,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
   const loadItems = async () => {
     const rows: any = await sqlite.getAllAsync(
-      "SELECT id, sku, name, unit, stock_quantity, average_cost FROM items WHERE item_type IN ('compound_finished','finished_product') ORDER BY name"
+      "SELECT id, sku, name, unit, stock_quantity, average_cost FROM items WHERE item_type IN ('raw_material','production_material','packaging') ORDER BY name"
     );
     setItems(rows || []);
   };
@@ -98,7 +97,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     try {
       const rows: any = await sqlite.getAllAsync(
         `SELECT id, invoice_no, party_name, total, currency_code, payment_type, created_at
-         FROM invoices WHERE invoice_type = 'sales'
+         FROM invoices WHERE invoice_type = 'purchase'
          ORDER BY created_at DESC LIMIT 10`
       );
       setHistory(rows || []);
@@ -106,18 +105,11 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   };
 
   const addLine = () => {
-    if (!pickItem) return Alert.alert("تنبيه", "اختر المنتج");
+    if (!pickItem) return Alert.alert("تنبيه", "اختر المادة/العبوة");
     const qty = Number(pickQty);
     const price = Number(pickPrice);
     if (!qty || qty <= 0) return Alert.alert("تنبيه", "أدخل كمية صحيحة");
     if (price < 0 || Number.isNaN(price)) return Alert.alert("تنبيه", "أدخل سعراً صحيحاً");
-
-    const alreadyUsed = lines
-      .filter((l) => l.itemId === pickItem.id)
-      .reduce((s, l) => s + l.quantity, 0);
-    const available = Number(pickItem.stock_quantity || 0) - alreadyUsed;
-    if (qty > available)
-      return Alert.alert("تنبيه", `المتوفر: ${available} ${pickItem.unit}`);
 
     setLines([
       ...lines,
@@ -126,7 +118,6 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         itemId: pickItem.id,
         itemName: pickItem.name,
         itemSku: pickItem.sku,
-        available: Number(pickItem.stock_quantity || 0),
         unit: pickItem.unit,
         quantity: qty,
         unitPrice: price,
@@ -147,22 +138,22 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   );
 
   const canSave =
-    !!customer &&
+    !!supplier &&
     !!currency &&
     lines.length > 0 &&
     (paymentType === "credit" || !!cashbox) &&
     !saving;
 
   const buildCurrentInvoiceData = (invoiceNo: string): InvoicePrintData | null => {
-    if (!customer || !currency) return null;
+    if (!supplier || !currency) return null;
     const rate = Number(currency.exchangeRate) || 1;
     return {
-      type: "sales",
+      type: "purchase",
       invoiceNo,
       createdAt: Date.now(),
-      partyLabel: "العميل",
-      partyName: customer.name,
-      partyPhone: customer.phone || undefined,
+      partyLabel: "المورد",
+      partyName: supplier.name,
+      partyPhone: supplier.phone || undefined,
       currencyCode: currency.code,
       currencySymbol: currency.symbol || currency.code,
       exchangeRate: rate,
@@ -212,10 +203,10 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
       }
 
       const data: InvoicePrintData = {
-        type: "sales",
+        type: "purchase",
         invoiceNo: inv.invoice_no,
         createdAt: inv.created_at,
-        partyLabel: "العميل",
+        partyLabel: "المورد",
         partyName: inv.party_name || "",
         currencyCode: inv.currency_code || "YER",
         currencySymbol: cur?.symbol || inv.currency_code || "YER",
@@ -240,7 +231,6 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     }
   };
 
-  // ============ حذف فاتورة ============
   const deleteInvoice = async (invoiceId: string) => {
     try {
       const inv: any = await sqlite.getFirstAsync(
@@ -266,37 +256,32 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         ? Number(inv.total)
         : Number(inv.total) * rate;
 
-      // 1) إرجاع المخزون
       for (const l of invLines || []) {
         await sqlite.runAsync(
-          "UPDATE items SET stock_quantity = stock_quantity + ?, updated_at = ? WHERE id = ?",
+          "UPDATE items SET stock_quantity = stock_quantity - ?, updated_at = ? WHERE id = ?",
           [Number(l.quantity), now, l.item_id]
         );
       }
 
-      // 2) حذف stock_movements
       await sqlite.runAsync(
-        "DELETE FROM stock_movements WHERE source_type = 'sales_invoice' AND source_id = ?",
+        "DELETE FROM stock_movements WHERE source_type = 'purchase_invoice' AND source_id = ?",
         [invoiceId]
       );
 
-      // 3) عكس رصيد العميل
       if (inv.payment_type === "credit" && inv.party_id) {
         await sqlite.runAsync(
-          "UPDATE customers SET balance = balance - ? WHERE id = ?",
+          "UPDATE suppliers SET balance = balance - ? WHERE id = ?",
           [baseAmount, inv.party_id]
         );
       }
 
-      // 4) عكس رصيد الصندوق
       if (inv.payment_type === "cash" && inv.cashbox_id) {
         await sqlite.runAsync(
-          "UPDATE cashboxes SET balance = balance - ? WHERE id = ?",
+          "UPDATE cashboxes SET balance = balance + ? WHERE id = ?",
           [baseAmount, inv.cashbox_id]
         );
       }
 
-      // 5) حذف السطور والفاتورة
       await sqlite.runAsync(
         "DELETE FROM invoice_lines WHERE invoice_id = ?",
         [invoiceId]
@@ -314,7 +299,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const confirmDelete = (invoiceId: string, invoiceNo: string) => {
     Alert.alert(
       "تأكيد الحذف",
-      `هل تريد حذف الفاتورة ${invoiceNo}؟\n\nسيتم:\n• إرجاع المخزون\n• عكس رصيد العميل/الصندوق\n• حذف السجلات المرتبطة`,
+      `هل تريد حذف الفاتورة ${invoiceNo}؟\n\nسيتم:\n• خصم المخزون\n• عكس رصيد المورد/الصندوق\n• حذف السجلات المرتبطة`,
       [
         { text: "إلغاء", style: "cancel" },
         {
@@ -326,7 +311,6 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     );
   };
 
-  // ============ تعديل فاتورة ============
   const editInvoice = async (invoiceId: string) => {
     Alert.alert(
       "تعديل الفاتورة",
@@ -351,16 +335,14 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                 [invoiceId]
               );
 
-              // بيانات مؤقتة قبل الحذف
-              const oldCustomer = customers.find((c) => c.id === inv.party_id);
+              const oldSupplier = suppliers.find((s) => s.id === inv.party_id);
               const oldCurrency = currencies.find((c) => c.code === inv.currency_code);
               const oldCashbox = cashboxes.find((c) => c.id === inv.cashbox_id);
               const oldPaymentType = (inv.payment_type as PaymentType) || "cash";
 
               await deleteInvoice(invoiceId);
 
-              // ملء النموذج
-              if (oldCustomer) setCustomer(oldCustomer);
+              if (oldSupplier) setSupplier(oldSupplier);
               if (oldCurrency) setCurrency(oldCurrency);
               if (oldCashbox) setCashbox(oldCashbox);
               setPaymentType(oldPaymentType);
@@ -371,7 +353,6 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                   itemId: l.item_id,
                   itemName: l.item_name || l.description || "—",
                   itemSku: l.item_sku || "",
-                  available: 0,
                   unit: l.item_unit || "",
                   quantity: Number(l.quantity),
                   unitPrice: Number(l.unit_price),
@@ -393,12 +374,12 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   };
 
   const save = () => {
-    if (!canSave || !customer || !currency) return;
+    if (!canSave || !supplier || !currency) return;
     const symbol = currency.symbol || currency.code;
     Alert.alert(
       "تأكيد الحفظ",
-      `فاتورة مبيعات بمبلغ ${total.toFixed(2)} ${symbol}\n` +
-        `العميل: ${customer.name}\n` +
+      `فاتورة مشتريات بمبلغ ${total.toFixed(2)} ${symbol}\n` +
+        `المورد: ${supplier.name}\n` +
         `الدفع: ${paymentType === "cash" ? "نقدي" : "أجل"}`,
       [
         { text: "إلغاء", style: "cancel" },
@@ -408,14 +389,14 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   };
 
   const doSave = async () => {
-    if (!customer || !currency) return;
+    if (!supplier || !currency) return;
     setSaving(true);
     try {
       const now = Date.now();
       const invoiceId = newId();
-      const prefix = "SAL";
+      const prefix = "PUR";
       const last: any = await sqlite.getAllAsync(
-        `SELECT invoice_no FROM invoices WHERE invoice_type = 'sales' AND invoice_no LIKE ?
+        `SELECT invoice_no FROM invoices WHERE invoice_type = 'purchase' AND invoice_no LIKE ?
          ORDER BY created_at DESC LIMIT 1`,
         [`${prefix}-%`]
       );
@@ -434,9 +415,9 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
          (id, invoice_no, invoice_type, party_id, party_name, status,
           subtotal, tax, total, created_at,
           currency_code, exchange_rate, payment_type, cashbox_id)
-         VALUES (?, ?, 'sales', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, 'purchase', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`,
         [
-          invoiceId, invoiceNo, customer.id, customer.name,
+          invoiceId, invoiceNo, supplier.id, supplier.name,
           paymentType === "cash" ? "paid" : "posted",
           total, total, now,
           currency.code, rate, paymentType,
@@ -453,8 +434,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         );
 
         await sqlite.runAsync(
-          "UPDATE items SET stock_quantity = stock_quantity - ?, updated_at = ? WHERE id = ?",
-          [l.quantity, now, l.itemId]
+          "UPDATE items SET stock_quantity = stock_quantity + ?, average_cost = ?, updated_at = ? WHERE id = ?",
+          [l.quantity, l.unitPrice, now, l.itemId]
         );
 
         await sqlite.runAsync(
@@ -462,20 +443,20 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
            (id, source_type, source_id, item_id, warehouse_id, movement_type,
             quantity_in, quantity_out, planned_quantity, waste_quantity,
             unit_cost, created_at)
-           VALUES (?, 'sales_invoice', ?, ?, 'wh-final', 'sale_out',
-                   0, ?, 0, 0, ?, ?)`,
+           VALUES (?, 'purchase_invoice', ?, ?, 'wh-wip', 'purchase_in',
+                   ?, 0, 0, 0, ?, ?)`,
           [newId(), invoiceId, l.itemId, l.quantity, l.unitPrice, now]
         );
       }
 
       if (paymentType === "credit") {
         await sqlite.runAsync(
-          "UPDATE customers SET balance = balance + ? WHERE id = ?",
-          [baseAmount, customer.id]
+          "UPDATE suppliers SET balance = balance + ? WHERE id = ?",
+          [baseAmount, supplier.id]
         );
       } else if (cashbox) {
         await sqlite.runAsync(
-          "UPDATE cashboxes SET balance = balance + ? WHERE id = ?",
+          "UPDATE cashboxes SET balance = balance - ? WHERE id = ?",
           [baseAmount, cashbox.id]
         );
       }
@@ -496,13 +477,13 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
             text: "مشاركة PDF",
             onPress: () => {
               if (currentData)
-                shareHtmlAsPdf(buildInvoiceHtml(currentData), `فاتورة-${invoiceNo}.pdf`);
+                shareHtmlAsPdf(buildInvoiceHtml(currentData), `فاتورة-شراء-${invoiceNo}.pdf`);
             },
           },
         ]
       );
 
-      setCustomer(null);
+      setSupplier(null);
       setLines([]);
       setNotes("");
       if (paymentType === "cash") setCashbox(null);
@@ -525,25 +506,25 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           <Text style={styles.backText}>← العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        <Text style={styles.screenTitle}>فاتورة مبيعات جديدة</Text>
+        <Text style={styles.screenTitle}>فاتورة مشتريات جديدة</Text>
         <Text style={styles.hint}>
-          تُسجَّل للعملاء، وتخصم من المخزون التام.
+          تُسجَّل من الموردين، وتضيف إلى مخزون تحت الإنتاج (مواد خام وعبوات).
         </Text>
 
-        <Text style={styles.label}>العميل</Text>
-        <Pressable style={styles.picker} onPress={() => setShowCustomerPicker((v) => !v)}>
-          <Text style={styles.pickerText}>{customer ? customer.name : "اختر عميلاً"}</Text>
+        <Text style={styles.label}>المورد</Text>
+        <Pressable style={styles.picker} onPress={() => setShowSupplierPicker((v) => !v)}>
+          <Text style={styles.pickerText}>{supplier ? supplier.name : "اختر مورداً"}</Text>
           <Text style={styles.pickerArrow}>▼</Text>
         </Pressable>
-        {showCustomerPicker && (
+        {showSupplierPicker && (
           <View style={styles.suggestBox}>
-            {customers.length === 0 ? (
-              <Text style={styles.suggestEmpty}>لا يوجد عملاء — أضفهم من شاشة العملاء</Text>
+            {suppliers.length === 0 ? (
+              <Text style={styles.suggestEmpty}>لا يوجد موردون — أضفهم من شاشة الموردين</Text>
             ) : (
-              customers.map((c) => (
-                <Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCustomer(c); setShowCustomerPicker(false); }}>
-                  <Text style={styles.suggestName}>{c.name}</Text>
-                  <Text style={styles.suggestMeta}>{c.code} · {c.phone || ""}</Text>
+              suppliers.map((s) => (
+                <Pressable key={s.id} style={styles.suggestItem} onPress={() => { setSupplier(s); setShowSupplierPicker(false); }}>
+                  <Text style={styles.suggestName}>{s.name}</Text>
+                  <Text style={styles.suggestMeta}>{s.code} · {s.phone || ""}</Text>
                 </Pressable>
               ))
             )}
@@ -594,7 +575,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
         {paymentType === "cash" && (
           <>
-            <Text style={styles.label}>الصندوق المستلم</Text>
+            <Text style={styles.label}>الصندوق المدفوع منه</Text>
             <Pressable style={styles.picker} onPress={() => setShowCashboxPicker((v) => !v)}>
               <Text style={styles.pickerText}>{cashbox ? cashbox.name : "اختر الصندوق"}</Text>
               <Text style={styles.pickerArrow}>▼</Text>
@@ -616,10 +597,10 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           </>
         )}
 
-        <Text style={styles.sectionTitle}>المنتجات ({lines.length})</Text>
+        <Text style={styles.sectionTitle}>المواد والعبوات ({lines.length})</Text>
         <View style={styles.list}>
           {lines.length === 0 ? (
-            <Text style={styles.empty}>لا توجد أصناف بعد</Text>
+            <Text style={styles.empty}>لا توجد مواد بعد</Text>
           ) : (
             lines.map((l) => (
               <View key={l.key} style={styles.row}>
@@ -643,15 +624,15 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>إضافة منتج</Text>
+        <Text style={styles.sectionTitle}>إضافة مادة / عبوة</Text>
         <Pressable style={styles.picker} onPress={() => setShowItemPicker((v) => !v)}>
-          <Text style={styles.pickerText}>{pickItem ? pickItem.name : "اختر المنتج"}</Text>
+          <Text style={styles.pickerText}>{pickItem ? pickItem.name : "اختر من الأصناف"}</Text>
           <Text style={styles.pickerArrow}>▼</Text>
         </Pressable>
         {showItemPicker && (
           <View style={styles.suggestBox}>
             {items.length === 0 ? (
-              <Text style={styles.suggestEmpty}>لا توجد منتجات نهائية</Text>
+              <Text style={styles.suggestEmpty}>لا توجد مواد — أضفها من شاشة الأصناف</Text>
             ) : (
               items.map((it) => (
                 <Pressable
@@ -664,9 +645,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                   }}
                 >
                   <Text style={styles.suggestName}>{it.name}</Text>
-                  <Text style={styles.suggestMeta}>
-                    {it.sku} · متوفر: {Number(it.stock_quantity || 0).toFixed(0)} {it.unit}
-                  </Text>
+                  <Text style={styles.suggestMeta}>{it.sku} · {it.unit}</Text>
                 </Pressable>
               ))
             )}
@@ -696,7 +675,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         />
 
         <Pressable style={styles.secondary} onPress={addLine}>
-          <Text style={styles.secondaryText}>+ إضافة المنتج</Text>
+          <Text style={styles.secondaryText}>+ إضافة المادة</Text>
         </Pressable>
 
         <View style={styles.totalBox}>
@@ -748,7 +727,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
         {history.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>آخر فواتير المبيعات</Text>
+            <Text style={styles.sectionTitle}>آخر فواتير المشتريات</Text>
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
