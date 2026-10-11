@@ -241,7 +241,7 @@ export default function CustomersScreen({
     const n = Number(bal) || 0;
     if (n > 0) return "#0b806c";
     if (n < 0) return "#dc2626";
-    return "#758298";
+    return "#8494B0";
   };
 
   return (
@@ -415,18 +415,18 @@ export default function CustomersScreen({
 
 const styles = StyleSheet.create({
   back: { paddingVertical: 10, marginBottom: 8 },
-  backText: { color: "#087f68", fontWeight: "700", textAlign: "right" },
+  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   screenTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
     marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
     marginTop: 16,
     marginBottom: 8,
@@ -441,23 +441,23 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "#f8fafc",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#D6E3F8",
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
-    color: "#172033",
+    color: "#0F172A",
   },
   list: { gap: 8, marginTop: 4 },
   empty: {
     textAlign: "right",
-    color: "#758298",
+    color: "#8494B0",
     fontSize: 12,
     padding: 10,
   },
   row: {
     backgroundColor: "#f8fafc",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#D6E3F8",
     borderRadius: 10,
     padding: 10,
     flexDirection: "row",
@@ -468,26 +468,26 @@ const styles = StyleSheet.create({
   rowName: {
     fontWeight: "700",
     fontSize: 14,
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
   },
   rowMeta: {
     fontSize: 11,
-    color: "#758298",
+    color: "#8494B0",
     marginTop: 3,
     textAlign: "right",
   },
   rowBalance: { fontSize: 11, marginTop: 3, textAlign: "right" },
   rowActions: { flexDirection: "row", gap: 6 },
-  editBtn: { backgroundColor: "#e8f1ff", padding: 8, borderRadius: 7 },
-  editText: { color: "#172033", fontSize: 12 },
+  editBtn: { backgroundColor: "#EFF6FF", padding: 8, borderRadius: 7 },
+  editText: { color: "#0F172A", fontSize: 12 },
   delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
-  delText: { color: "#172033", fontSize: 12 },
+  delText: { color: "#0F172A", fontSize: 12 },
   suggestBox: {
     marginTop: 4,
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#D6E3F8",
     borderRadius: 8,
     overflow: "hidden",
   },
@@ -498,25 +498,25 @@ const styles = StyleSheet.create({
   },
   suggestName: {
     fontWeight: "700",
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
     fontSize: 13,
   },
   suggestMeta: {
     fontSize: 11,
-    color: "#758298",
+    color: "#8494B0",
     textAlign: "right",
     marginTop: 2,
   },
   suggestEmpty: {
     padding: 10,
-    color: "#758298",
+    color: "#8494B0",
     textAlign: "right",
     fontSize: 12,
   },
   buttons: { flexDirection: "row", gap: 8, marginTop: 16 },
   primary: {
-    backgroundColor: "#10a88a",
+    backgroundColor: "#F97316",
     padding: 14,
     borderRadius: 10,
     flex: 1,
@@ -528,5 +528,5 @@ const styles = StyleSheet.create({
     padding: 13,
     borderRadius: 10,
   },
-  cancelText: { color: "#172033", textAlign: "center" },
+  cancelText: { color: "#0F172A", textAlign: "center" },
 });

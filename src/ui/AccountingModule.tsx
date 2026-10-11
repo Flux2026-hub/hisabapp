@@ -148,7 +148,7 @@ export default function AccountingModule() {
 const styles = StyleSheet.create({
   container: { padding: 4 },
   hint: {
-    color: "#758298",
+    color: "#8494B0",
     fontSize: 12,
     textAlign: "right",
     marginBottom: 12,
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: "800",
-    color: "#087f68",
+    color: "#1E40AF",
     textAlign: "right",
     marginTop: 10,
     marginBottom: 6,
@@ -166,13 +166,13 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 },
   tab: {
     borderWidth: 1,
-    borderColor: "#dfe5ed",
+    borderColor: "#D6E3F8",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: "#ffffff",
   },
-  tabText: { fontSize: 12, color: "#172033", fontWeight: "600" },
+  tabText: { fontSize: 12, color: "#0F172A", fontWeight: "600" },
   syncBar: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -182,9 +182,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
   },
-  syncText: { color: "#315b85", fontSize: 12 },
+  syncText: { color: "#1E40AF", fontSize: 12 },
   syncButton: {
-    backgroundColor: "#315b85",
+    backgroundColor: "#1E40AF",
     paddingVertical: 7,
     paddingHorizontal: 10,
     borderRadius: 7,

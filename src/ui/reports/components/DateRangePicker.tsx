@@ -114,13 +114,13 @@ const styles = StyleSheet.create({
   },
   quickBtn: {
     borderWidth: 1,
-    borderColor: "#dfe5ed",
+    borderColor: "#D6E3F8",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  quickActive: { backgroundColor: "#315b85", borderColor: "#315b85" },
-  quickText: { fontSize: 11, color: "#172033", fontWeight: "600" },
+  quickActive: { backgroundColor: "#1E40AF", borderColor: "#1E40AF" },
+  quickText: { fontSize: 11, color: "#0F172A", fontWeight: "600" },
   quickTextActive: { color: "#fff", fontWeight: "700" },
   row: { flexDirection: "row", gap: 8, marginTop: 10 },
   label: {
@@ -132,10 +132,10 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "#f8fafc",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#D6E3F8",
     borderRadius: 8,
     padding: 10,
-    color: "#172033",
+    color: "#0F172A",
     fontSize: 13,
   },
 });

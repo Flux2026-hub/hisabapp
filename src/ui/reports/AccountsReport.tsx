@@ -83,12 +83,12 @@ export default function AccountsReport({ onBack }: { onBack: () => void }) {
           "<h2>" + TYPE_LABEL[type] + " (" + grouped[type].length + ")</h2>" +
           "<table><thead><tr><th style='width:100px'>الرمز</th><th>الاسم</th><th style='width:100px'>الحساب الأب</th><th style='width:130px'>الرصيد</th></tr></thead><tbody>" +
           (rows || "<tr><td colspan='4' style='text-align:center;color:#999'>لا توجد حسابات</td></tr>") +
-          "</tbody><tfoot><tr style='background:#e8f7f3;font-weight:800'><td colspan='3' style='text-align:right'>إجمالي " + TYPE_LABEL[type] + "</td><td>" + totals[type].toFixed(2) + " " + baseSymbol + "</td></tr></tfoot></table>"
+          "</tbody><tfoot><tr style='background:#EFF6FF;font-weight:800'><td colspan='3' style='text-align:right'>إجمالي " + TYPE_LABEL[type] + "</td><td>" + totals[type].toFixed(2) + " " + baseSymbol + "</td></tr></tfoot></table>"
         );
       })
       .join("");
 
-    return "<!DOCTYPE html><html dir='rtl'><head><meta charset='utf-8'/><style>body{font-family:Arial,Tahoma;padding:24px;direction:rtl;color:#172033}.head{text-align:center;border-bottom:2px solid #10a88a;padding-bottom:12px;margin-bottom:16px}.brand{font-size:22px;font-weight:800;color:#087f68}h1{font-size:18px;margin:12px 0}h2{font-size:14px;margin:18px 0 8px;color:#315b85}table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #dfe5ed;padding:7px;text-align:right;font-size:12px}th{background:#0b1220;color:#fff}</style></head><body><div class='head'><div class='brand'>فلوكس</div><div style='font-size:12px;color:#758298'>منتج تسليك المجاري</div></div><h1>تقرير الحسابات</h1><div style='color:#526078;font-size:11px'>إجمالي الحسابات: " + accounts.length + " | العملة: " + baseSymbol + "</div>" + sections + "</body></html>";
+    return "<!DOCTYPE html><html dir='rtl'><head><meta charset='utf-8'/><style>body{font-family:Arial,Tahoma;padding:24px;direction:rtl;color:#0F172A}.head{text-align:center;border-bottom:2px solid #F97316;padding-bottom:12px;margin-bottom:16px}.brand{font-size:22px;font-weight:800;color:#1E40AF}h1{font-size:18px;margin:12px 0}h2{font-size:14px;margin:18px 0 8px;color:#1E40AF}table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #D6E3F8;padding:7px;text-align:right;font-size:12px}th{background:#1E40AF;color:#fff}</style></head><body><div class='head'><div class='brand'>فلوكس</div><div style='font-size:12px;color:#8494B0'>منتج تسليك المجاري</div></div><h1>تقرير الحسابات</h1><div style='color:#526078;font-size:11px'>إجمالي الحسابات: " + accounts.length + " | العملة: " + baseSymbol + "</div>" + sections + "</body></html>";
   };
 
   const csvContent = useMemo(() => {
@@ -149,7 +149,7 @@ export default function AccountsReport({ onBack }: { onBack: () => void }) {
                   style={[
                     styles.value,
                     {
-                      color: Number(a.balance || 0) > 0 ? "#059669" : Number(a.balance || 0) < 0 ? "#dc2626" : "#758298",
+                      color: Number(a.balance || 0) > 0 ? "#059669" : Number(a.balance || 0) < 0 ? "#dc2626" : "#8494B0",
                     },
                   ]}
                 >
@@ -173,12 +173,12 @@ export default function AccountsReport({ onBack }: { onBack: () => void }) {
 
 const styles = StyleSheet.create({
   backWrap: { paddingVertical: 8 },
-  back: { color: "#087f68", fontWeight: "700", textAlign: "right" },
-  sectionTitle: { fontSize: 15, fontWeight: "800", color: "#087f68", textAlign: "right", marginTop: 14, marginBottom: 8 },
-  empty: { textAlign: "right", color: "#758298", fontSize: 12, padding: 10 },
-  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#e2e8f0", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
+  back: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
+  sectionTitle: { fontSize: 15, fontWeight: "800", color: "#1E40AF", textAlign: "right", marginTop: 14, marginBottom: 8 },
+  empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
+  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
   rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowName: { fontWeight: "700", color: "#172033", textAlign: "right", fontSize: 14 },
-  rowMeta: { fontSize: 11, color: "#758298", marginTop: 2, textAlign: "right" },
+  rowName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 14 },
+  rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
   value: { fontWeight: "800", fontSize: 14 },
 });

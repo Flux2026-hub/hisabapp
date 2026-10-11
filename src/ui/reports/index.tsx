@@ -13,7 +13,7 @@ type ReportKey = "menu" | "sales" | "purchase" | "inventory" | "customers" | "su
 const MENU: { key: ReportKey; label: string; desc: string; color: string }[] = [
   { key: "sales", label: "تقرير المبيعات", desc: "كل فواتير المبيعات في الفترة", color: "#0b806c" },
   { key: "purchase", label: "تقرير المشتريات", desc: "كل فواتير المشتريات في الفترة", color: "#92400e" },
-  { key: "inventory", label: "تقرير المخزون", desc: "أرصدة الأصناف وقيمة المخزون", color: "#315b85" },
+  { key: "inventory", label: "تقرير المخزون", desc: "أرصدة الأصناف وقيمة المخزون", color: "#1E40AF" },
   { key: "customers", label: "تقرير العملاء", desc: "قائمة العملاء + كشف حساب", color: "#059669" },
   { key: "suppliers", label: "تقرير الموردين", desc: "قائمة الموردين + كشف حساب", color: "#7c2d12" },
   { key: "cashboxes", label: "تقرير الصناديق", desc: "أرصدة وحركات كل صندوق", color: "#1e40af" },
@@ -59,11 +59,11 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
 
 const styles = StyleSheet.create({
   back: { paddingVertical: 10, marginBottom: 8 },
-  backText: { color: "#087f68", fontWeight: "700", textAlign: "right" },
-  screenTitle: { fontSize: 22, fontWeight: "800", color: "#172033", textAlign: "right", marginBottom: 6 },
-  hint: { fontSize: 12, color: "#758298", textAlign: "right", marginBottom: 14, lineHeight: 18 },
+  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
+  screenTitle: { fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6 },
+  hint: { fontSize: 12, color: "#8494B0", textAlign: "right", marginBottom: 14, lineHeight: 18 },
   grid: { gap: 10 },
-  card: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#e2e8f0", borderRadius: 12, padding: 16 },
-  cardTitle: { fontSize: 16, fontWeight: "800", color: "#172033", textAlign: "right" },
-  cardDesc: { fontSize: 12, color: "#758298", textAlign: "right", marginTop: 6 },
+  card: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 16 },
+  cardTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A", textAlign: "right" },
+  cardDesc: { fontSize: 12, color: "#8494B0", textAlign: "right", marginTop: 6 },
 });

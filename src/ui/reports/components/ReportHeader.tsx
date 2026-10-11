@@ -37,27 +37,27 @@ const styles = StyleSheet.create({
   header: { marginBottom: 14 },
   brandRow: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },
   logo: {
-    backgroundColor: "#087f68",
+    backgroundColor: "#1E40AF",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
   },
   logoText: { color: "#fff", fontWeight: "800", fontSize: 16 },
   brandSub: {
-    color: "#758298",
+    color: "#8494B0",
     fontSize: 12,
     textAlign: "right",
   },
   divider: {
     height: 2,
-    backgroundColor: "#10a88a",
+    backgroundColor: "#F97316",
     marginVertical: 10,
     borderRadius: 1,
   },
   title: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
   },
   subtitle: {
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   },
   period: {
     fontSize: 11,
-    color: "#758298",
+    color: "#8494B0",
     textAlign: "right",
     marginTop: 6,
   },

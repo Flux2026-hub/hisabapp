@@ -24,7 +24,7 @@ type Category = "raw_material" | "packaging" | "finished_product";
 const CATEGORIES: { key: Category; label: string; color: string }[] = [
   { key: "raw_material", label: "مواد إنتاج", color: "#f59e0b" },
   { key: "packaging", label: "عبوات وتغليف", color: "#3b82f6" },
-  { key: "finished_product", label: "منتج نهائي", color: "#10a88a" },
+  { key: "finished_product", label: "منتج نهائي", color: "#F97316" },
 ];
 
 const UNITS = ["جرام", "كيلو", "لتر", "حبة", "عبوة", "علبة", "كرتون"];
@@ -441,17 +441,17 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
 
 const styles = StyleSheet.create({
   back: { paddingVertical: 10, marginBottom: 8 },
-  backText: { color: "#087f68", fontWeight: "700", textAlign: "right" },
+  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   screenTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
     marginBottom: 6,
   },
   hint: {
     fontSize: 12,
-    color: "#758298",
+    color: "#8494B0",
     textAlign: "right",
     marginBottom: 12,
     lineHeight: 18,
@@ -459,12 +459,12 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10 },
   tab: {
     borderWidth: 1,
-    borderColor: "#dfe5ed",
+    borderColor: "#D6E3F8",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  tabText: { fontSize: 12, color: "#172033" },
+  tabText: { fontSize: 12, color: "#0F172A" },
   warehouseBar: {
     backgroundColor: "#eef6ff",
     padding: 10,
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   warehouseText: {
-    color: "#315b85",
+    color: "#1E40AF",
     fontSize: 12,
     textAlign: "right",
     fontWeight: "600",
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
     marginTop: 16,
     marginBottom: 8,
@@ -495,18 +495,18 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "#f8fafc",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#D6E3F8",
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
-    color: "#172033",
+    color: "#0F172A",
   },
   list: { gap: 8, marginTop: 4 },
-  empty: { textAlign: "right", color: "#758298", fontSize: 12, padding: 10 },
+  empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
   row: {
     backgroundColor: "#f8fafc",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#D6E3F8",
     borderRadius: 10,
     padding: 10,
     flexDirection: "row",
@@ -517,12 +517,12 @@ const styles = StyleSheet.create({
   rowName: {
     fontWeight: "700",
     fontSize: 14,
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
   },
   rowMeta: {
     fontSize: 11,
-    color: "#758298",
+    color: "#8494B0",
     marginTop: 3,
     textAlign: "right",
   },
@@ -532,17 +532,17 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontWeight: "600",
   },
-  rowCost: { fontSize: 11, color: "#758298", marginTop: 2, textAlign: "right" },
+  rowCost: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
   rowActions: { flexDirection: "row", gap: 6 },
-  editBtn: { backgroundColor: "#e8f1ff", padding: 8, borderRadius: 7 },
-  editText: { color: "#172033", fontSize: 12 },
+  editBtn: { backgroundColor: "#EFF6FF", padding: 8, borderRadius: 7 },
+  editText: { color: "#0F172A", fontSize: 12 },
   delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
-  delText: { color: "#172033", fontSize: 12 },
+  delText: { color: "#0F172A", fontSize: 12 },
   suggestBox: {
     marginTop: 4,
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#D6E3F8",
     borderRadius: 8,
     overflow: "hidden",
   },
@@ -553,25 +553,25 @@ const styles = StyleSheet.create({
   },
   suggestName: {
     fontWeight: "700",
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
     fontSize: 13,
   },
   suggestMeta: {
     fontSize: 11,
-    color: "#758298",
+    color: "#8494B0",
     textAlign: "right",
     marginTop: 2,
   },
   suggestEmpty: {
     padding: 10,
-    color: "#758298",
+    color: "#8494B0",
     textAlign: "right",
     fontSize: 12,
   },
   buttons: { flexDirection: "row", gap: 8, marginTop: 16 },
   primary: {
-    backgroundColor: "#10a88a",
+    backgroundColor: "#F97316",
     padding: 14,
     borderRadius: 10,
     flex: 1,
@@ -583,5 +583,5 @@ const styles = StyleSheet.create({
     padding: 13,
     borderRadius: 10,
   },
-  cancelText: { color: "#172033", textAlign: "center" },
+  cancelText: { color: "#0F172A", textAlign: "center" },
 });

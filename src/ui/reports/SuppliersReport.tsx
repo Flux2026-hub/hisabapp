@@ -107,7 +107,7 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
         )
         .join("");
 
-      return "<!DOCTYPE html><html dir='rtl'><head><meta charset='utf-8'/><style>body{font-family:Arial,Tahoma;padding:24px;direction:rtl;color:#172033}.head{text-align:center;border-bottom:2px solid #10a88a;padding-bottom:12px;margin-bottom:16px}.brand{font-size:22px;font-weight:800;color:#087f68}h1{font-size:18px;margin:12px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #dfe5ed;padding:7px;text-align:right;font-size:12px}th{background:#0b1220;color:#fff}.sum{margin:14px 0;padding:12px;background:#fef3c7;border-radius:8px}.sum div{margin:4px 0;font-weight:700;color:#92400e}</style></head><body><div class='head'><div class='brand'>فلوكس</div><div style='font-size:12px;color:#758298'>منتج تسليك المجاري</div></div><h1>كشف حساب المورد: " + selected.name + "</h1><div style='color:#526078;font-size:11px'>الفترة: " + from + " -> " + to + " | العملة: " + baseSymbol + "</div><div class='sum'><div>إجمالي المدين: " + totalDebit.toFixed(2) + " " + baseSymbol + "</div><div>إجمالي الدائن: " + totalCredit.toFixed(2) + " " + baseSymbol + "</div><div>الرصيد الحالي: " + Number(selected.balance || 0).toFixed(2) + " " + baseSymbol + "</div></div><table><thead><tr><th>التاريخ</th><th>البيان</th><th>المرجع</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>" + rows + "</tbody></table></body></html>";
+      return "<!DOCTYPE html><html dir='rtl'><head><meta charset='utf-8'/><style>body{font-family:Arial,Tahoma;padding:24px;direction:rtl;color:#0F172A}.head{text-align:center;border-bottom:2px solid #F97316;padding-bottom:12px;margin-bottom:16px}.brand{font-size:22px;font-weight:800;color:#1E40AF}h1{font-size:18px;margin:12px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #D6E3F8;padding:7px;text-align:right;font-size:12px}th{background:#1E40AF;color:#fff}.sum{margin:14px 0;padding:12px;background:#fef3c7;border-radius:8px}.sum div{margin:4px 0;font-weight:700;color:#92400e}</style></head><body><div class='head'><div class='brand'>فلوكس</div><div style='font-size:12px;color:#8494B0'>منتج تسليك المجاري</div></div><h1>كشف حساب المورد: " + selected.name + "</h1><div style='color:#526078;font-size:11px'>الفترة: " + from + " -> " + to + " | العملة: " + baseSymbol + "</div><div class='sum'><div>إجمالي المدين: " + totalDebit.toFixed(2) + " " + baseSymbol + "</div><div>إجمالي الدائن: " + totalCredit.toFixed(2) + " " + baseSymbol + "</div><div>الرصيد الحالي: " + Number(selected.balance || 0).toFixed(2) + " " + baseSymbol + "</div></div><table><thead><tr><th>التاريخ</th><th>البيان</th><th>المرجع</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>" + rows + "</tbody></table></body></html>";
     }
 
     const rows = suppliers
@@ -116,7 +116,7 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
       )
       .join("");
 
-    return "<!DOCTYPE html><html dir='rtl'><head><meta charset='utf-8'/><style>body{font-family:Arial,Tahoma;padding:24px;direction:rtl;color:#172033}.head{text-align:center;border-bottom:2px solid #10a88a;padding-bottom:12px;margin-bottom:16px}.brand{font-size:22px;font-weight:800;color:#087f68}h1{font-size:18px;margin:12px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #dfe5ed;padding:7px;text-align:right;font-size:12px}th{background:#0b1220;color:#fff}</style></head><body><div class='head'><div class='brand'>فلوكس</div><div style='font-size:12px;color:#758298'>منتج تسليك المجاري</div></div><h1>تقرير الموردين</h1><div style='color:#526078;font-size:11px'>عدد الموردين: " + suppliers.length + " | العملة: " + baseSymbol + "</div><table><thead><tr><th>الرمز</th><th>الاسم</th><th>الهاتف</th><th>الرصيد</th></tr></thead><tbody>" + rows + "</tbody></table></body></html>";
+    return "<!DOCTYPE html><html dir='rtl'><head><meta charset='utf-8'/><style>body{font-family:Arial,Tahoma;padding:24px;direction:rtl;color:#0F172A}.head{text-align:center;border-bottom:2px solid #F97316;padding-bottom:12px;margin-bottom:16px}.brand{font-size:22px;font-weight:800;color:#1E40AF}h1{font-size:18px;margin:12px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #D6E3F8;padding:7px;text-align:right;font-size:12px}th{background:#1E40AF;color:#fff}</style></head><body><div class='head'><div class='brand'>فلوكس</div><div style='font-size:12px;color:#8494B0'>منتج تسليك المجاري</div></div><h1>تقرير الموردين</h1><div style='color:#526078;font-size:11px'>عدد الموردين: " + suppliers.length + " | العملة: " + baseSymbol + "</div><table><thead><tr><th>الرمز</th><th>الاسم</th><th>الهاتف</th><th>الرصيد</th></tr></thead><tbody>" + rows + "</tbody></table></body></html>";
   };
 
   const csvContent = useMemo(() => {
@@ -194,7 +194,7 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
             {
               label: "الرصيد (" + baseSymbol + ")",
               value: Number(selected.balance || 0).toFixed(2),
-              color: Number(selected.balance || 0) > 0 ? "#059669" : Number(selected.balance || 0) < 0 ? "#dc2626" : "#758298",
+              color: Number(selected.balance || 0) > 0 ? "#059669" : Number(selected.balance || 0) < 0 ? "#dc2626" : "#8494B0",
             },
           ]}
         />
@@ -212,7 +212,7 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
                   style={[
                     styles.value,
                     {
-                      color: Number(s.balance || 0) > 0 ? "#059669" : Number(s.balance || 0) < 0 ? "#dc2626" : "#758298",
+                      color: Number(s.balance || 0) > 0 ? "#059669" : Number(s.balance || 0) < 0 ? "#dc2626" : "#8494B0",
                     },
                   ]}
                 >
@@ -255,14 +255,14 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
 
 const styles = StyleSheet.create({
   backWrap: { paddingVertical: 8 },
-  back: { color: "#087f68", fontWeight: "700", textAlign: "right" },
+  back: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   sectionTitle: { fontSize: 15, fontWeight: "800", color: "#92400e", textAlign: "right", marginTop: 14, marginBottom: 8 },
-  empty: { textAlign: "right", color: "#758298", fontSize: 12, padding: 10 },
-  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#e2e8f0", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
+  empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
+  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
   rowInfo: { flex: 1, alignItems: "flex-end" },
   rowRight: { alignItems: "flex-start" },
-  rowName: { fontWeight: "700", color: "#172033", textAlign: "right", fontSize: 14 },
-  rowMeta: { fontSize: 11, color: "#758298", marginTop: 2, textAlign: "right" },
+  rowName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 14 },
+  rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
   value: { fontWeight: "800", fontSize: 14 },
   valueSmall: { fontWeight: "700", fontSize: 13, color: "#92400e" },
 });

@@ -82,17 +82,17 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
 
     return `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/>
     <style>
-      body{font-family:Arial,Tahoma;padding:24px;color:#172033;direction:rtl}
-      .head{text-align:center;border-bottom:2px solid #10a88a;padding-bottom:12px;margin-bottom:16px}
-      .brand{font-size:22px;font-weight:800;color:#087f68}
+      body{font-family:Arial,Tahoma;padding:24px;color:#0F172A;direction:rtl}
+      .head{text-align:center;border-bottom:2px solid #F97316;padding-bottom:12px;margin-bottom:16px}
+      .brand{font-size:22px;font-weight:800;color:#1E40AF}
       h1{font-size:18px;margin:12px 0}
       table{width:100%;border-collapse:collapse;margin-top:12px}
-      th,td{border:1px solid #dfe5ed;padding:7px;text-align:right;font-size:12px}
-      th{background:#0b1220;color:#fff}
+      th,td{border:1px solid #D6E3F8;padding:7px;text-align:right;font-size:12px}
+      th{background:#1E40AF;color:#fff}
       .sum{margin:14px 0;padding:12px;background:#eef6ff;border-radius:8px}
-      .sum div{margin:4px 0;font-weight:700;color:#315b85}
+      .sum div{margin:4px 0;font-weight:700;color:#1E40AF}
     </style></head><body>
-      <div class="head"><div class="brand">فلوكس</div><div style="font-size:12px;color:#758298">منتج تسليك المجاري</div></div>
+      <div class="head"><div class="brand">فلوكس</div><div style="font-size:12px;color:#8494B0">منتج تسليك المجاري</div></div>
       <h1>تقرير المخزون</h1>
       <div style="color:#526078;font-size:11px">العملة الأساسية: ${baseSymbol}</div>
       <div class="sum">
@@ -226,7 +226,7 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
 
 const styles = StyleSheet.create({
   backWrap: { paddingVertical: 8 },
-  back: { color: "#087f68", fontWeight: "700", textAlign: "right" },
+  back: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   filterRow: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
@@ -235,38 +235,38 @@ const styles = StyleSheet.create({
   },
   chip: {
     borderWidth: 1,
-    borderColor: "#dfe5ed",
+    borderColor: "#D6E3F8",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 12,
-    color: "#172033",
+    color: "#0F172A",
     fontWeight: "600",
     overflow: "hidden",
   },
   chipActive: {
-    backgroundColor: "#315b85",
-    borderColor: "#315b85",
+    backgroundColor: "#1E40AF",
+    borderColor: "#1E40AF",
     color: "#fff",
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#315b85",
+    color: "#1E40AF",
     textAlign: "right",
     marginTop: 14,
     marginBottom: 8,
   },
   empty: {
     textAlign: "right",
-    color: "#758298",
+    color: "#8494B0",
     fontSize: 12,
     padding: 10,
   },
   row: {
     backgroundColor: "#f8fafc",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#D6E3F8",
     borderRadius: 10,
     padding: 10,
     flexDirection: "row",
@@ -278,13 +278,13 @@ const styles = StyleSheet.create({
   rowRight: { alignItems: "flex-start" },
   rowName: {
     fontWeight: "700",
-    color: "#172033",
+    color: "#0F172A",
     textAlign: "right",
     fontSize: 14,
   },
   rowMeta: {
     fontSize: 11,
-    color: "#758298",
+    color: "#8494B0",
     marginTop: 2,
     textAlign: "right",
   },
@@ -295,5 +295,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   value: { color: "#0b806c", fontWeight: "800", fontSize: 14 },
-  cost: { color: "#758298", fontSize: 10, marginTop: 2 },
+  cost: { color: "#8494B0", fontSize: 10, marginTop: 2 },
 });

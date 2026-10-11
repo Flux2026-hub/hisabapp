@@ -62,7 +62,7 @@ export default function ReportActions({
 const styles = StyleSheet.create({
   row: { flexDirection: "row-reverse", gap: 8, marginVertical: 14 },
   refresh: {
-    backgroundColor: "#315b85",
+    backgroundColor: "#1E40AF",
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 10,
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pdf: {
-    backgroundColor: "#10a88a",
+    backgroundColor: "#F97316",
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 10,

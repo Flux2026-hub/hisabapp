@@ -24,7 +24,7 @@ export default function ReportSummary({ items }: { items: Item[] }) {
 
 const styles = StyleSheet.create({
   box: {
-    backgroundColor: "#e8f7f3",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
     padding: 14,
     marginVertical: 12,
@@ -38,6 +38,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#cce9e0",
   },
-  label: { color: "#087f68", fontSize: 13, fontWeight: "600" },
-  value: { color: "#087f68", fontSize: 15, fontWeight: "800" },
+  label: { color: "#1E40AF", fontSize: 13, fontWeight: "600" },
+  value: { color: "#1E40AF", fontSize: 15, fontWeight: "800" },
 });
