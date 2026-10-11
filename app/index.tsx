@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
-import { COLORS } from "../src/ui/theme";
+import { COLORS, FONTS } from "../src/ui/theme";
 
 type Tab = "home" | "accounting" | "settings";
 
@@ -181,12 +181,14 @@ const styles = StyleSheet.create({
   },
   brandTextWrap: { alignItems: "flex-end" },
   brandName: {
+    fontFamily: FONTS.heading,
     color: "#FFF",
     fontSize: 28,
     fontWeight: "800",
     textAlign: "right",
   },
   brandSub: {
+    fontFamily: FONTS.subheading,
     color: COLORS.blueSoft,
     fontSize: 12,
     textAlign: "right",

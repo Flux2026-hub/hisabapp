@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Alert,
   BackHandler,
   Pressable,
   ScrollView,
@@ -21,7 +22,7 @@ import PurchaseInvoiceScreen from "./PurchaseInvoiceScreen";
 import VouchersScreen from "./VouchersScreen";
 import JournalScreen from "./JournalScreen";
 import TransfersScreen from "./TransfersScreen";
-import { getPendingSyncCount } from "../sync/queue";
+import { getPendingSyncCount, processSyncQueue } from "../sync/queue";
 import { COLORS } from "./theme";
 
 type Mode =
@@ -75,6 +76,17 @@ export default function AccountingModule() {
 
   const goMenu = () => setMode("menu");
 
+  const syncNow = async () => {
+    try {
+      const base = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:3000";
+      await processSyncQueue(base);
+      setPending(await getPendingSyncCount());
+      Alert.alert("المزامنة", "اكتملت محاولة مزامنة العمليات المحلية");
+    } catch (e) {
+      Alert.alert("تعذر المزامنة", String(e));
+    }
+  };
+
   useEffect(() => {
     const onBackPress = () => {
       if (mode !== "menu") {
@@ -115,7 +127,7 @@ export default function AccountingModule() {
           <MaterialCommunityIcons name="clock-outline" size={16} color={COLORS.orange} />
           <Text style={styles.pendingText}>عمليات معلقة: {pending}</Text>
         </View>
-        <Pressable style={styles.syncButton}>
+        <Pressable style={styles.syncButton} onPress={syncNow}>
           <MaterialCommunityIcons name="sync" size={14} color="#FFF" />
           <Text style={styles.syncButtonText}>مزامنة الآن</Text>
         </Pressable>

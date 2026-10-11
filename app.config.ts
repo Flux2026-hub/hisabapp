@@ -51,7 +51,7 @@ const config: ExpoConfig = {
   version: "1.0.0",
   extra: publicRuntime,
   orientation: "portrait",
-  icon: "./assets/images/flux-logo.png",
+  icon: "./assets/images/flux-icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "automatic",
   ios: {
@@ -62,9 +62,9 @@ const config: ExpoConfig = {
   android: {
     adaptiveIcon: {
       backgroundColor: "#0B2545",
-      foregroundImage: "./assets/images/flux-logo.png",
-      backgroundImage: "./assets/images/flux-logo.png",
-      monochromeImage: "./assets/images/flux-logo.png",
+      foregroundImage: "./assets/images/flux-icon.png",
+      backgroundImage: "./assets/images/flux-icon.png",
+      monochromeImage: "./assets/images/flux-icon.png",
     },
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
@@ -87,15 +87,21 @@ const config: ExpoConfig = {
   plugins: [
     "expo-asset",
     "expo-router",
-    ["expo-audio", { microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone." }],
-    ["expo-video", { supportsBackgroundPlayback: true, supportsPictureInPicture: true }],
+    [
+      "expo-audio",
+      { microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone." },
+    ],
+    [
+      "expo-video",
+      { supportsBackgroundPlayback: true, supportsPictureInPicture: true },
+    ],
     [
       "expo-splash-screen",
       {
-        image: "./assets/images/flux-logo.png",
-        imageWidth: 240,
+        image: "./assets/images/flux-icon.png",
+        imageWidth: 280,
         resizeMode: "contain",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#0B2545",
         dark: { backgroundColor: "#0B2545" },
       },
     ],
