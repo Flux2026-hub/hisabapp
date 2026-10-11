@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -11,13 +12,14 @@ import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
 
 const colors = {
-  navy: "#0b1220",
-  teal: "#10a88a",
-  ink: "#172033",
-  muted: "#758298",
-  bg: "#f5f7fb",
-  card: "#fff",
-  line: "#e5eaf0",
+  navy: "#0B2545",
+  blue: "#1E40AF",
+  orange: "#F97316",
+  ink: "#0F172A",
+  muted: "#8494B0",
+  bg: "#F1F5F9",
+  card: "#FFFFFF",
+  line: "#D6E3F8",
 };
 
 type Tab = "home" | "accounting" | "settings";
@@ -39,11 +41,22 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
+      {/* ===== الهيدر بخلفية فلوكس الداكنة ===== */}
       <View style={styles.header}>
-        <Text style={styles.brand}>فلوكس</Text>
-        <Text style={styles.headerSub}>مسلك مجاري · يعمل بدون إنترنت</Text>
+        <View style={styles.brandRow}>
+          <View style={styles.brandTextWrap}>
+            <Text style={styles.brandName}>فلوكس</Text>
+            <Text style={styles.brandSub}>مسلك مجاري</Text>
+          </View>
+          <Image
+            source={require("../assets/images/flux-logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
       </View>
 
+      {/* ===== شريط التبويبات ===== */}
       <View style={styles.nav}>
         <Pressable
           style={styles.menuButton}
@@ -86,7 +99,8 @@ export default function HomeScreen() {
               البيانات محفوظة على الجهاز وتعمل بدون إنترنت
             </Text>
 
-            <Card title="إجراءات سريعة">
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>إجراءات سريعة</Text>
               <Action
                 label="المحاسبة والإدارة"
                 sub="العملاء · الموردون · الفواتير · السندات · التقارير"
@@ -97,44 +111,31 @@ export default function HomeScreen() {
                 sub="ترويسة التقرير واللوجو والتذييل"
                 onPress={() => go("settings")}
               />
-            </Card>
+            </View>
           </>
         )}
 
         {tab === "accounting" && (
           <>
             <Text style={styles.title}>المحاسبة والإدارة</Text>
-            <Card title="الوحدات المحاسبية">
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>الوحدات المحاسبية</Text>
               <AccountingModule />
-            </Card>
+            </View>
           </>
         )}
 
         {tab === "settings" && (
           <>
             <Text style={styles.title}>الإعدادات</Text>
-            <Card title="إعدادات التقارير">
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>إعدادات التقارير</Text>
               <SettingsModule onBack={() => go("home")} />
-            </Card>
+            </View>
           </>
         )}
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function Card({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      {children}
-    </View>
   );
 }
 
@@ -160,9 +161,41 @@ function Action({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  header: { backgroundColor: colors.navy, padding: 20, paddingTop: 26 },
-  brand: { color: "#fff", fontSize: 26, fontWeight: "800", textAlign: "right" },
-  headerSub: { color: "#aab7c9", fontSize: 11, textAlign: "right", marginTop: 3 },
+
+  // ===== الهيدر =====
+  header: {
+    backgroundColor: colors.navy,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+    paddingTop: 26,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  brandTextWrap: {
+    alignItems: "flex-end",
+  },
+  brandName: {
+    color: "#FFFFFF",
+    fontSize: 26,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  brandSub: {
+    color: "#D6E3F8",
+    fontSize: 12,
+    textAlign: "right",
+    marginTop: 3,
+    fontWeight: "600",
+  },
+  logo: {
+    width: 100,
+    height: 80,
+  },
+
+  // ===== المحتوى =====
   content: { padding: 16, paddingBottom: 40 },
   title: {
     color: colors.ink,
@@ -171,7 +204,14 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginTop: 7,
   },
-  hint: { color: colors.muted, fontSize: 11, textAlign: "right", marginVertical: 7 },
+  hint: {
+    color: colors.muted,
+    fontSize: 12,
+    textAlign: "right",
+    marginVertical: 8,
+  },
+
+  // ===== التبويبات =====
   nav: {
     flexDirection: "row-reverse",
     backgroundColor: colors.card,
@@ -181,42 +221,66 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuButton: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 8,
     backgroundColor: colors.navy,
-    borderRadius: 7,
+    borderRadius: 8,
     marginHorizontal: 4,
   },
-  menuText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  navItem: { flex: 1, alignItems: "center" },
-  navActive: { borderBottomWidth: 2, borderBottomColor: colors.teal },
-  navText: { color: colors.muted, fontSize: 11 },
-  navTextActive: { color: colors.teal, fontWeight: "800", fontSize: 11 },
+  menuText: { color: "#FFFFFF", fontSize: 10, fontWeight: "700" },
+  navItem: { flex: 1, alignItems: "center", paddingVertical: 6 },
+  navActive: {
+    borderBottomWidth: 3,
+    borderBottomColor: colors.orange,
+  },
+  navText: { color: colors.muted, fontSize: 11, fontWeight: "600" },
+  navTextActive: {
+    color: colors.blue,
+    fontWeight: "800",
+    fontSize: 11,
+  },
+
+  // ===== القائمة المنسدلة =====
   dropdown: {
     position: "absolute",
-    top: 112,
+    top: 130,
     right: 8,
     zIndex: 20,
     elevation: 8,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 10,
+    borderRadius: 12,
     width: 210,
+    shadowColor: "#0B2545",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
   },
   dropdownItem: {
     padding: 13,
     borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    borderBottomColor: colors.bg,
   },
-  dropdownText: { textAlign: "right", fontWeight: "700", color: colors.ink },
+  dropdownText: {
+    textAlign: "right",
+    fontWeight: "700",
+    color: colors.ink,
+  },
+
+  // ===== البطاقات =====
   card: {
     backgroundColor: colors.card,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 1.2,
     borderColor: colors.line,
     padding: 16,
     marginTop: 14,
+    shadowColor: "#0B2545",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardTitle: {
     color: colors.ink,
@@ -225,14 +289,27 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginBottom: 10,
   },
+
+  // ===== الأزرار السريعة =====
   action: {
     flexDirection: "row-reverse",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: colors.line,
   },
-  actionLabel: { color: colors.ink, fontWeight: "700", textAlign: "right" },
-  actionArrow: { color: colors.teal, fontSize: 20 },
-  small: { color: colors.muted, fontSize: 10, textAlign: "right", marginTop: 3 },
+  actionLabel: {
+    color: colors.ink,
+    fontWeight: "700",
+    textAlign: "right",
+    fontSize: 14,
+  },
+  actionArrow: { color: colors.orange, fontSize: 22, fontWeight: "700" },
+  small: {
+    color: colors.muted,
+    fontSize: 11,
+    textAlign: "right",
+    marginTop: 3,
+  },
 });
