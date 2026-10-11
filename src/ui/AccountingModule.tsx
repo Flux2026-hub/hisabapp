@@ -110,7 +110,6 @@ export default function AccountingModule() {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-
       <View style={styles.syncBar}>
         <View style={styles.syncLeft}>
           <MaterialCommunityIcons name="clock-outline" size={16} color={COLORS.orange} />
@@ -128,7 +127,10 @@ export default function AccountingModule() {
 
       {sections.map((sectionName) => (
         <View key={sectionName} style={styles.sectionBlock}>
-          <Text style={styles.sectionLabel}>{sectionName}</Text>
+          <View style={styles.sectionTitleRow}>
+            <View style={styles.sectionAccent} />
+            <Text style={styles.sectionLabel}>{sectionName}</Text>
+          </View>
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
               <Pressable
@@ -188,17 +190,27 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     paddingHorizontal: 4,
   },
-  sectionBlock: { width: "100%" },
+  sectionBlock: { width: "100%", marginTop: 14 },
+  sectionTitleRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    alignSelf: "stretch",
+    marginBottom: 8,
+    gap: 8,
+  },
+  sectionAccent: {
+    width: 4,
+    height: 20,
+    backgroundColor: COLORS.orange,
+    borderRadius: 2,
+  },
   sectionLabel: {
+    flex: 1,
     fontSize: 14,
     fontWeight: "800",
     color: COLORS.blue,
     textAlign: "right",
-    alignSelf: "stretch",
-    width: "100%",
-    marginTop: 14,
-    marginBottom: 8,
-    paddingRight: 4,
+    writingDirection: "rtl",
   },
   grid: {
     flexDirection: "row-reverse",

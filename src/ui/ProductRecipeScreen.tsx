@@ -236,7 +236,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         keyboardShouldPersistTaps="handled"

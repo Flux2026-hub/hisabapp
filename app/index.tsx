@@ -30,7 +30,6 @@ export default function HomeScreen() {
     setMenuOpen(false);
   };
 
-  // ===== زر الرجوع =====
   useEffect(() => {
     const onBackPress = () => {
       if (menuOpen) {
@@ -41,7 +40,6 @@ export default function HomeScreen() {
         setTab("home");
         return true;
       }
-      // من الشاشة الرئيسية → اخرج
       return false;
     };
     const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
@@ -50,7 +48,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* ===== الهيدر ===== */}
       <View style={styles.header}>
         <View style={styles.brandRow}>
           <View style={styles.brandTextWrap}>
@@ -65,8 +62,13 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* ===== شريط التبويبات ===== */}
       <View style={styles.nav}>
+        <Pressable
+          style={styles.menuButton}
+          onPress={() => setMenuOpen((v) => !v)}
+        >
+          <Text style={styles.menuText}>☰ الأقسام</Text>
+        </Pressable>
         {sections.map(([key, label]) => (
           <Pressable
             key={key}
@@ -78,12 +80,6 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         ))}
-        <Pressable
-          style={styles.menuButton}
-          onPress={() => setMenuOpen((v) => !v)}
-        >
-          <Text style={styles.menuText}>☰ الأقسام</Text>
-        </Pressable>
       </View>
 
       {menuOpen && (
@@ -110,7 +106,6 @@ export default function HomeScreen() {
             <Text style={styles.hint}>
               البيانات محفوظة على الجهاز وتعمل بدون إنترنت
             </Text>
-
             <View style={styles.card}>
               <Text style={styles.cardTitle}>إجراءات سريعة</Text>
               <Action
@@ -186,7 +181,7 @@ const styles = StyleSheet.create({
   },
   brandTextWrap: { alignItems: "flex-end" },
   brandName: {
-    color: "#FFFFFF",
+    color: "#FFF",
     fontSize: 28,
     fontWeight: "800",
     textAlign: "right",
@@ -228,7 +223,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginHorizontal: 4,
   },
-  menuText: { color: "#FFFFFF", fontSize: 10, fontWeight: "700" },
+  menuText: { color: "#FFF", fontSize: 10, fontWeight: "700" },
   navItem: { flex: 1, alignItems: "center", paddingVertical: 6 },
   navActive: { borderBottomWidth: 3, borderBottomColor: COLORS.orange },
   navText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "600" },
@@ -236,7 +231,7 @@ const styles = StyleSheet.create({
   dropdown: {
     position: "absolute",
     top: 130,
-    left: 8,
+    right: 8,
     zIndex: 20,
     elevation: 8,
     backgroundColor: COLORS.surface,
@@ -244,10 +239,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: 12,
     width: 210,
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
   },
   dropdownItem: {
     padding: 13,
@@ -262,11 +253,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     padding: 16,
     marginTop: 14,
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
   cardTitle: {
     color: COLORS.text,
