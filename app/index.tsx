@@ -1,20 +1,238 @@
 import { useState } from "react";
-import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { createLocalStockReceipt } from "../src/sync/queue";
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
-import OpeningBalancesModule from "../src/ui/OpeningBalancesModule";
 
-const colors = { navy:"#0b1220", teal:"#10a88a", ink:"#172033", muted:"#758298", bg:"#f5f7fb", card:"#fff", line:"#e5eaf0" };
-const materials = [{ id:"raw-silver", name:"مادة خام - فضة 925", unit:"جرام", stock:12840 }, { id:"prod-stone", name:"حجر زركون أبيض", unit:"حبة", stock:4630 }];
-type Tab = "home"|"receipt"|"recipes"|"cash"|"accounting"|"settings"|"opening";
-const sections:Array<[Tab,string]> = [["home","الرئيسية"],["receipt","التوريد"],["recipes","الوصفات"],["cash","الصناديق"],["accounting","المحاسبة"],["opening","الأرصدة الافتتاحية"],["settings","الإعدادات"]];
-export default function HomeScreen(){
- const [tab,setTab]=useState<Tab>("home"),[menuOpen,setMenuOpen]=useState(false),[itemId,setItemId]=useState(materials[0].id),[source,setSource]=useState(""),[quantity,setQuantity]=useState("1"),[cost,setCost]=useState("");
- const selected=materials.find(x=>x.id===itemId)??materials[0];
- const go=(next:Tab)=>{setTab(next);setMenuOpen(false)};
- async function saveReceipt(){if(Number(quantity)<=0||Number(cost)<=0){Alert.alert("بيانات ناقصة","أدخل كمية وتكلفة صحيحتين");return}await createLocalStockReceipt({sourceName:source||"توريد داخلي",itemId,warehouseId:"wip-main",quantity:Number(quantity),unit:selected.unit,unitCost:Number(cost)});Alert.alert("تم الحفظ محليًا","تم إنشاء أمر التوريد وحركة المخزون وإضافتها إلى Sync Queue");go("home")}
- return <SafeAreaView style={styles.root}><View style={styles.header}><Text style={styles.brand}>حساب</Text><Text style={styles.headerSub}>Android · يعمل بدون إنترنت · Offline-first</Text></View><View style={styles.nav}><Pressable style={styles.menuButton} onPress={()=>setMenuOpen(v=>!v)}><Text style={styles.menuText}>☰ الأقسام</Text></Pressable>{sections.slice(0,5).map(([key,label])=><Pressable key={key} onPress={()=>go(key)} style={[styles.navItem,tab===key&&styles.navActive]}><Text style={tab===key?styles.navTextActive:styles.navText}>{label}</Text></Pressable>)}</View>{menuOpen&&<View style={styles.dropdown}>{sections.map(([key,label])=><Pressable key={key} onPress={()=>go(key)} style={styles.dropdownItem}><Text style={styles.dropdownText}>{label}</Text></Pressable>)}</View>}<ScrollView contentContainerStyle={styles.content}>{tab==="home"&&<><Text style={styles.title}>لوحة التحكم</Text><Text style={styles.hint}>البيانات محفوظة على الجهاز وتتم مزامنتها عند الاتصال</Text><View style={styles.grid}>{[["رصيد الصندوق","86,450 ر.س"],["قيمة المخزون","126,780 ر.س"],["الأصناف","3"],["حالة التشغيل","Offline-first"]].map(([a,b])=><View style={styles.kpi} key={a}><Text style={styles.kpiLabel}>{a}</Text><Text style={styles.kpiValue}>{b}</Text></View>)}</View><Card title="إجراءات سريعة"><Action label="إنشاء أمر توريد مخزني" sub="مواد خام ومواد إنتاج إلى مخزن تحت التشغيل" onPress={()=>go("receipt")}/><Action label="الأرصدة الافتتاحية" sub="تسجيل أرصدة الحسابات والأصناف" onPress={()=>go("opening")}/><Action label="المحاسبة والإدارة" sub="العملاء والموردون والفواتير والسندات" onPress={()=>go("accounting")}/><Action label="إعدادات التقارير" sub="ترويسة التقرير واللوجو والتذييل" onPress={()=>go("settings")}/></Card></>}{tab==="receipt"&&<><Text style={styles.title}>أمر توريد مخزني</Text><Card title="بيانات التوريد"><Label text="المورد / المصدر"/><TextInput style={styles.input} value={source} onChangeText={setSource} placeholder="اختر أو اكتب اسم المورد" textAlign="right"/><Label text="المادة"/>{materials.map(m=><Pressable key={m.id} onPress={()=>setItemId(m.id)} style={[styles.choice,itemId===m.id&&styles.choiceActive]}><Text style={styles.choiceText}>{m.name}</Text><Text style={styles.small}>{m.unit} · الرصيد المحلي {m.stock}</Text></Pressable>)}<Label text={`الكمية (${selected.unit})`}/><TextInput style={styles.input} value={quantity} onChangeText={setQuantity} keyboardType="decimal-pad" textAlign="right"/><Label text="تكلفة الوحدة"/><TextInput style={styles.input} value={cost} onChangeText={setCost} keyboardType="decimal-pad" placeholder="0.00" textAlign="right"/><Pressable style={styles.primary} onPress={saveReceipt}><Text style={styles.primaryText}>حفظ وربط حركة المخزون</Text></Pressable></Card></>}{tab==="recipes"&&<><Text style={styles.title}>الوصفات المركبة</Text><Card title="مكونات الوصفة"><Line name="مادة خام - فضة 925" value="3.2 جرام · هدر 2%"/><Line name="حجر زركون أبيض" value="1 حبة · هدر 0%"/><Text style={styles.small}>يمكن إدارة الوصفات وصرف المواد من شاشة المحاسبة بعد اختيار الوحدات.</Text></Card></>}{tab==="cash"&&<><Text style={styles.title}>الصناديق</Text><Card title="الصناديق الرئيسية والفرعية"><Line name="صندوق المبيعات" value="تحليلي · 52,800 ر.س"/><Line name="صندوق المصروفات" value="فرعي · 21,650 ر.س"/><Line name="صندوق العهدة" value="تحليلي · 12,000 ر.س"/><Pressable style={styles.primary} onPress={()=>go("accounting")}><Text style={styles.primaryText}>إدارة الصناديق والعملات</Text></Pressable></Card></>}{tab==="accounting"&&<><Text style={styles.title}>المحاسبة والإدارة</Text><Card title="الوحدات المحاسبية"><AccountingModule/></Card></>}{tab==="opening"&&<><Text style={styles.title}>الأرصدة الافتتاحية</Text><Card title="الحسابات والأصناف"><OpeningBalancesModule onBack={()=>go("home")}/></Card></>}{tab==="settings"&&<><Text style={styles.title}>الإعدادات</Text><Card title="إعدادات التقارير"><SettingsModule onBack={()=>go("home")}/></Card></>}</ScrollView></SafeAreaView>;
+const colors = {
+  navy: "#0b1220",
+  teal: "#10a88a",
+  ink: "#172033",
+  muted: "#758298",
+  bg: "#f5f7fb",
+  card: "#fff",
+  line: "#e5eaf0",
+};
+
+type Tab = "home" | "accounting" | "settings";
+
+const sections: Array<[Tab, string]> = [
+  ["home", "الرئيسية"],
+  ["accounting", "المحاسبة"],
+  ["settings", "الإعدادات"],
+];
+
+export default function HomeScreen() {
+  const [tab, setTab] = useState<Tab>("home");
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const go = (next: Tab) => {
+    setTab(next);
+    setMenuOpen(false);
+  };
+
+  return (
+    <SafeAreaView style={styles.root}>
+      <View style={styles.header}>
+        <Text style={styles.brand}>فلوكس</Text>
+        <Text style={styles.headerSub}>مسلك مجاري · يعمل بدون إنترنت</Text>
+      </View>
+
+      <View style={styles.nav}>
+        <Pressable
+          style={styles.menuButton}
+          onPress={() => setMenuOpen((v) => !v)}
+        >
+          <Text style={styles.menuText}>☰ الأقسام</Text>
+        </Pressable>
+        {sections.map(([key, label]) => (
+          <Pressable
+            key={key}
+            onPress={() => go(key)}
+            style={[styles.navItem, tab === key && styles.navActive]}
+          >
+            <Text style={tab === key ? styles.navTextActive : styles.navText}>
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {menuOpen && (
+        <View style={styles.dropdown}>
+          {sections.map(([key, label]) => (
+            <Pressable
+              key={key}
+              onPress={() => go(key)}
+              style={styles.dropdownItem}
+            >
+              <Text style={styles.dropdownText}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      <ScrollView contentContainerStyle={styles.content}>
+        {tab === "home" && (
+          <>
+            <Text style={styles.title}>لوحة التحكم</Text>
+            <Text style={styles.hint}>
+              البيانات محفوظة على الجهاز وتعمل بدون إنترنت
+            </Text>
+
+            <Card title="إجراءات سريعة">
+              <Action
+                label="المحاسبة والإدارة"
+                sub="العملاء · الموردون · الفواتير · السندات · التقارير"
+                onPress={() => go("accounting")}
+              />
+              <Action
+                label="إعدادات التقارير"
+                sub="ترويسة التقرير واللوجو والتذييل"
+                onPress={() => go("settings")}
+              />
+            </Card>
+          </>
+        )}
+
+        {tab === "accounting" && (
+          <>
+            <Text style={styles.title}>المحاسبة والإدارة</Text>
+            <Card title="الوحدات المحاسبية">
+              <AccountingModule />
+            </Card>
+          </>
+        )}
+
+        {tab === "settings" && (
+          <>
+            <Text style={styles.title}>الإعدادات</Text>
+            <Card title="إعدادات التقارير">
+              <SettingsModule onBack={() => go("home")} />
+            </Card>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
-function Card({title,children}:{title:string;children:React.ReactNode}){return <View style={styles.card}><Text style={styles.cardTitle}>{title}</Text>{children}</View>};function Action({label,sub,onPress}:{label:string;sub:string;onPress:()=>void}){return <Pressable onPress={onPress} style={styles.action}><Text style={styles.actionArrow}>←</Text><View><Text style={styles.actionLabel}>{label}</Text><Text style={styles.small}>{sub}</Text></View></Pressable>};function Line({name,value}:{name:string;value:string}){return <View style={styles.line}><Text style={styles.lineName}>{name}</Text><Text style={styles.lineValue}>{value}</Text></View>};function Label({text}:{text:string}){return <Text style={styles.label}>{text}</Text>}
-const styles=StyleSheet.create({root:{flex:1,backgroundColor:colors.bg},header:{backgroundColor:colors.navy,padding:20,paddingTop:26},brand:{color:"#fff",fontSize:26,fontWeight:"800",textAlign:"right"},headerSub:{color:"#aab7c9",fontSize:11,textAlign:"right",marginTop:3},content:{padding:16,paddingBottom:40},title:{color:colors.ink,fontSize:24,fontWeight:"800",textAlign:"right",marginTop:7},hint:{color:colors.muted,fontSize:11,textAlign:"right",marginVertical:7},nav:{flexDirection:"row-reverse",backgroundColor:colors.card,borderBottomWidth:1,borderBottomColor:colors.line,paddingVertical:10,alignItems:"center"},menuButton:{paddingHorizontal:8,paddingVertical:8,backgroundColor:colors.navy,borderRadius:7,marginHorizontal:4},menuText:{color:"#fff",fontSize:10,fontWeight:"700"},navItem:{flex:1,alignItems:"center"},navActive:{borderBottomWidth:2,borderBottomColor:colors.teal},navText:{color:colors.muted,fontSize:10},navTextActive:{color:colors.teal,fontWeight:"800",fontSize:10},dropdown:{position:"absolute",top:112,right:8,zIndex:20,elevation:8,backgroundColor:colors.card,borderWidth:1,borderColor:colors.line,borderRadius:10,width:210},dropdownItem:{padding:13,borderBottomWidth:1,borderBottomColor:colors.line},dropdownText:{textAlign:"right",fontWeight:"700",color:colors.ink},grid:{flexDirection:"row",flexWrap:"wrap",gap:10,marginVertical:14},kpi:{width:"48%",backgroundColor:colors.card,borderRadius:12,padding:13,borderWidth:1,borderColor:colors.line},kpiLabel:{color:colors.muted,fontSize:10,textAlign:"right"},kpiValue:{color:colors.ink,fontSize:16,fontWeight:"800",textAlign:"right",marginTop:8},card:{backgroundColor:colors.card,borderRadius:14,borderWidth:1,borderColor:colors.line,padding:16,marginTop:14},cardTitle:{color:colors.ink,fontSize:15,fontWeight:"800",textAlign:"right",marginBottom:10},action:{flexDirection:"row-reverse",justifyContent:"space-between",paddingVertical:14,borderTopWidth:1,borderTopColor:colors.line},actionLabel:{color:colors.ink,fontWeight:"700",textAlign:"right"},actionArrow:{color:colors.teal,fontSize:20},small:{color:colors.muted,fontSize:10,textAlign:"right",marginTop:3},label:{color:colors.muted,fontSize:11,textAlign:"right",marginTop:13,marginBottom:6},input:{borderWidth:1,borderColor:colors.line,borderRadius:8,padding:11,color:colors.ink,backgroundColor:"#fbfcfe"},choice:{borderWidth:1,borderColor:colors.line,borderRadius:8,padding:11,marginBottom:7},choiceActive:{borderColor:colors.teal,backgroundColor:"#effaf7"},choiceText:{color:colors.ink,fontSize:12,fontWeight:"700",textAlign:"right"},primary:{backgroundColor:colors.teal,padding:14,borderRadius:9,alignItems:"center",marginTop:18},primaryText:{color:"#fff",fontWeight:"800"},line:{flexDirection:"row-reverse",justifyContent:"space-between",borderTopWidth:1,borderTopColor:colors.line,paddingVertical:12},lineName:{color:colors.ink,fontSize:12,fontWeight:"700",textAlign:"right"},lineValue:{color:colors.teal,fontWeight:"800",fontSize:11}});
+
+function Card({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function Action({
+  label,
+  sub,
+  onPress,
+}: {
+  label: string;
+  sub: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={styles.action}>
+      <Text style={styles.actionArrow}>←</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.actionLabel}>{label}</Text>
+        <Text style={styles.small}>{sub}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg },
+  header: { backgroundColor: colors.navy, padding: 20, paddingTop: 26 },
+  brand: { color: "#fff", fontSize: 26, fontWeight: "800", textAlign: "right" },
+  headerSub: { color: "#aab7c9", fontSize: 11, textAlign: "right", marginTop: 3 },
+  content: { padding: 16, paddingBottom: 40 },
+  title: {
+    color: colors.ink,
+    fontSize: 24,
+    fontWeight: "800",
+    textAlign: "right",
+    marginTop: 7,
+  },
+  hint: { color: colors.muted, fontSize: 11, textAlign: "right", marginVertical: 7 },
+  nav: {
+    flexDirection: "row-reverse",
+    backgroundColor: colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  menuButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    backgroundColor: colors.navy,
+    borderRadius: 7,
+    marginHorizontal: 4,
+  },
+  menuText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+  navItem: { flex: 1, alignItems: "center" },
+  navActive: { borderBottomWidth: 2, borderBottomColor: colors.teal },
+  navText: { color: colors.muted, fontSize: 11 },
+  navTextActive: { color: colors.teal, fontWeight: "800", fontSize: 11 },
+  dropdown: {
+    position: "absolute",
+    top: 112,
+    right: 8,
+    zIndex: 20,
+    elevation: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 10,
+    width: 210,
+  },
+  dropdownItem: {
+    padding: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  dropdownText: { textAlign: "right", fontWeight: "700", color: colors.ink },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 16,
+    marginTop: 14,
+  },
+  cardTitle: {
+    color: colors.ink,
+    fontSize: 15,
+    fontWeight: "800",
+    textAlign: "right",
+    marginBottom: 10,
+  },
+  action: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+  },
+  actionLabel: { color: colors.ink, fontWeight: "700", textAlign: "right" },
+  actionArrow: { color: colors.teal, fontSize: 20 },
+  small: { color: colors.muted, fontSize: 10, textAlign: "right", marginTop: 3 },
+});
