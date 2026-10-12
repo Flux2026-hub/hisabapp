@@ -233,7 +233,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         total: Number(inv.total) || 0,
       };
 
-      const html = buildInvoiceHtml(data);
+      const html = await buildInvoiceHtml(data);
       await printHtml(html);
     } catch (e) {
       Alert.alert("تعذر الطباعة", String(e));
@@ -488,15 +488,15 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           { text: "لاحقاً", style: "cancel" },
           {
             text: "طباعة",
-            onPress: () => {
-              if (currentData) printHtml(buildInvoiceHtml(currentData));
+            onPress: async () => {
+              if (currentData) printHtml(await buildInvoiceHtml(currentData));
             },
           },
           {
             text: "مشاركة PDF",
-            onPress: () => {
+            onPress: async () => {
               if (currentData)
-                shareHtmlAsPdf(buildInvoiceHtml(currentData), `فاتورة-${invoiceNo}.pdf`);
+                shareHtmlAsPdf(await buildInvoiceHtml(currentData), `فاتورة-${invoiceNo}.pdf`);
             },
           },
         ]
@@ -739,7 +739,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                 Alert.alert("تنبيه", "أكمل بيانات الفاتورة أولاً");
                 return;
               }
-              printHtml(buildInvoiceHtml(data));
+              printHtml(await buildInvoiceHtml(data));
             }}
           >
             <Text style={{ color: "#1E40AF", fontWeight: "700", fontSize: 18 }}>🖨️</Text>

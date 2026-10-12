@@ -238,8 +238,8 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           { text: "لاحقاً", style: "cancel" },
           {
             text: "طباعة",
-            onPress: () => {
-              const html = buildVoucherHtml({
+            onPress: async () => {
+              const html = await buildVoucherHtml({
                 voucherNo,
                 voucherType: vType,
                 createdAt: now,

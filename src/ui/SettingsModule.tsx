@@ -1,11 +1,544 @@
 import { useEffect, useState } from "react";
-import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { getReportSettings, saveReportSettings } from "../sync/accounting";
-export default function SettingsModule({onBack}:{onBack?:()=>void}) {
- const [title,setTitle]=useState("حساب"),[subtitle,setSubtitle]=useState("نظام المحاسبة والمخزون"),[footer,setFooter]=useState("تم إنشاء التقرير بواسطة حساب"),[logoUri,setLogoUri]=useState("");
- useEffect(()=>{getReportSettings().then(s=>{setTitle(s.headerTitle);setSubtitle(s.headerSubtitle??"");setFooter(s.footerText??"");setLogoUri(s.logoUri??"")})},[]);
- const save=async()=>{try{await saveReportSettings({headerTitle:title,headerSubtitle:subtitle,footerText:footer,logoUri});Alert.alert("تم الحفظ","ستستخدم هذه البيانات في تقارير PDF وExcel القادمة")}catch(e){Alert.alert("تعذر الحفظ",String(e))}};
- return <View>{onBack&&<Pressable onPress={onBack} style={styles.back}><Text style={styles.backText}>العودة إلى القائمة</Text></Pressable>}<Text style={styles.title}>الإعدادات</Text><Text style={styles.section}>إعدادات التقارير</Text><Text style={styles.hint}>هذه البيانات تظهر في ترويسة التقارير المطبوعة والمصدرة.</Text><Label text="عنوان التقرير / اسم المنشأة"/><Input value={title} onChangeText={setTitle}/><Label text="العنوان الفرعي"/><Input value={subtitle} onChangeText={setSubtitle}/><Label text="تذييل التقرير"/><Input value={footer} onChangeText={setFooter}/><Label text="رابط أو مسار اللوجو"/><Input value={logoUri} onChangeText={setLogoUri} placeholder="https://example.com/logo.png أو file:///..."/><Text style={styles.note}>يمكنك لصق رابط صورة عام أو مسار صورة محفوظة على الهاتف. سيظهر اللوجو في التقرير عند توفره.</Text>{logoUri.length>8&&<Image source={{uri:logoUri}} style={styles.logo} resizeMode="contain"/>}<Pressable style={styles.button} onPress={save}><Text style={styles.buttonText}>حفظ إعدادات التقارير</Text></Pressable></View>;
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { COLORS } from "./theme";
+import { clearSettingsCache } from "../utils/getSettings";
+
+const STORAGE_KEY = "flux_settings_v1";
+
+type Tab = "company" | "invoices" | "reports";
+
+type Settings = {
+  // معلومات الشركة
+  companyNameAr: string;
+  companyNameEn: string;
+  companyPhone1: string;
+  companyPhone2: string;
+  companyEmail: string;
+  companyWebsite: string;
+  companyAddress: string;
+  taxNumber: string;
+  commercialRegister: string;
+
+  // إعدادات الفواتير
+  invoiceHeaderTitle: string;
+  invoiceFooterText: string;
+  showLogo: boolean;
+  showQR: boolean;
+  showSignatures: boolean;
+  signatureRight: string;
+  signatureLeft: string;
+
+  // إعدادات التقارير
+  reportHeaderTitle: string;
+  reportFooterText: string;
+  reportShowLogo: boolean;
+};
+
+const DEFAULT_SETTINGS: Settings = {
+  companyNameAr: "فلوكس",
+  companyNameEn: "Flux",
+  companyPhone1: "",
+  companyPhone2: "",
+  companyEmail: "",
+  companyWebsite: "",
+  companyAddress: "",
+  taxNumber: "",
+  commercialRegister: "",
+
+  invoiceHeaderTitle: "فاتورة",
+  invoiceFooterText: "شكراً لتعاملكم معنا",
+  showLogo: true,
+  showQR: false,
+  showSignatures: true,
+  signatureRight: "توقيع المستلم",
+  signatureLeft: "توقيع البائع",
+
+  reportHeaderTitle: "فلوكس",
+  reportFooterText: "نظام فلوكس المحاسبي",
+  reportShowLogo: true,
+};
+
+export default function SettingsModule({ onBack }: { onBack?: () => void }) {
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [activeTab, setActiveTab] = useState<Tab>("company");
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          setSettings({ ...DEFAULT_SETTINGS, ...parsed });
+        }
+      } catch (e) {
+        console.log("Failed to load settings", e);
+      } finally {
+        setLoaded(true);
+      }
+    })();
+  }, []);
+
+  const update = <K extends keyof Settings>(key: K, value: Settings[K]) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      clearSettingsCache();
+      Alert.alert("تم الحفظ", "تم حفظ الإعدادات بنجاح");
+    } catch (e) {
+      Alert.alert("خطأ", "تعذر الحفظ: " + String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reset = () => {
+    Alert.alert(
+      "إعادة تعيين",
+      "هل تريد إرجاع كل الإعدادات للقيم الافتراضية؟",
+      [
+        { text: "إلغاء", style: "cancel" },
+        {
+          text: "إعادة تعيين",
+          style: "destructive",
+          onPress: async () => {
+            setSettings(DEFAULT_SETTINGS);
+            await AsyncStorage.removeItem(STORAGE_KEY);
+            clearSettingsCache();
+            Alert.alert("تم", "تم إرجاع الإعدادات الافتراضية");
+          },
+        },
+      ]
+    );
+  };
+
+  if (!loaded) {
+    return (
+      <View style={styles.loadingWrap}>
+        <Text style={styles.loadingText}>جارٍ التحميل...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {onBack && (
+          <Pressable style={styles.back} onPress={onBack}>
+            <Text style={styles.backText}>← العودة</Text>
+          </Pressable>
+        )}
+
+        <Text style={styles.screenTitle}>إعدادات النظام</Text>
+        <Text style={styles.hint}>
+          تظهر هذه الإعدادات في ترويسة الفواتير والتقارير المطبوعة
+        </Text>
+
+        <View style={styles.tabs}>
+          <Pressable
+            style={[styles.tab, activeTab === "company" && styles.tabActive]}
+            onPress={() => setActiveTab("company")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "company" && styles.tabTextActive,
+              ]}
+            >
+              معلومات الشركة
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.tab, activeTab === "invoices" && styles.tabActive]}
+            onPress={() => setActiveTab("invoices")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "invoices" && styles.tabTextActive,
+              ]}
+            >
+              الفواتير
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.tab, activeTab === "reports" && styles.tabActive]}
+            onPress={() => setActiveTab("reports")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "reports" && styles.tabTextActive,
+              ]}
+            >
+              التقارير
+            </Text>
+          </Pressable>
+        </View>
+
+        {activeTab === "company" && (
+          <View>
+            <Text style={styles.sectionLabel}>الهوية</Text>
+            <Field
+              label="اسم الشركة (عربي)"
+              value={settings.companyNameAr}
+              onChange={(v) => update("companyNameAr", v)}
+              placeholder="فلوكس"
+            />
+            <Field
+              label="اسم الشركة (إنجليزي)"
+              value={settings.companyNameEn}
+              onChange={(v) => update("companyNameEn", v)}
+              placeholder="Flux"
+            />
+
+            <Text style={styles.sectionLabel}>التواصل</Text>
+            <Field
+              label="الهاتف الأول"
+              value={settings.companyPhone1}
+              onChange={(v) => update("companyPhone1", v)}
+              placeholder="+967 7xx xxx xxx"
+              keyboardType="phone-pad"
+            />
+            <Field
+              label="الهاتف الثاني"
+              value={settings.companyPhone2}
+              onChange={(v) => update("companyPhone2", v)}
+              placeholder="+967 7xx xxx xxx"
+              keyboardType="phone-pad"
+            />
+            <Field
+              label="البريد الإلكتروني"
+              value={settings.companyEmail}
+              onChange={(v) => update("companyEmail", v)}
+              placeholder="info@flux.com"
+              keyboardType="email-address"
+            />
+            <Field
+              label="الموقع الإلكتروني"
+              value={settings.companyWebsite}
+              onChange={(v) => update("companyWebsite", v)}
+              placeholder="www.flux.com"
+            />
+            <Field
+              label="العنوان"
+              value={settings.companyAddress}
+              onChange={(v) => update("companyAddress", v)}
+              placeholder="صنعاء - شارع xxx"
+              multiline
+            />
+
+            <Text style={styles.sectionLabel}>بيانات رسمية</Text>
+            <Field
+              label="الرقم الضريبي"
+              value={settings.taxNumber}
+              onChange={(v) => update("taxNumber", v)}
+              placeholder="اختياري"
+            />
+            <Field
+              label="السجل التجاري"
+              value={settings.commercialRegister}
+              onChange={(v) => update("commercialRegister", v)}
+              placeholder="اختياري"
+            />
+          </View>
+        )}
+
+        {activeTab === "invoices" && (
+          <View>
+            <Text style={styles.sectionLabel}>الترويسة والتذييل</Text>
+            <Field
+              label="عنوان ترويسة الفاتورة"
+              value={settings.invoiceHeaderTitle}
+              onChange={(v) => update("invoiceHeaderTitle", v)}
+              placeholder="فاتورة مبيعات"
+            />
+            <Field
+              label="نص تذييل الفاتورة"
+              value={settings.invoiceFooterText}
+              onChange={(v) => update("invoiceFooterText", v)}
+              placeholder="شكراً لتعاملكم معنا"
+              multiline
+            />
+
+            <Text style={styles.sectionLabel}>عناصر مرئية</Text>
+            <SwitchRow
+              label="إظهار اللوجو في الفاتورة"
+              value={settings.showLogo}
+              onChange={(v) => update("showLogo", v)}
+            />
+            <SwitchRow
+              label="إظهار رمز QR للتحقق"
+              value={settings.showQR}
+              onChange={(v) => update("showQR", v)}
+            />
+            <SwitchRow
+              label="إظهار التوقيعات"
+              value={settings.showSignatures}
+              onChange={(v) => update("showSignatures", v)}
+            />
+
+            <Text style={styles.sectionLabel}>التوقيعات</Text>
+            <Field
+              label="نص التوقيع الأيمن"
+              value={settings.signatureRight}
+              onChange={(v) => update("signatureRight", v)}
+              placeholder="توقيع المستلم"
+            />
+            <Field
+              label="نص التوقيع الأيسر"
+              value={settings.signatureLeft}
+              onChange={(v) => update("signatureLeft", v)}
+              placeholder="توقيع البائع"
+            />
+          </View>
+        )}
+
+        {activeTab === "reports" && (
+          <View>
+            <Text style={styles.sectionLabel}>الترويسة والتذييل</Text>
+            <Field
+              label="عنوان ترويسة التقرير"
+              value={settings.reportHeaderTitle}
+              onChange={(v) => update("reportHeaderTitle", v)}
+              placeholder="فلوكس"
+            />
+            <Field
+              label="نص تذييل التقرير"
+              value={settings.reportFooterText}
+              onChange={(v) => update("reportFooterText", v)}
+              placeholder="نظام فلوكس المحاسبي"
+              multiline
+            />
+
+            <Text style={styles.sectionLabel}>عناصر مرئية</Text>
+            <SwitchRow
+              label="إظهار اللوجو في التقرير"
+              value={settings.reportShowLogo}
+              onChange={(v) => update("reportShowLogo", v)}
+            />
+          </View>
+        )}
+
+        <View style={styles.buttons}>
+          <Pressable
+            style={[styles.primary, saving && styles.disabled]}
+            onPress={save}
+            disabled={saving}
+          >
+            <Text style={styles.primaryText}>
+              {saving ? "جارٍ الحفظ..." : "حفظ الإعدادات"}
+            </Text>
+          </Pressable>
+          <Pressable style={styles.secondary} onPress={reset}>
+            <Text style={styles.secondaryText}>إعادة تعيين</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 }
-function Label({text}:{text:string}){return <Text style={styles.label}>{text}</Text>};function Input(p:any){return <TextInput {...p} style={styles.input} textAlign="right"/>}
-const styles=StyleSheet.create({back:{padding:8,marginBottom:8},backText:{color:"#1E40AF",fontWeight:"700",textAlign:"right"},title:{fontSize:20,fontWeight:"800",color:"#0F172A",textAlign:"right",marginBottom:14},section:{fontSize:16,fontWeight:"800",color:"#1E40AF",textAlign:"right",marginBottom:6},hint:{fontSize:12,color:"#8494B0",textAlign:"right",marginBottom:12},label:{fontSize:12,color:"#526078",textAlign:"right",marginTop:10,marginBottom:4},input:{backgroundColor:"#f8fafc",borderWidth:1,borderColor:"#D6E3F8",borderRadius:8,padding:11,fontSize:14},note:{fontSize:11,color:"#8494B0",textAlign:"right",marginTop:8,lineHeight:18},logo:{height:80,width:"100%",marginTop:12},button:{backgroundColor:"#F97316",padding:14,borderRadius:10,marginTop:16},buttonText:{color:"#fff",fontWeight:"700",textAlign:"center"}});
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  keyboardType,
+  multiline,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  keyboardType?: any;
+  multiline?: boolean;
+}) {
+  return (
+    <View>
+      <Text style={styles.label}>{label}</Text>
+      <TextInput
+        style={[styles.input, multiline && styles.inputMultiline]}
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={COLORS.textMuted}
+        keyboardType={keyboardType || "default"}
+        textAlign="right"
+        multiline={!!multiline}
+      />
+    </View>
+  );
+}
+
+function SwitchRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <View style={styles.switchRow}>
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ false: "#CBD5E1", true: COLORS.orange }}
+        thumbColor="#FFF"
+      />
+      <Text style={styles.switchLabel}>{label}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  loadingWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: { color: COLORS.textMuted, fontSize: 14 },
+  scrollContent: { paddingBottom: 40, paddingHorizontal: 8 },
+  back: { paddingVertical: 10 },
+  backText: {
+    color: COLORS.blue,
+    fontWeight: "800",
+    textAlign: "right",
+    fontSize: 13,
+  },
+  screenTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: COLORS.text,
+    textAlign: "right",
+    marginBottom: 4,
+  },
+  hint: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: "right",
+    marginBottom: 14,
+    lineHeight: 18,
+  },
+  tabs: {
+    flexDirection: "row-reverse",
+    gap: 6,
+    marginBottom: 16,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    borderWidth: 1.2,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+  },
+  tabActive: {
+    backgroundColor: COLORS.blue,
+    borderColor: COLORS.blue,
+  },
+  tabText: {
+    fontSize: 12,
+    color: COLORS.text,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  tabTextActive: { color: "#FFF", fontWeight: "800" },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: COLORS.blue,
+    textAlign: "right",
+    marginTop: 18,
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: "right",
+    marginTop: 10,
+    marginBottom: 5,
+    fontWeight: "700",
+  },
+  input: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.2,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: COLORS.text,
+  },
+  inputMultiline: { minHeight: 70, textAlignVertical: "top" },
+  switchRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.2,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  switchLabel: {
+    fontSize: 14,
+    color: COLORS.text,
+    fontWeight: "700",
+    flex: 1,
+    textAlign: "right",
+    marginRight: 10,
+  },
+  buttons: { marginTop: 24, gap: 10 },
+  primary: {
+    backgroundColor: COLORS.orange,
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    shadowColor: COLORS.orange,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    elevation: 5,
+  },
+  primaryText: { color: "#FFF", fontWeight: "800", fontSize: 16 },
+  secondary: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.2,
+    borderColor: COLORS.danger,
+    paddingVertical: 13,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  secondaryText: { color: COLORS.danger, fontWeight: "800", fontSize: 14 },
+  disabled: { opacity: 0.5 },
+});

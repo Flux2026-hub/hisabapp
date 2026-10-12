@@ -1,9 +1,11 @@
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import { getSettings } from "./getSettings";
 
 export type PrintResult = { success: boolean; error?: string };
 
-const baseStyles = `
+function baseStyles() {
+  return `
   @page { size: A4; margin: 12mm; }
   * { box-sizing: border-box; }
   body {
@@ -18,6 +20,7 @@ const baseStyles = `
             padding-bottom: 16px; border-bottom: 3px solid #F97316; margin-bottom: 20px; }
   .brand { font-size: 26px; font-weight: 800; color: #1E40AF; letter-spacing: 0.5px; }
   .brand-sub { font-size: 12px; color: #8494B0; font-weight: 700; margin-top: 2px; }
+  .company-info { font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5; }
   .doc-title { font-size: 20px; font-weight: 700; color: #0F172A; }
   .meta { font-size: 13px; color: #64748B; margin-top: 4px; }
   .info-grid { display: flex; gap: 14px; margin-bottom: 18px; }
@@ -52,6 +55,7 @@ const baseStyles = `
   .badge-cash { background: #DCFCE7; color: #059669; }
   .badge-credit { background: #FEF3C7; color: #D97706; }
 `;
+}
 
 export async function printHtml(html: string): Promise<PrintResult> {
   try {
@@ -81,6 +85,36 @@ export async function shareHtmlAsPdf(
   }
 }
 
+async function buildHeaderBlock(docTitle: string, docNumber: string, dateStr: string) {
+  const s = await getSettings();
+  const phones = [s.companyPhone1, s.companyPhone2].filter(Boolean).join(" / ");
+  const contactLines: string[] = [];
+  if (phones) contactLines.push(`📞 ${phones}`);
+  if (s.companyAddress) contactLines.push(`📍 ${s.companyAddress}`);
+  if (s.companyEmail) contactLines.push(`✉️ ${s.companyEmail}`);
+  if (s.companyWebsite) contactLines.push(`🌐 ${s.companyWebsite}`);
+  if (s.taxNumber) contactLines.push(`الرقم الضريبي: ${s.taxNumber}`);
+  if (s.commercialRegister) contactLines.push(`السجل التجاري: ${s.commercialRegister}`);
+  const contactHtml = contactLines.length
+    ? `<div class="company-info">${contactLines.join("<br/>")}</div>`
+    : "";
+
+  return `
+    <div class="header">
+      <div>
+        <div class="brand">${s.companyNameAr || "فلوكس"}</div>
+        <div class="brand-sub">${s.companyNameEn || "Flux"}</div>
+        ${contactHtml}
+      </div>
+      <div style="text-align:left;">
+        <div class="doc-title">${docTitle}</div>
+        <div class="meta">رقم: <strong>${docNumber}</strong></div>
+        <div class="meta">التاريخ: ${dateStr}</div>
+      </div>
+    </div>
+  `;
+}
+
 export type InvoicePrintLine = {
   itemName: string;
   itemSku: string;
@@ -107,7 +141,8 @@ export type InvoicePrintData = {
   notes?: string;
 };
 
-export function buildInvoiceHtml(data: InvoicePrintData): string {
+export async function buildInvoiceHtml(data: InvoicePrintData): Promise<string> {
+  const s = await getSettings();
   const docTitle =
     data.type === "sales" ? "فاتورة مبيعات" : "فاتورة مشتريات";
   const dateStr = new Date(data.createdAt).toLocaleString("ar-EG");
@@ -139,25 +174,30 @@ export function buildInvoiceHtml(data: InvoicePrintData): string {
          </div>`
       : "";
 
+  const signaturesHtml = s.showSignatures
+    ? `<div class="signature">
+         <div class="line">${s.signatureRight || "توقيع المستلم"}</div>
+         <div class="line">${s.signatureLeft || "توقيع البائع"}</div>
+       </div>`
+    : "";
+
+  const headerBlock = await buildHeaderBlock(
+    s.invoiceHeaderTitle
+      ? `${s.invoiceHeaderTitle} - ${docTitle}`
+      : docTitle,
+    data.invoiceNo,
+    dateStr
+  );
+
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <title>${docTitle} - ${data.invoiceNo}</title>
-  <style>${baseStyles}</style>
+  <style>${baseStyles()}</style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <div class="brand">فلوكس</div>
-      <div class="brand-sub">مسلك مجاري</div>
-    </div>
-    <div style="text-align:left;">
-      <div class="doc-title">${docTitle}</div>
-      <div class="meta">رقم: <strong>${data.invoiceNo}</strong></div>
-      <div class="meta">التاريخ: ${dateStr}</div>
-    </div>
-  </div>
+  ${headerBlock}
 
   <div class="info-grid">
     <div class="info-cell">
@@ -205,12 +245,9 @@ export function buildInvoiceHtml(data: InvoicePrintData): string {
 
   ${data.notes ? `<div class="notes"><strong>ملاحظات:</strong> ${data.notes}</div>` : ""}
 
-  <div class="signature">
-    <div class="line">توقيع المستلم</div>
-    <div class="line">توقيع البائع</div>
-  </div>
+  ${signaturesHtml}
 
-  <div class="footer">نظام فلوكس المحاسبي — ${data.invoiceNo}</div>
+  <div class="footer">${s.invoiceFooterText || s.companyNameAr}</div>
 </body>
 </html>`;
 }
@@ -226,27 +263,27 @@ export type VoucherPrintData = {
   description?: string;
 };
 
-export function buildVoucherHtml(data: VoucherPrintData): string {
+export async function buildVoucherHtml(data: VoucherPrintData): Promise<string> {
+  const s = await getSettings();
   const title = data.voucherType === "receipt" ? "سند قبض" : "سند دفع";
   const dateStr = new Date(data.createdAt).toLocaleString("ar-EG");
   const badgeClass =
     data.voucherType === "receipt" ? "badge-cash" : "badge-credit";
 
+  const signaturesHtml = s.showSignatures
+    ? `<div class="signature">
+         <div class="line">${s.signatureRight || "توقيع المستلم"}</div>
+         <div class="line">${s.signatureLeft || "توقيع المسؤول"}</div>
+       </div>`
+    : "";
+
+  const headerBlock = await buildHeaderBlock(title, data.voucherNo, dateStr);
+
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta charset="utf-8" /><title>${title}</title><style>${baseStyles}</style></head>
+<head><meta charset="utf-8" /><title>${title}</title><style>${baseStyles()}</style></head>
 <body>
-  <div class="header">
-    <div>
-      <div class="brand">فلوكس</div>
-      <div class="brand-sub">مسلك مجاري</div>
-    </div>
-    <div style="text-align:left;">
-      <div class="doc-title">${title}</div>
-      <div class="meta">رقم: <strong>${data.voucherNo}</strong></div>
-      <div class="meta">التاريخ: ${dateStr}</div>
-    </div>
-  </div>
+  ${headerBlock}
 
   <div class="info-grid">
     <div class="info-cell">
@@ -272,12 +309,9 @@ export function buildVoucherHtml(data: VoucherPrintData): string {
 
   ${data.description ? `<div class="notes"><strong>البيان:</strong> ${data.description}</div>` : ""}
 
-  <div class="signature">
-    <div class="line">توقيع المستلم</div>
-    <div class="line">توقيع المسؤول</div>
-  </div>
+  ${signaturesHtml}
 
-  <div class="footer">نظام فلوكس المحاسبي — ${data.voucherNo}</div>
+  <div class="footer">${s.invoiceFooterText || s.companyNameAr}</div>
 </body>
 </html>`;
 }
@@ -296,7 +330,8 @@ export type JournalPrintData = {
   }>;
 };
 
-export function buildJournalHtml(data: JournalPrintData): string {
+export async function buildJournalHtml(data: JournalPrintData): Promise<string> {
+  const s = await getSettings();
   const dateStr = new Date(data.createdAt).toLocaleString("ar-EG");
   const rows = data.lines
     .map(
@@ -310,21 +345,13 @@ export function buildJournalHtml(data: JournalPrintData): string {
     )
     .join("");
 
+  const headerBlock = await buildHeaderBlock("قيد يومية", data.entryNo, dateStr);
+
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta charset="utf-8" /><title>قيد ${data.entryNo}</title><style>${baseStyles}</style></head>
+<head><meta charset="utf-8" /><title>قيد ${data.entryNo}</title><style>${baseStyles()}</style></head>
 <body>
-  <div class="header">
-    <div>
-      <div class="brand">فلوكس</div>
-      <div class="brand-sub">مسلك مجاري</div>
-    </div>
-    <div style="text-align:left;">
-      <div class="doc-title">قيد يومية</div>
-      <div class="meta">رقم: <strong>${data.entryNo}</strong></div>
-      <div class="meta">التاريخ: ${dateStr}</div>
-    </div>
-  </div>
+  ${headerBlock}
 
   <div class="notes" style="margin-bottom:18px;">
     <strong>البيان:</strong> ${data.description}
@@ -349,7 +376,7 @@ export function buildJournalHtml(data: JournalPrintData): string {
     </tfoot>
   </table>
 
-  <div class="footer">نظام فلوكس المحاسبي — ${data.entryNo}</div>
+  <div class="footer">${s.invoiceFooterText || s.companyNameAr}</div>
 </body>
 </html>`;
 }
