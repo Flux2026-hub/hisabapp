@@ -1,8 +1,9 @@
 import { Stack } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { I18nManager, View, ActivityIndicator } from "react-native";
 import { useFonts } from "expo-font";
 import { initializeLocalDatabase } from "../src/db/local";
+import LockScreen, { isSessionActive } from "../src/ui/LockScreen";
 
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
@@ -12,12 +13,19 @@ export default function RootLayout() {
     "Alexandria-Black": require("../assets/fonts/Alexandria-Black.ttf"),
     "CodecBold": require("../assets/fonts/Codec-Bold.ttf"),
   });
+  const [ready, setReady] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
-    void initializeLocalDatabase();
+    (async () => {
+      await initializeLocalDatabase();
+      const session = await isSessionActive();
+      setUnlocked(session);
+      setReady(true);
+    })();
   }, []);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !ready) {
     return (
       <View
         style={{
@@ -30,6 +38,10 @@ export default function RootLayout() {
         <ActivityIndicator size="large" color="#F97316" />
       </View>
     );
+  }
+
+  if (!unlocked) {
+    return <LockScreen onUnlock={() => setUnlocked(true)} />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;
