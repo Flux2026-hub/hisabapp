@@ -120,7 +120,7 @@ export default function AccountingModule() {
     <ScrollView
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
+      keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}
     >
       <View style={styles.syncBar}>
         <View style={styles.syncLeft}>

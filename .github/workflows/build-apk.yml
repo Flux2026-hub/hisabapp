@@ -9,6 +9,8 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout project
@@ -48,9 +50,29 @@ jobs:
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
 
-      - name: Upload APK
+      - name: Rename APK
+        run: |
+          mkdir -p output
+          cp android/app/build/outputs/apk/release/*.apk output/hisabapp.apk
+          ls -lh output/
+
+      - name: Upload APK (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: hisabapp-apk
-          path: android/app/build/outputs/apk/**/*.apk
+          path: output/hisabapp.apk
           retention-days: 30
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "Build #${{ github.run_number }}"
+          body: |
+            APK جاهز للتحميل السريع
+            - رقم البناء: ${{ github.run_number }}
+            - التاريخ: ${{ github.event.head_commit.timestamp }}
+          files: output/hisabapp.apk
+          draft: false
+          prerelease: false

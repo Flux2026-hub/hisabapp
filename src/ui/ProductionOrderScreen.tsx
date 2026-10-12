@@ -227,10 +227,10 @@ export default function ProductionOrderScreen({
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}
         contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}
       >
         <Pressable style={styles.back} onPress={onBack}>

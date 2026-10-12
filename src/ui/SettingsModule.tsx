@@ -140,11 +140,11 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}
       >
         {onBack && (
           <Pressable style={styles.back} onPress={onBack}>
