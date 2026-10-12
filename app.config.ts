@@ -62,9 +62,7 @@ const config: ExpoConfig = {
   android: {
     adaptiveIcon: {
       backgroundColor: "#0B2545",
-      foregroundImage: "./assets/images/flux-icon.png",
-      backgroundImage: "./assets/images/flux-icon.png",
-      monochromeImage: "./assets/images/flux-icon.png",
+      foregroundImage: "./assets/images/flux-icon-safe.png",
     },
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,

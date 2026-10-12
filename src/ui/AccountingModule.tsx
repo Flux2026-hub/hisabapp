@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   sectionBlock: { width: "100%", marginTop: 14 },
   sectionTitleRow: {
-    flexDirection: "row-reverse",
+    flexDirection: "row",
     alignItems: "center",
     alignSelf: "stretch",
     marginBottom: 8,

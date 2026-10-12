@@ -184,7 +184,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.heading,
     color: "#FFF",
     fontSize: 28,
-    fontWeight: "800",
     textAlign: "right",
   },
   brandSub: {
@@ -193,7 +192,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "right",
     marginTop: 3,
-    fontWeight: "700",
   },
   logo: { width: 100, height: 80 },
   content: { padding: 16, paddingBottom: 40 },
