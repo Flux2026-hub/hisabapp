@@ -1,6 +1,7 @@
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { getSettings } from "./getSettings";
+import { getLogoBase64 } from "./logoBase64";
 
 export type PrintResult = { success: boolean; error?: string };
 
@@ -84,32 +85,39 @@ export async function shareHtmlAsPdf(
     return { success: false, error: String(e) };
   }
 }
-
 async function buildHeaderBlock(docTitle: string, docNumber: string, dateStr: string) {
   const s = await getSettings();
-  const phones = [s.companyPhone1, s.companyPhone2].filter(Boolean).join(" / ");
+  const logo = s.showLogo ? await getLogoBase64() : null;
+
   const contactLines: string[] = [];
-  if (phones) contactLines.push(`📞 ${phones}`);
-  if (s.companyAddress) contactLines.push(`📍 ${s.companyAddress}`);
-  if (s.companyEmail) contactLines.push(`✉️ ${s.companyEmail}`);
-  if (s.companyWebsite) contactLines.push(`🌐 ${s.companyWebsite}`);
-  if (s.taxNumber) contactLines.push(`الرقم الضريبي: ${s.taxNumber}`);
-  if (s.commercialRegister) contactLines.push(`السجل التجاري: ${s.commercialRegister}`);
+  const phones = [s.companyPhone1, s.companyPhone2].filter(Boolean).join(" / ");
+  if (phones) contactLines.push("📞 " + phones);
+  if (s.companyAddress) contactLines.push("📍 " + s.companyAddress);
+  if (s.companyEmail) contactLines.push("✉️ " + s.companyEmail);
+  if (s.companyWebsite) contactLines.push("🌐 " + s.companyWebsite);
+  if (s.taxNumber) contactLines.push("الرقم الضريبي: " + s.taxNumber);
+  if (s.commercialRegister) contactLines.push("السجل التجاري: " + s.commercialRegister);
+
   const contactHtml = contactLines.length
-    ? `<div class="company-info">${contactLines.join("<br/>")}</div>`
+    ? `<div style="font-size:12px; color:#64748B; margin-top:10px; line-height:1.9; text-align:center;">${contactLines.join(" &nbsp;•&nbsp; ")}</div>`
+    : "";
+
+  const logoHtml = logo
+    ? `<img src="${logo}" alt="logo" style="height:80px; object-fit:contain; display:block; margin:0 auto 12px;" />`
     : "";
 
   return `
-    <div class="header">
-      <div>
-        <div class="brand">${s.companyNameAr || "فلوكس"}</div>
-        <div class="brand-sub">${s.companyNameEn || "Flux"}</div>
-        ${contactHtml}
-      </div>
+    <div style="text-align:center; padding-bottom:16px; border-bottom:3px solid #F97316; margin-bottom:18px;">
+      ${logoHtml}
+      <div style="font-size:24px; font-weight:800; color:#1E40AF;">${s.companyNameAr || "فلوكس"}</div>
+      <div style="font-size:13px; font-weight:700; color:#8494B0; margin-top:2px;">${s.companyNameEn || "Flux"}</div>
+      ${contactHtml}
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1.5px solid #D6E3F8;">
+      <div style="font-size:18px; font-weight:800; color:#0F172A;">${docTitle}</div>
       <div style="text-align:left;">
-        <div class="doc-title">${docTitle}</div>
-        <div class="meta">رقم: <strong>${docNumber}</strong></div>
-        <div class="meta">التاريخ: ${dateStr}</div>
+        <div style="font-size:13px; color:#64748B;">رقم: <strong style="color:#0F172A;">${docNumber}</strong></div>
+        <div style="font-size:13px; color:#64748B;">التاريخ: ${dateStr}</div>
       </div>
     </div>
   `;
