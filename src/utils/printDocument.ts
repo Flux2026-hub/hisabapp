@@ -8,44 +8,49 @@ const baseStyles = `
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
-    direction: rtl; text-align: right; color: #172033;
-    font-size: 13px; margin: 0; padding: 0;
+    direction: rtl; text-align: right; color: #0F172A;
+    font-size: 15px; margin: 0; padding: 0; line-height: 1.6;
   }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  h2 { font-size: 15px; margin: 18px 0 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+  h1 { font-size: 28px; margin: 0 0 6px; color: #1E40AF; }
+  h2 { font-size: 19px; margin: 22px 0 10px; border-bottom: 2px solid #D6E3F8;
+       padding-bottom: 6px; color: #1E40AF; }
   .header { display: flex; justify-content: space-between; align-items: flex-start;
-            padding-bottom: 12px; border-bottom: 2px solid #10a88a; margin-bottom: 16px; }
-  .brand { font-size: 22px; font-weight: 800; color: #087f68; letter-spacing: 0.5px; }
-  .doc-title { font-size: 18px; font-weight: 700; }
-  .meta { font-size: 11px; color: #526078; margin-top: 3px; }
-  .info-grid { display: flex; gap: 12px; margin-bottom: 14px; }
-  .info-cell { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0;
-               border-radius: 8px; padding: 10px; }
-  .info-label { font-size: 10px; color: #758298; margin-bottom: 3px; }
-  .info-value { font-size: 13px; font-weight: 700; }
-  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-  th { background: #0b1220; color: #fff; padding: 9px 8px; font-size: 12px; text-align: right; }
-  td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px; text-align: right; }
-  tr:nth-child(even) td { background: #f8fafc; }
-  .totals { margin-top: 14px; display: flex; justify-content: flex-end; }
-  .totals-box { width: 60%; }
-  .total-row { display: flex; justify-content: space-between; padding: 6px 0;
-               border-bottom: 1px dashed #e2e8f0; font-size: 12px; }
-  .total-row.grand { border-top: 2px solid #10a88a; border-bottom: none;
-                     font-size: 16px; font-weight: 800; color: #087f68;
-                     padding-top: 10px; margin-top: 4px; }
-  .notes { margin-top: 18px; padding: 10px; background: #f8fafc;
-           border-radius: 6px; font-size: 12px; color: #526078; }
-  .signature { margin-top: 40px; display: flex; justify-content: space-between;
-               font-size: 11px; color: #526078; }
-  .signature .line { border-top: 1px solid #94a3b8; padding-top: 4px;
-                     width: 180px; text-align: center; }
-  .footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid #e2e8f0;
-            font-size: 10px; color: #94a3b8; text-align: center; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px;
-           font-size: 11px; font-weight: 700; }
-  .badge-cash { background: #e8f7f3; color: #087f68; }
-  .badge-credit { background: #fef3c7; color: #92400e; }
+            padding-bottom: 16px; border-bottom: 3px solid #F97316; margin-bottom: 20px; }
+  .brand { font-size: 26px; font-weight: 800; color: #1E40AF; letter-spacing: 0.5px; }
+  .brand-sub { font-size: 12px; color: #8494B0; font-weight: 700; margin-top: 2px; }
+  .doc-title { font-size: 20px; font-weight: 700; color: #0F172A; }
+  .meta { font-size: 13px; color: #64748B; margin-top: 4px; }
+  .info-grid { display: flex; gap: 14px; margin-bottom: 18px; }
+  .info-cell { flex: 1; background: #EFF6FF; border: 1.5px solid #D6E3F8;
+               border-radius: 10px; padding: 14px; }
+  .info-label { font-size: 12px; color: #8494B0; margin-bottom: 5px; font-weight: 700; }
+  .info-value { font-size: 16px; font-weight: 800; color: #0F172A; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th { background: #0B2545; color: #FFFFFF; padding: 12px 10px; font-size: 14px;
+       text-align: right; font-weight: 700; }
+  td { padding: 11px 10px; border-bottom: 1.5px solid #E2E8F0; font-size: 14px;
+       text-align: right; color: #0F172A; }
+  tr:nth-child(even) td { background: #F8FAFC; }
+  .totals { margin-top: 18px; display: flex; justify-content: flex-end; }
+  .totals-box { width: 65%; }
+  .total-row { display: flex; justify-content: space-between; padding: 8px 0;
+               border-bottom: 1.5px dashed #D6E3F8; font-size: 14px; color: #0F172A; }
+  .total-row.grand { border-top: 3px solid #F97316; border-bottom: none;
+                     font-size: 20px; font-weight: 800; color: #F97316;
+                     padding-top: 14px; margin-top: 6px; }
+  .notes { margin-top: 22px; padding: 14px; background: #EFF6FF;
+           border-left: 5px solid #1E40AF; border-radius: 8px;
+           font-size: 14px; color: #0F172A; }
+  .signature { margin-top: 50px; display: flex; justify-content: space-between;
+               font-size: 13px; color: #64748B; }
+  .signature .line { border-top: 1.5px solid #8494B0; padding-top: 6px;
+                     width: 200px; text-align: center; font-weight: 600; }
+  .footer { margin-top: 35px; padding-top: 12px; border-top: 1.5px solid #D6E3F8;
+            font-size: 12px; color: #8494B0; text-align: center; font-weight: 600; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 6px;
+           font-size: 13px; font-weight: 800; }
+  .badge-cash { background: #DCFCE7; color: #059669; }
+  .badge-credit { background: #FEF3C7; color: #D97706; }
 `;
 
 export async function printHtml(html: string): Promise<PrintResult> {
@@ -75,8 +80,6 @@ export async function shareHtmlAsPdf(
     return { success: false, error: String(e) };
   }
 }
-
-// ============ فاتورة ============
 
 export type InvoicePrintLine = {
   itemName: string;
@@ -117,20 +120,20 @@ export function buildInvoiceHtml(data: InvoicePrintData): string {
     .map(
       (l, i) => `
       <tr>
-        <td style="width:35px; text-align:center;">${i + 1}</td>
+        <td style="width:40px; text-align:center;">${i + 1}</td>
         <td>${l.itemName}
-          <div style="font-size:10px; color:#758298; margin-top:2px;">${l.itemSku}</div>
+          <div style="font-size:12px; color:#8494B0; margin-top:3px;">${l.itemSku}</div>
         </td>
-        <td style="width:90px; text-align:center;">${l.quantity} ${l.unit}</td>
-        <td style="width:90px;">${l.unitPrice.toFixed(2)}</td>
-        <td style="width:110px; font-weight:700;">${(l.quantity * l.unitPrice).toFixed(2)}</td>
+        <td style="width:110px; text-align:center;">${l.quantity} ${l.unit}</td>
+        <td style="width:110px;">${l.unitPrice.toFixed(2)}</td>
+        <td style="width:130px; font-weight:800; color:#1E40AF;">${(l.quantity * l.unitPrice).toFixed(2)}</td>
       </tr>`
     )
     .join("");
 
   const baseEquivalent =
     !data.isBase && data.exchangeRate && data.exchangeRate !== 1
-      ? `<div class="total-row" style="font-size:11px; color:#758298;">
+      ? `<div class="total-row" style="font-size:13px; color:#8494B0;">
            <span>ما يعادل</span>
            <span>${(data.total * data.exchangeRate).toFixed(2)}</span>
          </div>`
@@ -147,7 +150,7 @@ export function buildInvoiceHtml(data: InvoicePrintData): string {
   <div class="header">
     <div>
       <div class="brand">فلوكس</div>
-      <div class="meta">منتج تسليك المجاري</div>
+      <div class="brand-sub">مسلك مجاري</div>
     </div>
     <div style="text-align:left;">
       <div class="doc-title">${docTitle}</div>
@@ -212,8 +215,6 @@ export function buildInvoiceHtml(data: InvoicePrintData): string {
 </html>`;
 }
 
-// ============ سند ============
-
 export type VoucherPrintData = {
   voucherNo: string;
   voucherType: "receipt" | "payment";
@@ -238,7 +239,7 @@ export function buildVoucherHtml(data: VoucherPrintData): string {
   <div class="header">
     <div>
       <div class="brand">فلوكس</div>
-      <div class="meta">منتج تسليك المجاري</div>
+      <div class="brand-sub">مسلك مجاري</div>
     </div>
     <div style="text-align:left;">
       <div class="doc-title">${title}</div>
@@ -258,13 +259,13 @@ export function buildVoucherHtml(data: VoucherPrintData): string {
     </div>
   </div>
 
-  <div style="margin-top:24px; padding:20px; background:#f8fafc; border:1px solid #e2e8f0;
-              border-radius:10px; text-align:center;">
-    <div class="info-label" style="font-size:12px;">المبلغ</div>
-    <div style="font-size:32px; font-weight:800; color:#087f68; margin-top:6px;">
+  <div style="margin-top:30px; padding:26px; background:#EFF6FF; border:2px solid #D6E3F8;
+              border-radius:12px; text-align:center;">
+    <div class="info-label" style="font-size:14px;">المبلغ</div>
+    <div style="font-size:38px; font-weight:800; color:#F97316; margin-top:10px;">
       ${data.amount.toFixed(2)} ${data.currencySymbol}
     </div>
-    <div style="margin-top:8px;">
+    <div style="margin-top:12px;">
       <span class="badge ${badgeClass}">${title}</span>
     </div>
   </div>
@@ -277,6 +278,78 @@ export function buildVoucherHtml(data: VoucherPrintData): string {
   </div>
 
   <div class="footer">نظام فلوكس المحاسبي — ${data.voucherNo}</div>
+</body>
+</html>`;
+}
+
+export type JournalPrintData = {
+  entryNo: string;
+  createdAt: number;
+  description: string;
+  totalDebit: number;
+  totalCredit: number;
+  lines: Array<{
+    accountCode: string;
+    accountName: string;
+    debit: number;
+    credit: number;
+  }>;
+};
+
+export function buildJournalHtml(data: JournalPrintData): string {
+  const dateStr = new Date(data.createdAt).toLocaleString("ar-EG");
+  const rows = data.lines
+    .map(
+      (l) => `
+      <tr>
+        <td style="font-family:monospace; font-weight:700;">${l.accountCode}</td>
+        <td>${l.accountName}</td>
+        <td style="width:110px; font-weight:700;">${l.debit > 0 ? l.debit.toFixed(2) : "-"}</td>
+        <td style="width:110px; font-weight:700;">${l.credit > 0 ? l.credit.toFixed(2) : "-"}</td>
+      </tr>`
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8" /><title>قيد ${data.entryNo}</title><style>${baseStyles}</style></head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand">فلوكس</div>
+      <div class="brand-sub">مسلك مجاري</div>
+    </div>
+    <div style="text-align:left;">
+      <div class="doc-title">قيد يومية</div>
+      <div class="meta">رقم: <strong>${data.entryNo}</strong></div>
+      <div class="meta">التاريخ: ${dateStr}</div>
+    </div>
+  </div>
+
+  <div class="notes" style="margin-bottom:18px;">
+    <strong>البيان:</strong> ${data.description}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:110px;">رمز الحساب</th>
+        <th>اسم الحساب</th>
+        <th>مدين</th>
+        <th>دائن</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+    <tfoot>
+      <tr style="background:#EFF6FF; font-weight:800; color:#1E40AF;">
+        <td colspan="2" style="text-align:right; font-size:16px;">الإجمالي</td>
+        <td style="font-size:16px;">${data.totalDebit.toFixed(2)}</td>
+        <td style="font-size:16px;">${data.totalCredit.toFixed(2)}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="footer">نظام فلوكس المحاسبي — ${data.entryNo}</div>
 </body>
 </html>`;
 }

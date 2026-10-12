@@ -217,12 +217,10 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   sectionLabel: {
-    flex: 1,
     fontSize: 14,
     fontWeight: "800",
     color: COLORS.blue,
     textAlign: "right",
-    writingDirection: "rtl",
   },
   grid: {
     flexDirection: "row-reverse",

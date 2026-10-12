@@ -52,7 +52,6 @@ export default function HomeScreen() {
         <View style={styles.brandRow}>
           <View style={styles.brandTextWrap}>
             <Text style={styles.brandName}>فلوكس</Text>
-            <Text style={styles.brandSub}>مسلك مجاري</Text>
           </View>
           <Image
             source={require("../assets/images/flux-logo.png")}
@@ -183,7 +182,7 @@ const styles = StyleSheet.create({
   brandName: {
     fontFamily: FONTS.heading,
     color: "#FFF",
-    fontSize: 28,
+    fontSize: 21,
     textAlign: "right",
   },
   brandSub: {
