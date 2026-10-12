@@ -541,7 +541,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
               <Text style={styles.suggestEmpty}>لا يوجد عملاء — أضفهم من شاشة العملاء</Text>
             ) : (
               customers.map((c) => (
-                <Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCustomer(c); setShowCustomerPicker(false); }}>
+                <Pressable key={c.id} style={styles.suggestItem} onPress={async () => { setCustomer(c); setShowCustomerPicker(false); }}>
                   <Text style={styles.suggestName}>{c.name}</Text>
                   <Text style={styles.suggestMeta}>{c.code} · {c.phone || ""}</Text>
                 </Pressable>
@@ -565,7 +565,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
               <Pressable
                 key={c.id}
                 style={styles.suggestItem}
-                onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}
+                onPress={async () => { setCurrency(c); setShowCurrencyPicker(false); }}
               >
                 <Text style={styles.suggestName}>{c.name} ({c.symbol})</Text>
                 <Text style={styles.suggestMeta}>
@@ -605,7 +605,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                   <Text style={styles.suggestEmpty}>لا توجد صناديق</Text>
                 ) : (
                   cashboxes.map((c) => (
-                    <Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}>
+                    <Pressable key={c.id} style={styles.suggestItem} onPress={async () => { setCashbox(c); setShowCashboxPicker(false); }}>
                       <Text style={styles.suggestName}>{c.name}</Text>
                       <Text style={styles.suggestMeta}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                     </Pressable>
@@ -657,7 +657,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                 <Pressable
                   key={it.id}
                   style={styles.suggestItem}
-                  onPress={() => {
+                  onPress={async () => {
                     setPickItem(it);
                     setPickPrice(String(it.average_cost ?? ""));
                     setShowItemPicker(false);
@@ -733,7 +733,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
               borderRadius: 10,
               justifyContent: "center",
             }}
-            onPress={() => {
+            onPress={async () => {
               const data = buildCurrentInvoiceData("—");
               if (!data) {
                 Alert.alert("تنبيه", "أكمل بيانات الفاتورة أولاً");
