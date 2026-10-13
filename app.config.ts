@@ -1,4 +1,4 @@
-import "./scripts/load-env.js";
+import "./wscripts/load-env.js";
 import type { ExpoConfig } from "expo/config";
 
 const rawBundleId = "space.manus.hisabapp.t204085905761159";
@@ -84,6 +84,12 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-asset",
+    [
+  "expo-local-authentication",
+  {
+    faceIDPermission: "استخدم Face ID للدخول للتطبيق",
+  },
+],
     "expo-router",
     [
       "expo-audio",
