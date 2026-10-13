@@ -84,12 +84,6 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-asset",
-    [
-  "expo-local-authentication",
-  {
-    faceIDPermission: "استخدم Face ID للدخول للتطبيق",
-  },
-],
     "expo-router",
     [
       "expo-audio",
