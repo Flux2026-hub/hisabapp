@@ -41,23 +41,6 @@ jobs:
           CI: 1
           EXPO_NO_TELEMETRY: 1
 
-      - name: Fix expo-document-picker Kotlin errors
-        run: |
-          FILES=$(find node_modules -name "DocumentPickerOptions.kt" 2>/dev/null)
-          echo "Found files:"
-          echo "$FILES"
-          if [ -z "$FILES" ]; then
-            echo "ERROR: No files found"
-            exit 1
-          fi
-          for FILE in $FILES; do
-            echo "=== Patching: $FILE ==="
-            sed -i '/import androidx.core.text.IsNotEmpty/d' "$FILE"
-            sed -i 's/\.IsNotEmpty()/\.isNotEmpty()/g' "$FILE"
-            sed -i 's/ IsNotEmpty / isNotEmpty /g' "$FILE"
-            grep -n "IsNotEmpty" "$FILE" && echo "STILL HAS IsNotEmpty!" || echo "OK"
-          done
-
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
