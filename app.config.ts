@@ -1,4 +1,4 @@
-import "./wscripts/load-env.js";
+import "./scripts/load-env.js";
 import type { ExpoConfig } from "expo/config";
 
 const rawBundleId = "space.manus.hisabapp.t204085905761159";
