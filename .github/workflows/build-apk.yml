@@ -35,27 +35,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Fix expo-document-picker Kotlin errors
-        run: |
-          FILE=$(find node_modules/.pnpm -name "DocumentPickerOptions.kt" | head -n 1)
-          echo "Found: $FILE"
-          if [ -z "$FILE" ]; then
-            echo "ERROR: File not found"
-            exit 1
-          fi
-          sed -i '/import androidx.core.text.IsNotEmpty/d' "$FILE"
-          sed -i 's/\.IsNotEmpty()/\.isNotEmpty()/g' "$FILE"
-          sed -i 's/ IsNotEmpty / isNotEmpty /g' "$FILE"
-          echo "=== After fix ==="
-          cat -n "$FILE"
-          echo "=== Checking for remaining IsNotEmpty ==="
-          grep -n "IsNotEmpty" "$FILE" || echo "All clean!"
-
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean --no-install
         env:
           CI: 1
           EXPO_NO_TELEMETRY: 1
+
+      - name: Fix expo-document-picker Kotlin errors
+        run: |
+          FILES=$(find node_modules -name "DocumentPickerOptions.kt" 2>/dev/null)
+          echo "Found files:"
+          echo "$FILES"
+          if [ -z "$FILES" ]; then
+            echo "ERROR: No files found"
+            exit 1
+          fi
+          for FILE in $FILES; do
+            echo "=== Patching: $FILE ==="
+            sed -i '/import androidx.core.text.IsNotEmpty/d' "$FILE"
+            sed -i 's/\.IsNotEmpty()/\.isNotEmpty()/g' "$FILE"
+            sed -i 's/ IsNotEmpty / isNotEmpty /g' "$FILE"
+            grep -n "IsNotEmpty" "$FILE" && echo "STILL HAS IsNotEmpty!" || echo "OK"
+          done
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew

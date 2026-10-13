@@ -1,6 +1,5 @@
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
-import * as DocumentPicker from "expo-document-picker";
 import { sqlite } from "../db/local";
 
 const TABLES = [
@@ -58,21 +57,33 @@ export async function exportBackup(): Promise<{ success: boolean; uri?: string; 
 
 export async function pickBackupFile(): Promise<{ success: boolean; backup?: BackupFile; error?: string }> {
   try {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "application/json",
-      copyToCacheDirectory: true,
-    });
-    if (result.canceled || !result.assets || result.assets.length === 0) {
-      return { success: false, error: "تم الإلغاء" };
+    const permissions =
+      await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+
+    if (!permissions.granted) {
+      return { success: false, error: "لم يتم منح صلاحية الوصول للملفات" };
     }
-    const uri = result.assets[0].uri;
-    const content = await FileSystem.readAsStringAsync(uri, {
+
+    const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(
+      permissions.directoryUri
+    );
+
+    const jsonFile = files.find((f) => f.toLowerCase().endsWith(".json"));
+
+    if (!jsonFile) {
+      return { success: false, error: "لا يوجد ملف JSON في المجلد المحدد" };
+    }
+
+    const content = await FileSystem.readAsStringAsync(jsonFile, {
       encoding: FileSystem.EncodingType.UTF8,
     });
+
     const backup: BackupFile = JSON.parse(content);
+
     if (!backup.data || typeof backup.data !== "object") {
       return { success: false, error: "ملف غير صالح" };
     }
+
     return { success: true, backup };
   } catch (e: any) {
     return { success: false, error: String(e) };
