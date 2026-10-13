@@ -17,7 +17,7 @@ const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 
 const env = {
-  appName: "فلوكس - مسلك مجاري",
+  appName: "تطبيق فلوكس المحاسبي",
   appSlug: "hisabapp",
   logoUrl: "",
   scheme: schemeFromBundleId,

@@ -14,6 +14,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "./theme";
 import { clearSettingsCache } from "../utils/getSettings";
+import { exportBackup, pickBackupFile, restoreBackup } from "../utils/backup";
 
 const STORAGE_KEY = "flux_settings_v1";
 
@@ -107,6 +108,52 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleExport = async () => {
+    try {
+      const result = await exportBackup();
+      if (result.success) {
+        Alert.alert("تم التصدير", "تم إنشاء النسخة الاحتياطية ومشاركتها بنجاح");
+      } else if (result.error !== "تم الإلغاء") {
+        Alert.alert("خطأ", result.error || "تعذر التصدير");
+      }
+    } catch (e) {
+      Alert.alert("خطأ", String(e));
+    }
+  };
+
+  const handleRestore = () => {
+    Alert.alert(
+      "تحذير",
+      "الاستعادة ستستبدل جميع البيانات الحالية بالبيانات الموجودة في الملف.\n\nهل أنت متأكد؟",
+      [
+        { text: "إلغاء", style: "cancel" },
+        {
+          text: "متابعة",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const picked = await pickBackupFile();
+              if (!picked.success || !picked.backup) {
+                if (picked.error !== "تم الإلغاء") {
+                  Alert.alert("خطأ", picked.error || "تعذر قراءة الملف");
+                }
+                return;
+              }
+              const result = await restoreBackup(picked.backup);
+              if (result.success) {
+                Alert.alert("تمت الاستعادة", "تم استيراد " + result.restored + " سجلاً بنجاح");
+              } else {
+                Alert.alert("خطأ", result.error || "تعذر الاستعادة");
+              }
+            } catch (e) {
+              Alert.alert("خطأ", String(e));
+            }
+          },
+        },
+      ]
+    );
   };
 
   const reset = () => {
@@ -264,6 +311,15 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
               onChange={(v) => update("commercialRegister", v)}
               placeholder="اختياري"
             />
+
+            <Text style={styles.sectionLabel}>النسخ الاحتياطي</Text>
+            <Text style={styles.backupHint}>احفظ نسخة من كل بياناتك في ملف واحد يمكن استعادته لاحقاً.</Text>
+            <Pressable style={styles.backupBtn} onPress={handleExport}>
+              <Text style={styles.backupBtnText}>📤 تصدير نسخة احتياطية</Text>
+            </Pressable>
+            <Pressable style={styles.restoreBtn} onPress={handleRestore}>
+              <Text style={styles.restoreBtnText}>📥 استعادة نسخة احتياطية</Text>
+            </Pressable>
           </View>
         )}
 
@@ -518,6 +574,30 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginRight: 10,
   },
+  backupHint: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: "right",
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  backupBtn: {
+    backgroundColor: COLORS.blue,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  backupBtnText: { color: "#FFF", fontWeight: "800", fontSize: 14 },
+  restoreBtn: {
+    backgroundColor: "#FFF",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: COLORS.orange,
+  },
+  restoreBtnText: { color: COLORS.orange, fontWeight: "800", fontSize: 14 },
   buttons: { marginTop: 24, gap: 10 },
   primary: {
     backgroundColor: COLORS.orange,

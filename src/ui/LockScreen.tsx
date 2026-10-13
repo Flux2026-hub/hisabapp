@@ -44,13 +44,10 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
     (async () => {
       const exists = await hasPin();
       setSetupMode(!exists);
-
       try {
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-        if (hasHardware && isEnrolled) {
-          setBiometricAvailable(true);
-        }
+        if (hasHardware && isEnrolled) setBiometricAvailable(true);
       } catch (e) {
         console.log("biometric check failed", e);
       }
@@ -70,9 +67,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
         cancelLabel: "إلغاء",
         disableDeviceFallback: true,
       });
-      if (result.success) {
-        onUnlock();
-      }
+      if (result.success) onUnlock();
     } catch (e) {
       console.log("biometric failed", e);
     }
@@ -83,9 +78,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
     const next = pin + d;
     setPin(next);
     setError("");
-    if (next.length === 4) {
-      setTimeout(() => handleComplete(next), 200);
-    }
+    if (next.length === 4) setTimeout(() => handleComplete(next), 200);
   };
 
   const removeDigit = () => {
@@ -99,22 +92,19 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
         setFirstPin(entered);
         setPin("");
         setError("");
+      } else if (firstPin === entered) {
+        await setNewPin(entered);
+        setSetupMode(false);
+        onUnlock();
       } else {
-        if (firstPin === entered) {
-          await setNewPin(entered);
-          setSetupMode(false);
-          onUnlock();
-        } else {
-          setError("الرمزان غير متطابقين");
-          setPin("");
-          setFirstPin("");
-        }
+        setError("الرمزان غير متطابقين");
+        setPin("");
+        setFirstPin("");
       }
     } else {
       const saved = await AsyncStorage.getItem(PIN_KEY);
-      if (saved === entered) {
-        onUnlock();
-      } else {
+      if (saved === entered) onUnlock();
+      else {
         setError("رمز خاطئ");
         setPin("");
       }
@@ -130,40 +120,37 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
 
   return (
     <View style={styles.root}>
-      {/* ===== صورة المنتج ===== */}
       <View style={styles.productWrap}>
-        <View style={styles.productCard}>
-          <Image
-            source={require("../../assets/images/flux-product.png")}
-            style={styles.productImage}
-            resizeMode="contain"
-          />
-        </View>
+        <Image
+          source={require("../../assets/images/flux-product.png")}
+          style={styles.productImage}
+          resizeMode="contain"
+        />
       </View>
 
-      {/* ===== مؤشر الوضع ===== */}
       <View style={styles.modeRow}>
         <MaterialCommunityIcons
-          name={setupMode ? (firstPin ? "lock-check-outline" : "lock-plus-outline") : "lock-outline"}
+          name={
+            setupMode
+              ? firstPin
+                ? "lock-check-outline"
+                : "lock-plus-outline"
+              : "lock-outline"
+          }
           size={18}
           color={COLORS.blue}
         />
       </View>
 
-      {/* ===== نقاط الـ PIN ===== */}
       <View style={styles.dotsRow}>
         {[0, 1, 2, 3].map((i) => (
           <View
             key={i}
-            style={[
-              styles.dot,
-              i < pin.length ? styles.dotFilled : styles.dotEmpty,
-            ]}
+            style={[styles.dot, i < pin.length ? styles.dotFilled : styles.dotEmpty]}
           />
         ))}
       </View>
 
-      {/* ===== رسالة الخطأ ===== */}
       <View style={styles.errorWrap}>
         {error ? (
           <>
@@ -179,7 +166,6 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
         )}
       </View>
 
-      {/* ===== زر البصمة ===== */}
       {biometricAvailable && !setupMode ? (
         <Pressable
           style={({ pressed }) => [
@@ -188,23 +174,17 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
           ]}
           onPress={tryBiometric}
         >
-          <MaterialCommunityIcons
-            name="fingerprint"
-            size={42}
-            color={COLORS.blue}
-          />
+          <MaterialCommunityIcons name="fingerprint" size={42} color={COLORS.blue} />
         </Pressable>
       ) : (
         <View style={styles.biometricPlaceholder} />
       )}
 
-      {/* ===== لوحة الأرقام ===== */}
       <View style={styles.pad}>
         {digits.map((row, ri) => (
           <View key={ri} style={styles.padRow}>
             {row.map((d, di) => {
-              if (d === "")
-                return <View key={di} style={styles.padBtn} />;
+              if (d === "") return <View key={di} style={styles.padBtn} />;
               if (d === "←") {
                 return (
                   <Pressable
@@ -253,41 +233,20 @@ const styles = StyleSheet.create({
     paddingTop: 30,
     paddingBottom: 30,
   },
-
-  // ===== صورة المنتج =====
   productWrap: {
     alignItems: "center",
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  productCard: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 4,
-    borderColor: COLORS.orange,
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    elevation: 8,
+    marginTop: 20,
+    marginBottom: 20,
   },
   productImage: {
-    width: 150,
-    height: 150,
+    width: 220,
+    height: 220,
   },
-
-  // ===== المؤشر =====
   modeRow: {
     alignItems: "center",
-    marginTop: 18,
+    marginTop: 4,
     marginBottom: 10,
   },
-
-  // ===== النقاط =====
   dotsRow: {
     flexDirection: "row-reverse",
     justifyContent: "center",
@@ -308,8 +267,6 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderColor: COLORS.blueSoft,
   },
-
-  // ===== الخطأ =====
   errorWrap: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -323,8 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-
-  // ===== البصمة =====
   biometricBtn: {
     width: 68,
     height: 68,
@@ -350,8 +305,6 @@ const styles = StyleSheet.create({
     height: 68,
     marginBottom: 16,
   },
-
-  // ===== لوحة الأرقام =====
   pad: {
     flex: 1,
     justifyContent: "center",
