@@ -35,6 +35,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Fix expo-document-picker IsNotEmpty
+        run: |
+          FILE=$(find node_modules/.pnpm -name "DocumentPickerOptions.kt" | head -n 1)
+          echo "Found: $FILE"
+          sed -i '/import androidx.core.text.IsNotEmpty/d' "$FILE"
+          grep -c "IsNotEmpty" "$FILE" || echo "Fixed successfully"
+
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean --no-install
         env:
