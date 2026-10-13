@@ -1,2 +1,5 @@
 _backup_colors/
 node_modules/
+app.config.js
+app.config.js.map
+app.config.d.ts
