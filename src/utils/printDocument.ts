@@ -103,7 +103,7 @@ async function buildHeaderBlock(docTitle: string, docNumber: string, dateStr: st
     : "";
 
   const logoHtml = logo
-    ? `<img src="${logo}" alt="logo" style="height:80px; object-fit:contain; display:block; margin:0 auto 12px;" />`
+    ? `<img src="${logo}" alt="logo" style="height:100px; object-fit:contain; display:block; margin:0 auto 12px;" />`
     : "";
 
   return `
