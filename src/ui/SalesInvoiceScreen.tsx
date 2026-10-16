@@ -31,12 +31,14 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const [currencies, setCurrencies] = useState<Row[]>([]);
   const [cashboxes, setCashboxes] = useState<Row[]>([]);
   const [items, setItems] = useState<Row[]>([]);
+  const [salesReps, setSalesReps] = useState<Row[]>([]);
 
   const [customer, setCustomer] = useState<Row | null>(null);
   const [currency, setCurrency] = useState<Row | null>(null);
   const [paymentType, setPaymentType] = useState<PaymentType>("cash");
   const [cashbox, setCashbox] = useState<Row | null>(null);
   const [notes, setNotes] = useState("");
+  const [salesRep, setSalesRep] = useState<Row | null>(null);
 
   const [lines, setLines] = useState<InvoiceLine[]>([]);
   const [pickItem, setPickItem] = useState<Row | null>(null);
@@ -47,6 +49,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showCashboxPicker, setShowCashboxPicker] = useState(false);
   const [showItemPicker, setShowItemPicker] = useState(false);
+  const [showSalesRepPicker, setShowSalesRepPicker] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<Row[]>([]);
@@ -65,6 +68,11 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         );
         setCustomers(c || []);
         setCashboxes(cb || []);
+
+        const reps: any = await sqlite.getAllAsync(
+          "SELECT id, code, name, phone, commission_rate FROM sales_reps WHERE is_active = 1 ORDER BY name"
+        );
+        setSalesReps(reps || []);
 
         const normalizedCurrencies = (cur || []).map((x: any) => ({
           id: x.id,
@@ -145,6 +153,12 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     () => lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0),
     [lines]
   );
+
+  const commissionAmount = useMemo(() => {
+    if (!salesRep) return 0;
+    const rate = Number(salesRep.commission_rate) || 0;
+    return total * (rate / 100);
+  }, [salesRep, total]);
 
   const canSave =
     !!customer &&
@@ -433,14 +447,19 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         `INSERT INTO invoices
          (id, invoice_no, invoice_type, party_id, party_name, status,
           subtotal, tax, total, created_at,
-          currency_code, exchange_rate, payment_type, cashbox_id)
-         VALUES (?, ?, 'sales', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`,
+          currency_code, exchange_rate, payment_type, cashbox_id,
+          sales_rep_id, sales_rep_name, commission_rate, commission_amount)
+         VALUES (?, ?, 'sales', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           invoiceId, invoiceNo, customer.id, customer.name,
           paymentType === "cash" ? "paid" : "posted",
           total, total, now,
           currency.code, rate, paymentType,
           paymentType === "cash" && cashbox ? cashbox.id : null,
+          salesRep?.id || null,
+          salesRep?.name || null,
+          salesRep ? Number(salesRep.commission_rate) : 0,
+          salesRep ? commissionAmount : 0,
         ]
       );
 
@@ -505,6 +524,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
       setCustomer(null);
       setLines([]);
       setNotes("");
+      setSalesRep(null);
       if (paymentType === "cash") setCashbox(null);
 
       await loadItems();
@@ -699,10 +719,44 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           <Text style={styles.secondaryText}>+ إضافة المنتج</Text>
         </Pressable>
 
+        <Text style={styles.label}>مندوب المبيعات (اختياري)</Text>
+        <Pressable style={styles.picker} onPress={() => setShowSalesRepPicker((v) => !v)}>
+          <Text style={styles.pickerText}>{salesRep ? salesRep.name : "بدون مندوب"}</Text>
+          <Text style={styles.pickerArrow}>▼</Text>
+        </Pressable>
+        {showSalesRepPicker && (
+          <View style={styles.suggestBox}>
+            <Pressable style={styles.suggestItem} onPress={() => { setSalesRep(null); setShowSalesRepPicker(false); }}>
+              <Text style={styles.suggestName}>بدون مندوب</Text>
+            </Pressable>
+            {salesReps.length === 0 ? (
+              <Text style={styles.suggestEmpty}>لا يوجد مناديب — أضفهم من شاشة المناديب</Text>
+            ) : (
+              salesReps.map((r) => (
+                <Pressable key={r.id} style={styles.suggestItem} onPress={() => { setSalesRep(r); setShowSalesRepPicker(false); }}>
+                  <Text style={styles.suggestName}>{r.name}</Text>
+                  <Text style={styles.suggestMeta}>{r.code} · عمولة {r.commission_rate}%</Text>
+                </Pressable>
+              ))
+            )}
+          </View>
+        )}
+
         <View style={styles.totalBox}>
           <Text style={styles.totalLabel}>الإجمالي</Text>
           <Text style={styles.totalValue}>{total.toFixed(2)} {symbol}</Text>
         </View>
+
+        {salesRep && (
+          <View style={styles.commissionBox}>
+            <Text style={styles.commissionLabel}>
+              عمولة {salesRep.name} ({salesRep.commission_rate}%)
+            </Text>
+            <Text style={styles.commissionValue}>
+              {commissionAmount.toFixed(2)} {symbol}
+            </Text>
+          </View>
+        )}
 
         <Text style={styles.label}>ملاحظات (اختياري)</Text>
         <TextInput
@@ -847,6 +901,9 @@ const styles = StyleSheet.create({
   totalBox: { marginTop: 16, backgroundColor: "#EFF6FF", padding: 14, borderRadius: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   totalLabel: { color: "#1E40AF", fontWeight: "700", fontSize: 14 },
   totalValue: { color: "#1E40AF", fontWeight: "800", fontSize: 18 },
+  commissionBox: { marginTop: 8, backgroundColor: "#FFF7ED", padding: 12, borderRadius: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  commissionLabel: { color: "#9A3412", fontWeight: "600", fontSize: 13, flex: 1 },
+  commissionValue: { color: "#C2410C", fontWeight: "800", fontSize: 16 },
   primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10, marginTop: 16 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
   secondary: { backgroundColor: "#1E40AF", padding: 12, borderRadius: 8, marginTop: 8 },

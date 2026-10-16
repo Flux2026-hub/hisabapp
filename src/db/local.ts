@@ -25,6 +25,7 @@ export async function initializeLocalDatabase() {
     CREATE TABLE IF NOT EXISTS account_transfers (id TEXT PRIMARY KEY NOT NULL, transfer_no TEXT NOT NULL UNIQUE, from_account TEXT NOT NULL, to_account TEXT NOT NULL, amount REAL NOT NULL, description TEXT, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, account_type TEXT NOT NULL, parent_code TEXT, balance REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS currencies (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, symbol TEXT NOT NULL, exchange_rate REAL NOT NULL DEFAULT 1, is_base INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS sales_reps (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT, commission_rate REAL NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS sync_queue (id INTEGER PRIMARY KEY AUTOINCREMENT, operation_id TEXT NOT NULL UNIQUE, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, operation_type TEXT NOT NULL, payload TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, last_error TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
   `);
 
@@ -43,6 +44,10 @@ export async function initializeLocalDatabase() {
     "ALTER TABLE vouchers ADD COLUMN exchange_rate REAL DEFAULT 1",
     "ALTER TABLE journal_lines ADD COLUMN party_type TEXT",
     "ALTER TABLE journal_lines ADD COLUMN party_id TEXT",
+      "ALTER TABLE invoices ADD COLUMN sales_rep_id TEXT",
+      "ALTER TABLE invoices ADD COLUMN sales_rep_name TEXT",
+      "ALTER TABLE invoices ADD COLUMN commission_rate REAL DEFAULT 0",
+      "ALTER TABLE invoices ADD COLUMN commission_amount REAL DEFAULT 0",
   ]) {
     try {
       await sqlite.execAsync(migration);

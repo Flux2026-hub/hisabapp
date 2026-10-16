@@ -22,6 +22,7 @@ import PurchaseInvoiceScreen from "./PurchaseInvoiceScreen";
 import VouchersScreen from "./VouchersScreen";
 import JournalScreen from "./JournalScreen";
 import TransfersScreen from "./TransfersScreen";
+import SalesRepsScreen from "./SalesRepsScreen";
 import { getPendingSyncCount, processSyncQueue } from "../sync/queue";
 import { COLORS } from "./theme";
 
@@ -36,6 +37,7 @@ type Mode =
   | "recipe"
   | "production"
   | "salesInvoice"
+  | "salesReps"
   | "purchaseInvoice"
   | "voucher"
   | "journal"
@@ -58,6 +60,7 @@ const MENU: MenuItem[] = [
   { section: "المخزون والإنتاج", mode: "currencies", label: "العملات", icon: "cash-multiple" },
   { section: "المخزون والإنتاج", mode: "recipe", label: "التركيبة", icon: "cog-outline" },
   { section: "المخزون والإنتاج", mode: "production", label: "أمر الإنتاج", icon: "factory" },
+  { section: "البيانات الأساسية", mode: "salesReps", label: "مناديب المبيعات", icon: "account-tie" },
   { section: "العمليات", mode: "salesInvoice", label: "فاتورة مبيعات", icon: "file-document-outline" },
   { section: "العمليات", mode: "purchaseInvoice", label: "فاتورة مشتريات", icon: "file-document-multiple-outline" },
   { section: "العمليات", mode: "voucher", label: "سند قبض/دفع", icon: "swap-horizontal" },
@@ -107,6 +110,7 @@ export default function AccountingModule() {
   if (mode === "production") return <ProductionOrderScreen onBack={goMenu} />;
   if (mode === "cashboxes") return <CashboxesScreen onBack={goMenu} />;
   if (mode === "accounts") return <AccountsScreen onBack={goMenu} />;
+  if (mode === "salesReps") return <SalesRepsScreen onBack={goMenu} />;
   if (mode === "salesInvoice") return <SalesInvoiceScreen onBack={goMenu} />;
   if (mode === "purchaseInvoice") return <PurchaseInvoiceScreen onBack={goMenu} />;
   if (mode === "voucher") return <VouchersScreen onBack={goMenu} />;

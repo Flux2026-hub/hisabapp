@@ -7,8 +7,9 @@ import CustomersReport from "./CustomersReport";
 import SuppliersReport from "./SuppliersReport";
 import CashboxesReport from "./CashboxesReport";
 import AccountsReport from "./AccountsReport";
+import CommissionsReport from "./CommissionsReport";
 
-type ReportKey = "menu" | "sales" | "purchase" | "inventory" | "customers" | "suppliers" | "cashboxes" | "accounts";
+type ReportKey = "menu" | "sales" | "purchase" | "inventory" | "customers" | "suppliers" | "cashboxes" | "accounts" | "commissions";
 
 const MENU: { key: ReportKey; label: string; desc: string; color: string }[] = [
   { key: "sales", label: "تقرير المبيعات", desc: "كل فواتير المبيعات في الفترة", color: "#0b806c" },
@@ -18,6 +19,7 @@ const MENU: { key: ReportKey; label: string; desc: string; color: string }[] = [
   { key: "suppliers", label: "تقرير الموردين", desc: "قائمة الموردين + كشف حساب", color: "#7c2d12" },
   { key: "cashboxes", label: "تقرير الصناديق", desc: "أرصدة وحركات كل صندوق", color: "#1e40af" },
   { key: "accounts", label: "تقرير الحسابات", desc: "شجرة الحسابات والأرصدة", color: "#7c3aed" },
+  { key: "commissions", label: "تقرير العمولات", desc: "مبيعات وعمولات مناديب البيع", color: "#c2410c" },
 ];
 
 export default function ReportsIndex({ onBack }: { onBack: () => void }) {
@@ -31,6 +33,7 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
   if (key === "suppliers") return <SuppliersReport onBack={goMenu} />;
   if (key === "cashboxes") return <CashboxesReport onBack={goMenu} />;
   if (key === "accounts") return <AccountsReport onBack={goMenu} />;
+  if (key === "commissions") return <CommissionsReport onBack={goMenu} />;
 
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
