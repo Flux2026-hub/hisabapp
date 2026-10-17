@@ -174,7 +174,7 @@ export default function AccountsReport({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   backWrap: { paddingVertical: 8 },
   back: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  sectionTitle: { fontSize: 15, fontWeight: "800", color: "#1E40AF", textAlign: "right", marginTop: 14, marginBottom: 8 },
+  sectionTitle: { fontSize: 15,  color: "#1E40AF", textAlign: "right", marginTop: 14, marginBottom: 8 },
   empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
   row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
   rowInfo: { flex: 1, alignItems: "flex-end" },

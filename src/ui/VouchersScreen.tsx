@@ -590,14 +590,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  screenTitle: { 
+  screenTitle: {  
     fontSize: 22,
-    fontWeight: "800",
+    
     color: C.ink,
     textAlign: "right",
     marginBottom: 4,
 fontFamily: "Alexandria-Regular",
-  },
+   },
   hint: {
     fontSize: 12,
     color: C.muted,
@@ -621,7 +621,7 @@ fontFamily: "Alexandria-Regular",
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    
     color: C.ink,
     textAlign: "right",
   },

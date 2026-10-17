@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    
     color: "#1E40AF",
     textAlign: "right",
     marginTop: 14,

@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   back: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    
     color: "#92400e",
     textAlign: "right",
     marginTop: 14,

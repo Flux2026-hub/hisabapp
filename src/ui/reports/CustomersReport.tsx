@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
   chipTextActive: { color: "#FFF", fontWeight: "800" },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    
     color: COLORS.blue,
     textAlign: "right",
     marginTop: 16,

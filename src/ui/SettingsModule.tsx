@@ -488,14 +488,14 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontSize: 13,
   },
-  screenTitle: { 
+  screenTitle: {  
     fontSize: 22,
-    fontWeight: "800",
+    
     color: COLORS.text,
     textAlign: "right",
     marginBottom: 4,
 fontFamily: "Alexandria-Regular",
-  },
+   },
   hint: {
     fontSize: 12,
     color: COLORS.textMuted,

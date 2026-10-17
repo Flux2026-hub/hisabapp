@@ -345,7 +345,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-end" },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: { fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 12, fontFamily: "Alexandria-Regular" },
+  screenTitle: {  fontSize: 22,  color: "#0F172A", textAlign: "right", marginBottom: 12, fontFamily: "Alexandria-Regular"  },
   label: { fontSize: 12, color: "#526078", textAlign: "right", marginTop: 8, marginBottom: 4 },
   input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A" },
   picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   typeText: { color: "#0F172A", fontWeight: "700", fontSize: 13 },
   typeTextActive: { color: "#fff" },
   twoCols: { flexDirection: "row", gap: 8, marginTop: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 },
+  sectionTitle: { fontSize: 16,  color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 },
   list: { gap: 8, marginTop: 4 },
   row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   rowInfo: { flex: 1, alignItems: "flex-end" },

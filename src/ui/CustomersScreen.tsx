@@ -416,17 +416,17 @@ export default function CustomersScreen({
 const styles = StyleSheet.create({
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
   backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: { 
+  screenTitle: {  
     fontSize: 20,
-    fontWeight: "800",
+    
     color: "#0F172A",
     textAlign: "right",
     marginBottom: 12,
 fontFamily: "Alexandria-Regular",
-  },
+   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    
     color: "#0F172A",
     textAlign: "right",
     marginTop: 16,
