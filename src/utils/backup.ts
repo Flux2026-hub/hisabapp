@@ -8,7 +8,7 @@ const TABLES = [
   "customers", "suppliers", "cashboxes",
   "invoices", "invoice_lines", "vouchers",
   "journal_entries", "journal_lines", "account_transfers",
-  "accounts", "currencies",
+  "accounts", "currencies", "sales_reps", "sales_returns", "sales_return_lines",
 ];
 
 export type BackupFile = {
