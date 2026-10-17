@@ -481,21 +481,19 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: COLORS.textMuted, fontSize: 14 },
   scrollContent: { paddingBottom: 40, paddingHorizontal: 8 },
-  back: {  paddingVertical: 10 }, alignSelf: "flex-end",
+  back: { alignSelf: "flex-end",   paddingVertical: 10 }, alignSelf: "flex-end",
   backText: {
      color: COLORS.blue,
     fontWeight: "800",
     textAlign: "right",
     fontSize: 13,
   },
-  screenTitle: {  
-    fontSize: 22,
+  screenTitle: {fontSize: 22,
     
     color: COLORS.text,
     textAlign: "right",
     marginBottom: 4,
-fontFamily: "Alexandria-Regular",
-   },
+fontFamily: "CodecBold"},
   hint: {
     fontSize: 12,
     color: COLORS.textMuted,

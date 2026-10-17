@@ -699,7 +699,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
           placeholderTextColor="#9CA3AF"
         />
 
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
+        <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 16 }}>
           <Pressable
             style={[styles.primary, { marginTop: 0, flex: 1 }, (!canSave || saving) && styles.disabled]}
             onPress={save}
@@ -736,7 +736,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  <View style={{ flexDirection: "row", gap: 4 }}>
+                  <View style={{ flexDirection: "row-reverse", gap: 4 }}>
                     <Pressable
                       onPress={() => setReturnInvoiceId(h.id)}
                       style={{
@@ -810,29 +810,28 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
   backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {   fontSize: 20,  color: "#0F172A", textAlign: "right", marginBottom: 6, fontFamily: "Alexandria-Regular",
-   },
+  screenTitle: {fontSize: 20,  color: "#0F172A", textAlign: "right", marginBottom: 6, fontFamily: "CodecBold"},
   hint: { fontSize: 12, color: "#8494B0", textAlign: "right", marginBottom: 12, lineHeight: 18 },
-  sectionTitle: { fontSize: 16,  color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 },
+  sectionTitle: {fontSize: 16,  color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 , fontFamily: "CodecBold"},
   label: { fontSize: 12, color: "#526078", textAlign: "right", marginTop: 8, marginBottom: 4 },
   input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A" },
-  picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   pickerText: { color: "#0F172A", textAlign: "right", flex: 1, fontSize: 13 },
   pickerArrow: { color: "#8494B0", fontSize: 12, marginLeft: 8 },
-  toggleRow: { flexDirection: "row", gap: 8 },
+  toggleRow: { flexDirection: "row-reverse", gap: 8 },
   toggleBtn: { flex: 1, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: "#D6E3F8", alignItems: "center" },
   toggleActive: { backgroundColor: "#F97316", borderColor: "#F97316" },
   toggleText: { color: "#0F172A", fontWeight: "600" },
   toggleTextActive: { color: "#fff", fontWeight: "700" },
   list: { gap: 8, marginTop: 4 },
   empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
-  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   rowInfo: { flex: 1, alignItems: "flex-end" },
   rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 3, textAlign: "right" },
   rowQty: { fontSize: 12, color: "#1E40AF", marginTop: 3, textAlign: "right", fontWeight: "600" },
   rowTotal: { fontSize: 12, color: "#0b806c", marginTop: 2, textAlign: "right", fontWeight: "700" },
-  rowActions: { flexDirection: "row", gap: 6 },
+  rowActions: { flexDirection: "row-reverse", gap: 6 },
   delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
   delText: { color: "#0F172A", fontSize: 12 },
   suggestBox: { marginTop: 4, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, overflow: "hidden" },
@@ -840,7 +839,7 @@ const styles = StyleSheet.create({
   suggestName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 13 },
   suggestMeta: { fontSize: 11, color: "#8494B0", textAlign: "right", marginTop: 2 },
   suggestEmpty: { padding: 10, color: "#8494B0", textAlign: "right", fontSize: 12 },
-  totalBox: { marginTop: 16, backgroundColor: "#EFF6FF", padding: 14, borderRadius: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  totalBox: { marginTop: 16, backgroundColor: "#EFF6FF", padding: 14, borderRadius: 10, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   totalLabel: { color: "#1E40AF", fontWeight: "700", fontSize: 14 },
   totalValue: { color: "#1E40AF", fontWeight: "800", fontSize: 18 },
   primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10, marginTop: 16 },
@@ -848,9 +847,9 @@ const styles = StyleSheet.create({
   secondary: { backgroundColor: "#1E40AF", padding: 12, borderRadius: 8, marginTop: 8 },
   secondaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
   disabled: { opacity: 0.5 },
-  histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: 8 },
   histInfo: { flex: 1, alignItems: "flex-end" },
-  histRight: { alignItems: "flex-start" },
+  histRight: { alignItems: "flex-end" },
   histName: { fontWeight: "700", color: "#0F172A", textAlign: "right" },
   histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: "#8494B0", marginTop: 2, textAlign: "right" },

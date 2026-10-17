@@ -148,7 +148,7 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
     <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
       <View style={styles.backWrap}>
         <Text style={styles.back} onPress={() => (selected ? setSelected(null) : onBack())}>
-          {"<-"} {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}
+          {"->"} {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}
         </Text>
       </View>
 
@@ -255,12 +255,12 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
 
 const styles = StyleSheet.create({
   backWrap: { paddingVertical: 8 },
-  back: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  sectionTitle: { fontSize: 15,  color: "#92400e", textAlign: "right", marginTop: 14, marginBottom: 8 },
+  back: { alignSelf: "flex-end",  color: "#1E40AF", fontWeight: "700", textAlign: "right" },
+  sectionTitle: {fontSize: 15,  color: "#92400e", textAlign: "right", marginTop: 14, marginBottom: 8 , fontFamily: "CodecBold"},
   empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
-  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
+  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
   rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowRight: { alignItems: "flex-start" },
+  rowRight: { alignItems: "flex-end" },
   rowName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 14 },
   rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
   value: { fontWeight: "800", fontSize: 14 },

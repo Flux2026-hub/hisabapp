@@ -590,14 +590,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  screenTitle: {  
-    fontSize: 22,
+  screenTitle: {fontSize: 22,
     
     color: C.ink,
     textAlign: "right",
     marginBottom: 4,
-fontFamily: "Alexandria-Regular",
-   },
+fontFamily: "CodecBold"},
   hint: {
     fontSize: 12,
     color: C.muted,
@@ -619,15 +617,14 @@ fontFamily: "Alexandria-Regular",
     backgroundColor: C.orange,
     borderRadius: 2,
   },
-  sectionTitle: {
-    fontSize: 16,
+  sectionTitle: {fontSize: 16,
     
     color: C.ink,
     textAlign: "right",
-  },
+  fontFamily: "CodecBold"},
 
   // ===== Toggle =====
-  toggleRow: { flexDirection: "row", gap: 10 },
+  toggleRow: { flexDirection: "row-reverse", gap: 10 },
   toggleBtn: {
     flex: 1,
     paddingVertical: 14,
@@ -654,7 +651,7 @@ fontFamily: "Alexandria-Regular",
   toggleTextActive: { color: "#FFFFFF", fontWeight: "800" },
 
   // ===== Party =====
-  partyRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  partyRow: { flexDirection: "row-reverse", gap: 8, flexWrap: "wrap" },
   partyBtn: {
     flex: 1,
     minWidth: 70,
@@ -684,7 +681,7 @@ fontFamily: "Alexandria-Regular",
     borderColor: C.line,
     borderRadius: 12,
     padding: 14,
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     justifyContent: "space-between",
     alignItems: "center",
   },
@@ -783,7 +780,7 @@ fontFamily: "Alexandria-Regular",
     borderColor: C.line,
     borderRadius: 12,
     padding: 12,
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,

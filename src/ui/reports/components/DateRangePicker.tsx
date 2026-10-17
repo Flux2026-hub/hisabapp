@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   quickActive: { backgroundColor: "#1E40AF", borderColor: "#1E40AF" },
   quickText: { fontSize: 11, color: "#0F172A", fontWeight: "600" },
   quickTextActive: { color: "#fff", fontWeight: "700" },
-  row: { flexDirection: "row", gap: 8, marginTop: 10 },
+  row: { flexDirection: "row-reverse", gap: 8, marginTop: 10 },
   label: {
     fontSize: 12,
     color: "#526078",

@@ -259,7 +259,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         {showCurrencyPicker && (<View style={styles.suggestBox}>{currencies.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</View>)}
 
         <Text style={styles.label}>نوع الدفع</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={{ flexDirection: "row-reverse", gap: 8 }}>
           <Pressable style={[styles.typeBtn, paymentType === "cash" && styles.typeBtnActive]} onPress={() => setPaymentType("cash")}><Text style={[styles.typeText, paymentType === "cash" && styles.typeTextActive]}>نقدي</Text></Pressable>
           <Pressable style={[styles.typeBtn, paymentType === "credit" && styles.typeBtnActive]} onPress={() => setPaymentType("credit")}><Text style={[styles.typeText, paymentType === "credit" && styles.typeTextActive]}>أجل</Text></Pressable>
         </View>
@@ -324,7 +324,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  <View style={{ flexDirection: "row", gap: 4 }}>
+                  <View style={{ flexDirection: "row-reverse", gap: 4 }}>
                     <Pressable onPress={() => setReturnInvoiceId(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
                     <Pressable onPress={() => printInvoiceById(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
                     <Pressable onPress={() => editInvoice(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
@@ -345,37 +345,37 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-end" },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: {  fontSize: 22,  color: "#0F172A", textAlign: "right", marginBottom: 12, fontFamily: "Alexandria-Regular"  },
+  screenTitle: {fontSize: 22,  color: "#0F172A", textAlign: "right", marginBottom: 12, fontFamily: "CodecBold"},
   label: { fontSize: 12, color: "#526078", textAlign: "right", marginTop: 8, marginBottom: 4 },
   input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A" },
-  picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   pickerText: { color: "#0F172A", textAlign: "right", flex: 1, fontSize: 14 },
   pickerArrow: { color: "#8494B0", fontSize: 12, marginLeft: 8 },
   suggestBox: { marginTop: 4, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, overflow: "hidden", maxHeight: 200 },
   suggestItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#f1f5f9" },
   suggestName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 13 },
   suggestMeta: { fontSize: 11, color: "#8494B0", textAlign: "right", marginTop: 2 },
-  typeRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+  typeRow: { flexDirection: "row-reverse", gap: 8, marginBottom: 8 },
   typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "#D6E3F8", backgroundColor: "#fff", alignItems: "center" },
   typeBtnActive: { backgroundColor: "#1E40AF", borderColor: "#1E40AF" },
   typeText: { color: "#0F172A", fontWeight: "700", fontSize: 13 },
   typeTextActive: { color: "#fff" },
-  twoCols: { flexDirection: "row", gap: 8, marginTop: 8 },
-  sectionTitle: { fontSize: 16,  color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 },
+  twoCols: { flexDirection: "row-reverse", gap: 8, marginTop: 8 },
+  sectionTitle: {fontSize: 16,  color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 , fontFamily: "CodecBold"},
   list: { gap: 8, marginTop: 4 },
-  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   rowInfo: { flex: 1, alignItems: "flex-end" },
   rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 3, textAlign: "right" },
-  rowActions: { flexDirection: "row", gap: 6 },
+  rowActions: { flexDirection: "row-reverse", gap: 6 },
   delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
   delText: { color: "#991b1b", fontSize: 12 },
   addBox: { backgroundColor: "#F8FAFC", padding: 12, borderRadius: 10, marginTop: 8, borderWidth: 1, borderColor: "#D6E3F8" },
   summaryBox: { backgroundColor: "#FEF2F2", padding: 12, borderRadius: 10, marginTop: 12 },
-  summaryRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
+  summaryRow: { flexDirection: "row-reverse", justifyContent: "space-between", paddingVertical: 4 },
   summaryLabel: { color: "#7F1D1D", fontWeight: "600", fontSize: 13 },
   summaryValue: { color: "#0F172A", fontWeight: "700", fontSize: 13 },
-  totalBox: { marginTop: 16, backgroundColor: "#EFF6FF", padding: 14, borderRadius: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  totalBox: { marginTop: 16, backgroundColor: "#EFF6FF", padding: 14, borderRadius: 10, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   totalLabel: { color: "#1E40AF", fontWeight: "700", fontSize: 14 },
   totalValue: { color: "#1E40AF", fontWeight: "800", fontSize: 18 },
   primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10 },
@@ -385,9 +385,9 @@ const styles = StyleSheet.create({
   cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 12, borderRadius: 10, marginTop: 8 },
   cancelText: { color: "#0F172A", textAlign: "center", fontWeight: "700" },
   disabled: { opacity: 0.5 },
-  histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   histInfo: { flex: 1, alignItems: "flex-end" },
-  histRight: { alignItems: "flex-start", paddingRight: 8 },
+  histRight: { alignItems: "flex-end", paddingRight: 8 },
   histName: { fontWeight: "700", color: "#0F172A", textAlign: "right" },
   histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: "#8494B0", marginTop: 2, textAlign: "right" },

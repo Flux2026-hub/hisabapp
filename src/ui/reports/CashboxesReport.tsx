@@ -235,7 +235,7 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
     <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
       <View style={styles.backWrap}>
         <Text style={styles.back} onPress={goBack}>
-          ← {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}
+          -> {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}
         </Text>
       </View>
 
@@ -441,7 +441,7 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
 
 const styles = StyleSheet.create({
   backWrap: { paddingVertical: 8 },
-  back: { color: COLORS.blue, fontWeight: "700", textAlign: "right" },
+  back: { alignSelf: "flex-end",  color: COLORS.blue, fontWeight: "700", textAlign: "right" },
   filterLabel: {
     fontSize: 12,
     color: COLORS.textMuted,
@@ -471,14 +471,13 @@ const styles = StyleSheet.create({
   chipViewActive: { backgroundColor: COLORS.orange, borderColor: COLORS.orange },
   chipText: { fontSize: 12, color: COLORS.text, fontWeight: "700" },
   chipTextActive: { color: "#FFF", fontWeight: "800" },
-  sectionTitle: {
-    fontSize: 15,
+  sectionTitle: {fontSize: 15,
     
     color: COLORS.blue,
     textAlign: "right",
     marginTop: 16,
     marginBottom: 8,
-  },
+  fontFamily: "CodecBold"},
   empty: {
     textAlign: "right",
     color: COLORS.textMuted,
@@ -491,13 +490,13 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: 10,
     padding: 12,
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 6,
   },
   rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowRight: { alignItems: "flex-start" },
+  rowRight: { alignItems: "flex-end" },
   rowName: {
     fontWeight: "700",
     color: COLORS.text,

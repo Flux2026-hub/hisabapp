@@ -156,7 +156,7 @@ function Action({
 }) {
   return (
     <Pressable onPress={onPress} style={styles.action}>
-      <Text style={styles.actionArrow}>←</Text>
+      <Text style={styles.actionArrow}>-></Text>
       <View style={{ flex: 1 }}>
         <Text style={styles.actionLabel}>{label}</Text>
         <Text style={styles.small}>{sub}</Text>
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     paddingTop: 26,
   },
   brandRow: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
   },
@@ -194,13 +194,12 @@ const styles = StyleSheet.create({
   },
   logo: { width: 100, height: 80 },
   content: { padding: 16, paddingBottom: 40 },
-  title: {
-    color: COLORS.text,
+  title: {color: COLORS.text,
     fontSize: 24,
-    fontWeight: "800",
+    
     textAlign: "right",
     marginTop: 7,
-  },
+  fontFamily: "CodecBold"},
   hint: {
     color: COLORS.textMuted,
     fontSize: 12,
@@ -208,7 +207,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   nav: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,

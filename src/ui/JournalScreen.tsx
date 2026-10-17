@@ -204,7 +204,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                     {l.partyName && <Text style={styles.rowParty}>{l.partyType === 'customer' ? 'عميل: ' : 'مورد: '}{l.partyName}</Text>}
                     {l.lineDesc ? <Text style={styles.rowDesc}>{l.lineDesc}</Text> : null}
                   </View>
-                  <View style={{ alignItems: "flex-start" }}>
+                  <View style={{ alignItems: "flex-end" }}>
                     {l.debit > 0 ? <Text style={styles.rowDebit}>مدين: {l.debit.toFixed(2)} {currency?.code}</Text> : null}
                     {l.credit > 0 ? <Text style={styles.rowCredit}>دائن: {l.credit.toFixed(2)} {currency?.code}</Text> : null}
                     {!currency?.isBase && <Text style={styles.rowBase}>أساسي: {(l.debitBase || l.creditBase).toFixed(2)}</Text>}
@@ -218,7 +218,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
         <View style={styles.addBox}>
           <Text style={styles.addTitle}>إضافة سطر جديد</Text>
           <Text style={styles.label}>نوع الحساب</Text>
-          <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+          <View style={{ flexDirection: "row-reverse", gap: 8, marginBottom: 8 }}>
             <Pressable style={[styles.typeBtn, pickPartyType === "none" && styles.typeBtnActive]} onPress={() => { setPickPartyType("none"); setPickParty(null); }}><Text style={[styles.typeText, pickPartyType === "none" && styles.typeTextActive]}>حساب عام</Text></Pressable>
             <Pressable style={[styles.typeBtn, pickPartyType === "customer" && styles.typeBtnActive]} onPress={() => { setPickPartyType("customer"); setPickParty(null); }}><Text style={[styles.typeText, pickPartyType === "customer" && styles.typeTextActive]}>عميل</Text></Pressable>
             <Pressable style={[styles.typeBtn, pickPartyType === "supplier" && styles.typeBtnActive]} onPress={() => { setPickPartyType("supplier"); setPickParty(null); }}><Text style={[styles.typeText, pickPartyType === "supplier" && styles.typeTextActive]}>مورد</Text></Pressable>
@@ -301,22 +301,21 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  back: { paddingVertical: 10, marginBottom: 8 },
+  back: { alignSelf: "flex-end",  paddingVertical: 10, marginBottom: 8 },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: {  fontSize: 22,  color: "#0F172A", textAlign: "right", marginBottom: 12, fontFamily: "Alexandria-Regular",
-   },
-  headerBox: { flexDirection: "row", gap: 8, marginBottom: 16 },
+  screenTitle: {fontSize: 22,  color: "#0F172A", textAlign: "right", marginBottom: 12, fontFamily: "CodecBold"},
+  headerBox: { flexDirection: "row-reverse", gap: 8, marginBottom: 16 },
   label: { fontSize: 12, color: "#526078", textAlign: "right", marginTop: 8, marginBottom: 4 },
   input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A" },
-  sectionTitle: { fontSize: 16,  color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 },
+  sectionTitle: {fontSize: 16,  color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 , fontFamily: "CodecBold"},
   tableBox: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, overflow: "hidden" },
   empty: { textAlign: "center", color: "#8494B0", fontSize: 13, padding: 20 },
   tableRow: { borderBottomWidth: 1, borderBottomColor: "#E2E8F0", padding: 12 },
-  rowHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  rowHeader: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: 6 },
   rowIndex: { backgroundColor: "#EFF6FF", color: "#1E40AF", fontSize: 12, fontWeight: "700", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   delBtn: { backgroundColor: "#fee2e2", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   delText: { color: "#991b1b", fontSize: 11, fontWeight: "700" },
-  rowBody: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  rowBody: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-end" },
   rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   rowMeta: { fontSize: 12, color: "#8494B0", marginTop: 2, textAlign: "right" },
   rowParty: { fontSize: 12, color: "#F97316", fontWeight: "700", marginTop: 2, textAlign: "right" },
@@ -330,8 +329,8 @@ const styles = StyleSheet.create({
   typeBtnActive: { backgroundColor: "#1E40AF", borderColor: "#1E40AF" },
   typeText: { color: "#0F172A", fontWeight: "700", fontSize: 13 },
   typeTextActive: { color: "#fff" },
-  twoCols: { flexDirection: "row", gap: 8 },
-  picker: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  twoCols: { flexDirection: "row-reverse", gap: 8 },
+  picker: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   pickerText: { color: "#0F172A", textAlign: "right", flex: 1, fontSize: 14 },
   pickerArrow: { color: "#8494B0", fontSize: 12, marginLeft: 8 },
   suggestBox: { marginTop: 4, backgroundColor: "#fff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, overflow: "hidden", maxHeight: 200 },
@@ -341,7 +340,7 @@ const styles = StyleSheet.create({
   addBtn: { backgroundColor: "#0F172A", padding: 12, borderRadius: 8, marginTop: 12, alignItems: "center" },
   addBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   balanceBox: { backgroundColor: "#EFF6FF", padding: 12, borderRadius: 10, marginTop: 16, borderWidth: 1, borderColor: "#BFDBFE" },
-  balRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
+  balRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: 4 },
   balLabel: { color: "#1E40AF", fontWeight: "600", fontSize: 14 },
   balValue: { color: "#1E40AF", fontWeight: "800", fontSize: 15 },
   balStatus: { marginTop: 8, padding: 8, borderRadius: 6 },
@@ -349,9 +348,9 @@ const styles = StyleSheet.create({
   primaryText: { color: "#fff", fontWeight: "800", fontSize: 16, textAlign: "center" },
   disabled: { opacity: 0.5 },
   list: { gap: 8, marginTop: 4 },
-  histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   histInfo: { flex: 1, alignItems: "flex-end" },
-  histRight: { alignItems: "flex-start", paddingRight: 8 },
+  histRight: { alignItems: "flex-end", paddingRight: 8 },
   histName: { fontWeight: "700", color: "#0F172A", textAlign: "right" },
   histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: "#8494B0", marginTop: 2, textAlign: "right" },

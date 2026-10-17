@@ -115,7 +115,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
     ["1", "2", "3"],
     ["4", "5", "6"],
     ["7", "8", "9"],
-    ["", "0", "←"],
+    ["", "0", "->"],
   ];
 
   return (
@@ -185,7 +185,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
           <View key={ri} style={styles.padRow}>
             {row.map((d, di) => {
               if (d === "") return <View key={di} style={styles.padBtn} />;
-              if (d === "←") {
+              if (d === "->") {
                 return (
                   <Pressable
                     key={di}

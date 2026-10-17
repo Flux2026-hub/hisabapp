@@ -226,7 +226,7 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
 
 const styles = StyleSheet.create({
   backWrap: { paddingVertical: 8 },
-  back: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
+  back: { alignSelf: "flex-end",  color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   filterRow: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
@@ -249,14 +249,13 @@ const styles = StyleSheet.create({
     borderColor: "#1E40AF",
     color: "#fff",
   },
-  sectionTitle: {
-    fontSize: 15,
+  sectionTitle: {fontSize: 15,
     
     color: "#1E40AF",
     textAlign: "right",
     marginTop: 14,
     marginBottom: 8,
-  },
+  fontFamily: "CodecBold"},
   empty: {
     textAlign: "right",
     color: "#8494B0",
@@ -269,13 +268,13 @@ const styles = StyleSheet.create({
     borderColor: "#D6E3F8",
     borderRadius: 10,
     padding: 10,
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 6,
   },
   rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowRight: { alignItems: "flex-start" },
+  rowRight: { alignItems: "flex-end" },
   rowName: {
     fontWeight: "700",
     color: "#0F172A",

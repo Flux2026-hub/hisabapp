@@ -54,18 +54,16 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     borderRadius: 1,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "800",
+  title: {fontSize: 20,
+    
     color: "#0F172A",
     textAlign: "right",
-  },
-  subtitle: {
-    fontSize: 12,
+  fontFamily: "CodecBold"},
+  subtitle: {fontSize: 12,
     color: "#526078",
     textAlign: "right",
     marginTop: 4,
-  },
+  fontFamily: "CodecBold"},
   period: {
     fontSize: 11,
     color: "#8494B0",

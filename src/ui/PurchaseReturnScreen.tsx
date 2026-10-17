@@ -91,7 +91,7 @@ export default function PurchaseReturnScreen({ invoiceId, onBack }: { invoiceId:
           <Text style={styles.lineName}>{l.description}</Text>
           <Text style={styles.lineMeta}>الكمية الأصلية: {l.quantity} · السعر: {l.unit_price}</Text>
           
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8, gap: 8 }}>
+          <View style={{ flexDirection: "row-reverse", alignItems: "center", marginTop: 8, gap: 8 }}>
             <Text style={{ fontSize: 13, color: "#0F172A", fontWeight: "700" }}>الكمية المرتجعة:</Text>
             <TextInput style={[styles.input, { flex: 1, paddingVertical: 6 }]} value={l.returnQty} onChangeText={(val) => { const newLines = [...lines]; newLines[idx].returnQty = val; setLines(newLines); }} keyboardType="decimal-pad" placeholder="0" textAlign="center" />
           </View>
@@ -99,7 +99,7 @@ export default function PurchaseReturnScreen({ invoiceId, onBack }: { invoiceId:
       ))}
 
       <Text style={styles.sectionTitle}>طريقة الاسترداد</Text>
-      <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+      <View style={{ flexDirection: "row-reverse", gap: 8, marginBottom: 8 }}>
         <Pressable style={[styles.typeBtn, refundType === "credit" && styles.typeBtnActive]} onPress={() => setRefundType("credit")}><Text style={[styles.typeText, refundType === "credit" && styles.typeTextActive]}>خصم من رصيد المورد</Text></Pressable>
         <Pressable style={[styles.typeBtn, refundType === "cash" && styles.typeBtnActive]} onPress={() => setRefundType("cash")}><Text style={[styles.typeText, refundType === "cash" && styles.typeTextActive]}>استرداد نقدي للصندوق</Text></Pressable>
       </View>
@@ -121,9 +121,9 @@ export default function PurchaseReturnScreen({ invoiceId, onBack }: { invoiceId:
 const styles = StyleSheet.create({
   back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-end" },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: { fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6, fontFamily: "Alexandria-Regular" },
+  screenTitle: {fontSize: 22,  color: "#0F172A", textAlign: "right", marginBottom: 6, fontFamily: "CodecBold"},
   hint: { fontSize: 12, color: "#8494B0", textAlign: "right", marginBottom: 14 },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 },
+  sectionTitle: {fontSize: 16,  color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 , fontFamily: "CodecBold"},
   lineBox: { backgroundColor: "#f8fafc", padding: 12, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: "#D6E3F8" },
   lineName: { fontSize: 14, fontWeight: "700", color: "#0F172A", textAlign: "right" },
   lineMeta: { fontSize: 12, color: "#8494B0", textAlign: "right", marginTop: 4 },
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   suggestBox: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, overflow: "hidden", maxHeight: 150, marginTop: 4 },
   suggestItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#f1f5f9" },
   suggestName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 13 },
-  totalBox: { marginTop: 16, backgroundColor: "#EFF6FF", padding: 14, borderRadius: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  totalBox: { marginTop: 16, backgroundColor: "#EFF6FF", padding: 14, borderRadius: 10, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   totalLabel: { color: "#1E40AF", fontWeight: "700", fontSize: 14 },
   totalValue: { color: "#1E40AF", fontWeight: "800", fontSize: 18 },
   primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10, marginTop: 16 },
