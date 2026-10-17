@@ -243,13 +243,18 @@ export async function buildInvoiceHtml(data: InvoicePrintData): Promise<string> 
 
   <div class="totals">
     <div class="totals-box">
-      <div class="total-row">
-        <span>عدد الأصناف</span>
-        <span>${data.lines.length}</span>
-      </div>
-      ${baseEquivalent}
+      ${(data.discountAmount ?? 0) > 0 ? `
+        <div class="total-row">
+          <span>الإجمالي الفرعي</span>
+          <span>${(data.subtotal ?? data.total).toFixed(2)} ${symbol}</span>
+        </div>
+        <div class="total-row" style="color:#DC2626;">
+          <span>الخصم ${data.discountType === "percent" ? `(${data.discountValue}%)` : ""}</span>
+          <span>- ${(data.discountAmount || 0).toFixed(2)} ${symbol}</span>
+        </div>
+      ` : ''}
       <div class="total-row grand">
-        <span>الإجمالي</span>
+        <span>الإجمالي النهائي</span>
         <span>${data.total.toFixed(2)} ${symbol}</span>
       </div>
     </div>

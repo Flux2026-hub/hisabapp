@@ -263,6 +263,10 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         discountType: inv.discount_type || null,
         discountValue: Number(inv.discount_value) || 0,
         discountAmount: Number(inv.discount_amount) || 0,
+        subtotal: Number(inv.subtotal) || Number(inv.total) || 0,
+        discountType: inv.discount_type || null,
+        discountValue: Number(inv.discount_value) || 0,
+        discountAmount: Number(inv.discount_amount) || 0,
         total: Number(inv.total) || 0,
       };
 

@@ -6,12 +6,17 @@ import {
 import { sqlite } from "../db/local";
 
 type Row = any;
-type JLine = { key: string; accountCode: string; accountName: string; debit: number; credit: number };
+type JLine = { key: string; accountCode: string; accountName: string; debit: number; credit: number; partyType: string | null; partyId: string | null; partyName: string | null };
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 export default function JournalScreen({ onBack }: { onBack: () => void }) {
   const [accounts, setAccounts] = useState<Row[]>([]);
+  const [customers, setCustomers] = useState<Row[]>([]);
+  const [suppliers, setSuppliers] = useState<Row[]>([]);
+  const [pickPartyType, setPickPartyType] = useState<"none" | "customer" | "supplier">("none");
+  const [pickParty, setPickParty] = useState<Row | null>(null);
+  const [showPartyPicker, setShowPartyPicker] = useState(false);
   const [description, setDescription] = useState("");
   const [lines, setLines] = useState<JLine[]>([]);
   const [pickAccount, setPickAccount] = useState<Row | null>(null);
@@ -28,6 +33,10 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
           "SELECT id, code, name, account_type FROM accounts ORDER BY code"
         );
         setAccounts(acc || []);
+        const cust: any = await sqlite.getAllAsync("SELECT id, name, code FROM customers ORDER BY name");
+        const supp: any = await sqlite.getAllAsync("SELECT id, name, code FROM suppliers ORDER BY name");
+        setCustomers(cust || []);
+        setSuppliers(supp || []);
         await loadHistory();
       } catch (e) {
         Alert.alert("تعذر التحميل", String(e));
@@ -58,11 +67,22 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
 
     setLines([
       ...lines,
-      { key: newId(), accountCode: pickAccount.code, accountName: pickAccount.name, debit, credit },
+      { 
+        key: newId(), 
+        accountCode: pickAccount.code, 
+        accountName: pickAccount.name, 
+        debit, 
+        credit,
+        partyType: pickPartyType === "none" ? null : pickPartyType,
+        partyId: pickParty?.id || null,
+        partyName: pickParty?.name || null,
+      },
     ]);
     setPickAccount(null);
     setPickDebit("");
     setPickCredit("");
+    setPickPartyType("none");
+    setPickParty(null);
     setShowAccount(false);
   };
 
@@ -97,9 +117,9 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
       for (const l of lines) {
         await sqlite.runAsync(
           `INSERT INTO journal_lines
-           (id, entry_id, account_code, account_name, debit, credit)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [newId(), entryId, l.accountCode, l.accountName, l.debit, l.credit]
+           (id, entry_id, account_code, account_name, debit, credit, party_type, party_id, party_name)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [newId(), entryId, l.accountCode, l.accountName, l.debit, l.credit, l.partyType, l.partyId, l.partyName]
         );
       }
 
@@ -151,6 +171,11 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                 <View style={styles.rowInfo}>
                   <Text style={styles.rowName}>{l.accountName}</Text>
                   <Text style={styles.rowMeta}>{l.accountCode}</Text>
+                  {l.partyName && (
+                    <Text style={[styles.rowMeta, { color: "#F97316", fontWeight: "700" }]}>
+                      {l.partyType === "customer" ? "عميل: " : "مورد: "} {l.partyName}
+                    </Text>
+                  )}
                   <Text style={styles.rowAmounts}>
                     {l.debit > 0 ? `مدين: ${l.debit.toFixed(2)}` : `دائن: ${l.credit.toFixed(2)}`}
                   </Text>
@@ -208,6 +233,42 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
             />
           </View>
         </View>
+
+        <Text style={styles.label}>نوع الطرف (اختياري)</Text>
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+          <Pressable style={[styles.partyTypeBtn, pickPartyType === "none" && styles.partyTypeBtnActive]} onPress={() => { setPickPartyType("none"); setPickParty(null); }}>
+            <Text style={[styles.partyTypeText, pickPartyType === "none" && styles.partyTypeTextActive]}>عام</Text>
+          </Pressable>
+          <Pressable style={[styles.partyTypeBtn, pickPartyType === "customer" && styles.partyTypeBtnActive]} onPress={() => { setPickPartyType("customer"); setPickParty(null); }}>
+            <Text style={[styles.partyTypeText, pickPartyType === "customer" && styles.partyTypeTextActive]}>عميل</Text>
+          </Pressable>
+          <Pressable style={[styles.partyTypeBtn, pickPartyType === "supplier" && styles.partyTypeBtnActive]} onPress={() => { setPickPartyType("supplier"); setPickParty(null); }}>
+            <Text style={[styles.partyTypeText, pickPartyType === "supplier" && styles.partyTypeTextActive]}>مورد</Text>
+          </Pressable>
+        </View>
+
+        {pickPartyType !== "none" && (
+          <>
+            <Pressable style={styles.picker} onPress={() => setShowPartyPicker((v) => !v)}>
+              <Text style={styles.pickerText}>{pickParty ? pickParty.name : `اختر ${pickPartyType === "customer" ? "العميل" : "المورد"}`}</Text>
+              <Text style={styles.pickerArrow}>▼</Text>
+            </Pressable>
+            {showPartyPicker && (
+              <View style={styles.suggestBox}>
+                {(pickPartyType === "customer" ? customers : suppliers).length === 0 ? (
+                  <Text style={styles.suggestEmpty}>لا توجد بيانات</Text>
+                ) : (
+                  (pickPartyType === "customer" ? customers : suppliers).map((p) => (
+                    <Pressable key={p.id} style={styles.suggestItem} onPress={() => { setPickParty(p); setShowPartyPicker(false); }}>
+                      <Text style={styles.suggestName}>{p.name}</Text>
+                      <Text style={styles.suggestMeta}>{p.code}</Text>
+                    </Pressable>
+                  ))
+                )}
+              </View>
+            )}
+          </>
+        )}
 
         <Pressable style={styles.secondary} onPress={addLine}>
           <Text style={styles.secondaryText}>+ إضافة السطر</Text>
@@ -283,6 +344,10 @@ const styles = StyleSheet.create({
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
   secondary: { backgroundColor: "#1E40AF", padding: 12, borderRadius: 8, marginTop: 8 },
   secondaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
+  partyTypeBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: "#D6E3F8", backgroundColor: "#f8fafc", alignItems: "center" },
+  partyTypeBtnActive: { backgroundColor: "#1E40AF", borderColor: "#1E40AF" },
+  partyTypeText: { color: "#0F172A", fontWeight: "700", fontSize: 13 },
+  partyTypeTextActive: { color: "#ffffff" },
   disabled: { opacity: 0.5 },
   histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   histInfo: { flex: 1, alignItems: "flex-end" },

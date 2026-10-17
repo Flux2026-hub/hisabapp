@@ -44,6 +44,7 @@ export async function initializeLocalDatabase() {
     "ALTER TABLE vouchers ADD COLUMN exchange_rate REAL DEFAULT 1",
     "ALTER TABLE journal_lines ADD COLUMN party_type TEXT",
     "ALTER TABLE journal_lines ADD COLUMN party_id TEXT",
+      "ALTER TABLE journal_lines ADD COLUMN party_name TEXT",
       "ALTER TABLE invoices ADD COLUMN sales_rep_id TEXT",
       "ALTER TABLE invoices ADD COLUMN sales_rep_name TEXT",
       "ALTER TABLE invoices ADD COLUMN commission_rate REAL DEFAULT 0",
