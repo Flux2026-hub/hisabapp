@@ -195,7 +195,7 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
       >
         {onBack && (
           <Pressable style={styles.back} onPress={onBack}>
-            <Text style={styles.backText}>← العودة</Text>
+            <Text style={styles.backText}>العودة -></Text>
           </Pressable>
         )}
 
@@ -481,20 +481,20 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: COLORS.textMuted, fontSize: 14 },
   scrollContent: { paddingBottom: 40, paddingHorizontal: 8 },
-  back: { paddingVertical: 10 },
+  back: {  paddingVertical: 10 }, alignSelf: "flex-end",
   backText: {
-    color: COLORS.blue,
+     color: COLORS.blue, textAlign: "right",
     fontWeight: "800",
     textAlign: "right",
     fontSize: 13,
   },
-  screenTitle: {
+  screenTitle: { 
     fontSize: 22,
     fontWeight: "800",
     color: COLORS.text,
     textAlign: "right",
     marginBottom: 4,
-  },
+   fontFamily: "Alexandria-Regular" },
   hint: {
     fontSize: 12,
     color: COLORS.textMuted,

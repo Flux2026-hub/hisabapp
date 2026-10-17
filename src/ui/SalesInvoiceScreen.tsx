@@ -54,6 +54,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const [showSalesRepPicker, setShowSalesRepPicker] = useState(false);
 
   const [saving, setSaving] = useState(false);
+  const [returnInvoiceId, setReturnInvoiceId] = useState<string | null>(null);
   const [history, setHistory] = useState<Row[]>([]);
 
   useEffect(() => {
@@ -566,13 +567,17 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     }
   };
 
+  if (returnInvoiceId) {
+    return <SalesReturnScreen invoiceId={returnInvoiceId} onBack={() => setReturnInvoiceId(null)} />;
+  }
+
   const symbol = currency?.symbol || currency?.code || "";
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>← العودة إلى الوحدات المحاسبية</Text>
+          <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <Text style={styles.screenTitle}>فاتورة مبيعات جديدة</Text>
@@ -876,6 +881,17 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                 <View key={h.id} style={styles.histRow}>
                   <View style={{ flexDirection: "row", gap: 4 }}>
                     <Pressable
+                      onPress={() => setReturnInvoiceId(h.id)}
+                      style={{
+                        backgroundColor: "#f3e8ff",
+                        paddingHorizontal: 8,
+                        paddingVertical: 8,
+                        borderRadius: 6,
+                      }}
+                    >
+                      <Text style={{ fontSize: 14 }}>↩️</Text>
+                    </Pressable>
+                    <Pressable
                       onPress={() => printInvoiceById(h.id)}
                       style={{
                         backgroundColor: "#EFF6FF",
@@ -935,9 +951,9 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  back: { paddingVertical: 10, marginBottom: 8 },
-  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6 },
+  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
+  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700", textAlign: "right" },
+  screenTitle: {  fontSize: 20, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6  fontFamily: "Alexandria-Regular" },
   hint: { fontSize: 12, color: "#8494B0", textAlign: "right", marginBottom: 12, lineHeight: 18 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 },
   label: { fontSize: 12, color: "#526078", textAlign: "right", marginTop: 8, marginBottom: 4 },

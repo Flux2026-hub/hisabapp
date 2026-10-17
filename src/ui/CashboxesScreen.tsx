@@ -212,7 +212,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
         contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}
       >
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>← العودة إلى الوحدات المحاسبية</Text>
+          <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <Text style={styles.screenTitle}>الصناديق</Text>
@@ -412,9 +412,9 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  back: { paddingVertical: 10, marginBottom: 8 },
-  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6 },
+  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
+  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700", textAlign: "right" },
+  screenTitle: {  fontSize: 20, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6  fontFamily: "Alexandria-Regular" },
   hint: { fontSize: 12, color: "#8494B0", textAlign: "right", marginBottom: 12, lineHeight: 18 },
   tabs: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10 },
   tab: { borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },

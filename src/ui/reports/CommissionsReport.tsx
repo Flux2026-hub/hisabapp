@@ -49,7 +49,7 @@ export default function CommissionsReport({ onBack }: { onBack: () => void }) {
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
       <Pressable style={styles.back} onPress={onBack}>
-        <Text style={styles.backText}>{"<-"} العودة إلى التقارير</Text>
+        <Text style={styles.backText}>{"->"} العودة إلى التقارير</Text>
       </Pressable>
 
       <Text style={styles.screenTitle}>تقرير العمولات</Text>
@@ -115,9 +115,9 @@ export default function CommissionsReport({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  back: { paddingVertical: 10, marginBottom: 8 },
-  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: { fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6 },
+  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
+  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700", textAlign: "right" },
+  screenTitle: {  fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6  fontFamily: "Alexandria-Regular" },
   hint: { fontSize: 12, color: "#8494B0", textAlign: "right", marginBottom: 14, lineHeight: 18 },
   filterBox: { backgroundColor: "#EFF6FF", padding: 14, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: "#D6E3F8" },
   label: { fontSize: 13, color: "#0F172A", marginTop: 8, marginBottom: 4, fontWeight: "700", textAlign: "right" },

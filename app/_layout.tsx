@@ -11,6 +11,7 @@ I18nManager.forceRTL(true);
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     "Alexandria-Black": require("../assets/fonts/Alexandria-Black.ttf"),
+    "Alexandria-Regular": require("../assets/fonts/Alexandria-Regular.ttf"),
     "CodecBold": require("../assets/fonts/Codec-Bold.ttf"),
   });
   const [ready, setReady] = useState(false);

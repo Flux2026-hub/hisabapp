@@ -285,7 +285,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         contentContainerStyle={styles.scrollContent}
       >
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>← العودة إلى الوحدات المحاسبية</Text>
+          <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <Text style={styles.screenTitle}>السندات (قبض / دفع)</Text>
@@ -581,21 +581,21 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 40, paddingHorizontal: 14 },
 
-  back: { paddingVertical: 10, marginBottom: 4 },
+  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 4 },
   backText: {
-    color: C.orange,
+     color: C.orange, textAlign: "right",
     fontWeight: "800",
     textAlign: "right",
     fontSize: 13,
   },
 
-  screenTitle: {
+  screenTitle: { 
     fontSize: 22,
     fontWeight: "800",
     color: C.ink,
     textAlign: "right",
     marginBottom: 4,
-  },
+   fontFamily: "Alexandria-Regular" },
   hint: {
     fontSize: 12,
     color: C.muted,

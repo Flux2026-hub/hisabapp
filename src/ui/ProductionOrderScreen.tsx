@@ -234,7 +234,7 @@ export default function ProductionOrderScreen({
         contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}
       >
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>← العودة إلى الوحدات المحاسبية</Text>
+          <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <Text style={styles.screenTitle}>أمر الإنتاج</Text>
@@ -403,15 +403,15 @@ export default function ProductionOrderScreen({
 }
 
 const styles = StyleSheet.create({
-  back: { paddingVertical: 10, marginBottom: 8 },
-  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: {
+  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
+  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700", textAlign: "right" },
+  screenTitle: { 
     fontSize: 20,
     fontWeight: "800",
     color: "#0F172A",
     textAlign: "right",
     marginBottom: 6,
-  },
+   fontFamily: "Alexandria-Regular" },
   hint: {
     fontSize: 12,
     color: "#8494B0",

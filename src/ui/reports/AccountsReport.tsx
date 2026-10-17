@@ -107,7 +107,7 @@ export default function AccountsReport({ onBack }: { onBack: () => void }) {
     <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
       <View style={styles.backWrap}>
         <Text style={styles.back} onPress={onBack}>
-          {"<-"} العودة إلى التقارير
+          {"->"} العودة إلى التقارير
         </Text>
       </View>
 

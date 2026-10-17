@@ -134,7 +134,7 @@ export default function SalesReport({ onBack }: { onBack: () => void }) {
     >
       <View style={styles.backWrap}>
         <Text style={styles.back} onPress={onBack}>
-          ← العودة إلى التقارير
+          العودة -> إلى التقارير
         </Text>
       </View>
 
