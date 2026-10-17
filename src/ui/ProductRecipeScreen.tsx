@@ -470,7 +470,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
 
 const styles = StyleSheet.create({
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
-  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700", textAlign: "right" },
+  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
   screenTitle: { 
     fontSize: 20,
     fontWeight: "800",

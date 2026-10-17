@@ -190,8 +190,8 @@ export default function SalesReturnScreen({ invoiceId, onBack }: { invoiceId: st
 
 const styles = StyleSheet.create({
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
-  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700", textAlign: "right" },
-  screenTitle: {  fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6fontFamily: "Alexandria-Regular",
+  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
+  screenTitle: {  fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 6, fontFamily: "Alexandria-Regular",
   },
   hint: { fontSize: 12, color: "#8494B0", textAlign: "right", marginBottom: 14, lineHeight: 18 },
   sectionTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 },
