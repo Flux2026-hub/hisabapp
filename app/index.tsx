@@ -49,9 +49,10 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandTextWrap}>
+        <View style={[styles.brandRow, { flexDirection: "row-reverse", justifyContent: "space-between" }]}>
+          <View style={[styles.brandTextWrap, { alignItems: "flex-end" }]}>
             <Text style={styles.brandName}>فلوكس</Text>
+            <Text style={{ fontSize: 11, color: "#94A3B8", marginTop: -2, fontFamily: "Alexandria-Regular" }}>لأنابيب أكثر نظافة</Text>
           </View>
           <Image
             source={require("../assets/images/flux-logo.png")}
@@ -61,12 +62,12 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={styles.nav}>
+      <View style={[styles.nav, { flexDirection: "row-reverse" }]}>
         <Pressable
           style={styles.menuButton}
           onPress={() => setMenuOpen((v) => !v)}
         >
-          <Text style={styles.menuText}>☰ الأقسام</Text>
+          <Text style={{ fontSize: 24, color: "#fff", fontWeight: "bold" }}>☰</Text>
         </Pressable>
         {sections.map(([key, label]) => (
           <Pressable
@@ -82,7 +83,7 @@ export default function HomeScreen() {
       </View>
 
       {menuOpen && (
-        <View style={styles.dropdown}>
+        <View style={[styles.dropdown, { alignItems: "flex-end", right: "auto", left: 10 }]}>
           {sections.map(([key, label]) => (
             <Pressable
               key={key}
