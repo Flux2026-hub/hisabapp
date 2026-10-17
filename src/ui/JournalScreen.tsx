@@ -57,7 +57,8 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
   const balanced = Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0;
 
   const addLine = () => {
-    if (!pickAccount) return Alert.alert("تنبيه", "اختر الحساب");
+    if (pickPartyType === "none" && !pickAccount) return Alert.alert("تنبيه", "اختر الحساب");
+    if (pickPartyType !== "none" && !pickParty) return Alert.alert("تنبيه", "اختر " + (pickPartyType === "customer" ? "العميل" : "المورد"));
     const debit = Number(pickDebit) || 0;
     const credit = Number(pickCredit) || 0;
     if (debit > 0 && credit > 0)
@@ -65,12 +66,15 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
     if (debit === 0 && credit === 0)
       return Alert.alert("تنبيه", "أدخل مبلغاً في المدين أو الدائن");
 
+    const finalCode = pickPartyType !== "none" && pickParty ? pickParty.code : pickAccount.code;
+    const finalName = pickPartyType !== "none" && pickParty ? pickParty.name : pickAccount.name;
+
     setLines([
       ...lines,
       { 
         key: newId(), 
-        accountCode: pickAccount.code, 
-        accountName: pickAccount.name, 
+        accountCode: finalCode, 
+        accountName: finalName, 
         debit, 
         credit,
         partyType: pickPartyType === "none" ? null : pickPartyType,
@@ -186,12 +190,30 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
         </View>
 
         <Text style={styles.sectionTitle}>إضافة سطر</Text>
-        <Pressable style={styles.picker} onPress={() => setShowAccount((v) => !v)}>
-          <Text style={styles.pickerText}>
-            {pickAccount ? `${pickAccount.code} - ${pickAccount.name}` : "اختر الحساب"}
-          </Text>
-          <Text style={styles.pickerArrow}>▼</Text>
-        </Pressable>
+        {pickPartyType === "none" && (
+          <>
+            <Pressable style={styles.picker} onPress={() => setShowAccount((v) => !v)}>
+              <Text style={styles.pickerText}>
+                {pickAccount ? `${pickAccount.code} - ${pickAccount.name}` : "اختر الحساب"}
+              </Text>
+              <Text style={styles.pickerArrow}>▼</Text>
+            </Pressable>
+            {showAccount && (
+              <View style={styles.suggestBox}>
+                {accounts.length === 0 ? (
+                  <Text style={styles.suggestEmpty}>لا توجد حسابات — أضفها من شاشة الحسابات</Text>
+                ) : (
+                  accounts.map((a) => (
+                    <Pressable key={a.id} style={styles.suggestItem} onPress={() => { setPickAccount(a); setShowAccount(false); }}>
+                      <Text style={styles.suggestName}>{a.name}</Text>
+                      <Text style={styles.suggestMeta}>{a.code} · {a.account_type}</Text>
+                    </Pressable>
+                  ))
+                )}
+              </View>
+            )}
+          </>
+        )}
         {showAccount && (
           <View style={styles.suggestBox}>
             {accounts.length === 0 ? (
