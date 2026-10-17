@@ -303,7 +303,8 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: { paddingVertical: 10, marginBottom: 8 },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: { fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 12, , fontFamily: "Alexandria-Regular" },
+  screenTitle: { fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "right", marginBottom: 12, fontFamily: "Alexandria-Regular",
+  },
   headerBox: { flexDirection: "row", gap: 8, marginBottom: 16 },
   label: { fontSize: 12, color: "#526078", textAlign: "right", marginTop: 8, marginBottom: 4 },
   input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A" },

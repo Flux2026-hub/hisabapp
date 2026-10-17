@@ -422,7 +422,8 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     textAlign: "right",
     marginBottom: 12,
-, fontFamily: "Alexandria-Regular" },
+fontFamily: "Alexandria-Regular",
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",

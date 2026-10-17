@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 40, paddingHorizontal: 8 },
   back: {  paddingVertical: 10 }, alignSelf: "flex-end",
   backText: {
-     color: COLORS.blue, textAlign: "right",
+     color: COLORS.blue,
     fontWeight: "800",
     textAlign: "right",
     fontSize: 13,
@@ -494,7 +494,8 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     textAlign: "right",
     marginBottom: 4,
-, fontFamily: "Alexandria-Regular" },
+fontFamily: "Alexandria-Regular",
+  },
   hint: {
     fontSize: 12,
     color: COLORS.textMuted,
