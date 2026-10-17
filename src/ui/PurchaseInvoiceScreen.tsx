@@ -4,6 +4,7 @@ import {
   StyleSheet, Text, TextInput, View,
 } from "react-native";
 import { sqlite } from "../db/local";
+import PurchaseReturnScreen from "./PurchaseReturnScreen";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   buildInvoiceHtml, printHtml, shareHtmlAsPdf,
@@ -49,6 +50,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
   const [showItemPicker, setShowItemPicker] = useState(false);
 
   const [saving, setSaving] = useState(false);
+  const [returnInvoiceId, setReturnInvoiceId] = useState<string | null>(null);
   const [history, setHistory] = useState<Row[]>([]);
 
   useEffect(() => {
@@ -500,6 +502,8 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
 
   const symbol = currency?.symbol || currency?.code || "";
 
+  if (returnInvoiceId) return <PurchaseReturnScreen invoiceId={returnInvoiceId} onBack={() => setReturnInvoiceId(null)} />;
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
@@ -733,6 +737,17 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
                   <View style={{ flexDirection: "row", gap: 4 }}>
+                    <Pressable
+                      onPress={() => setReturnInvoiceId(h.id)}
+                      style={{
+                        backgroundColor: "#f3e8ff",
+                        paddingHorizontal: 8,
+                        paddingVertical: 8,
+                        borderRadius: 6,
+                      }}
+                    >
+                      <Text style={{ fontSize: 14 }}>↩️</Text>
+                    </Pressable>
                     <Pressable
                       onPress={() => printInvoiceById(h.id)}
                       style={{
