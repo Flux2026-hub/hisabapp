@@ -504,6 +504,17 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
 
   if (returnInvoiceId) return <PurchaseReturnScreen invoiceId={returnInvoiceId} onBack={() => setReturnInvoiceId(null)} />;
 
+
+  const showRowOptions = (id: string, no: string) => {
+    Alert.alert(`الفاتورة ${no}`, "اختر الإجراء المطلوب:", [
+      { text: "طباعة", onPress: () => printInvoiceById(id) },
+      { text: "تعديل", onPress: () => editInvoice(id) },
+      { text: "إرجاع", onPress: () => setReturnInvoiceId(id) },
+      { text: "حذف", style: "destructive", onPress: () => confirmDelete(id, no) },
+      { text: "إلغاء", style: "cancel" },
+    ]);
+  };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>

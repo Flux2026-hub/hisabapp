@@ -306,10 +306,10 @@ export default function CustomersScreen({
               <View key={r.id} style={styles.row}>
                 <View style={styles.rowActions}>
                   <Pressable onPress={() => edit(r)} style={styles.editBtn}>
-                    <Text style={styles.editText}>تعديل</Text>
+                    <Text style={styles.editText}>✏️</Text>
                   </Pressable>
                   <Pressable onPress={() => remove(r)} style={styles.delBtn}>
-                    <Text style={styles.delText}>حذف</Text>
+                    <Text style={styles.delText}>🗑️</Text>
                   </Pressable>
                 </View>
                 <View style={styles.rowInfo}>

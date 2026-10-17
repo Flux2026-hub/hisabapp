@@ -217,11 +217,11 @@ export default function CurrenciesScreen({ onBack }: { onBack: () => void }) {
             <View key={r.id} style={styles.row}>
               <View style={styles.rowActions}>
                 <Pressable onPress={() => edit(r)} style={styles.editBtn}>
-                  <Text style={styles.editText}>تعديل</Text>
+                  <Text style={styles.editText}>✏️</Text>
                 </Pressable>
                 {!r.isBase && (
                   <Pressable onPress={() => remove(r)} style={styles.delBtn}>
-                    <Text style={styles.delText}>حذف</Text>
+                    <Text style={styles.delText}>🗑️</Text>
                   </Pressable>
                 )}
               </View>
