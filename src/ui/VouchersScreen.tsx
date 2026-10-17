@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { sqlite } from "../db/local";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { buildVoucherHtml, printHtml } from "../utils/printDocument";
 
 type Row = any;
@@ -595,7 +596,7 @@ const styles = StyleSheet.create({
     color: C.ink,
     textAlign: "right",
     marginBottom: 4,
-   fontFamily: "Alexandria-Regular" },
+, fontFamily: "Alexandria-Regular" },
   hint: {
     fontSize: 12,
     color: C.muted,

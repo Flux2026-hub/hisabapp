@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     textAlign: "right",
     marginBottom: 6,
-   fontFamily: "Alexandria-Regular" },
+, fontFamily: "Alexandria-Regular" },
   hint: {
     fontSize: 12,
     color: "#8494B0",
