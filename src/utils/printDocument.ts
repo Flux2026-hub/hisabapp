@@ -145,6 +145,10 @@ export type InvoicePrintData = {
   paymentType: "cash" | "credit";
   cashboxName?: string;
   lines: InvoicePrintLine[];
+  subtotal?: number;
+  discountType?: "percent" | "fixed" | null;
+  discountValue?: number;
+  discountAmount?: number;
   total: number;
   notes?: string;
 };

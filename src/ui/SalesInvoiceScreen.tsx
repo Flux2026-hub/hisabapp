@@ -39,6 +39,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const [cashbox, setCashbox] = useState<Row | null>(null);
   const [notes, setNotes] = useState("");
   const [salesRep, setSalesRep] = useState<Row | null>(null);
+  const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
+  const [discountValue, setDiscountValue] = useState("");
 
   const [lines, setLines] = useState<InvoiceLine[]>([]);
   const [pickItem, setPickItem] = useState<Row | null>(null);
@@ -149,10 +151,19 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const removeLine = (key: string) =>
     setLines(lines.filter((l) => l.key !== key));
 
-  const total = useMemo(
+  const subtotal = useMemo(
     () => lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0),
     [lines]
   );
+
+  const discountAmount = useMemo(() => {
+    const val = Number(discountValue) || 0;
+    if (val <= 0) return 0;
+    if (discountType === "percent") return subtotal * (val / 100);
+    return Math.min(val, subtotal);
+  }, [discountType, discountValue, subtotal]);
+
+  const total = Math.max(0, subtotal - discountAmount);
 
   const commissionAmount = useMemo(() => {
     if (!salesRep) return 0;
@@ -190,6 +201,10 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         quantity: l.quantity,
         unitPrice: l.unitPrice,
       })),
+      subtotal,
+      discountType,
+      discountValue: Number(discountValue) || 0,
+      discountAmount,
       total,
       notes: notes.trim() || undefined,
     };
@@ -244,6 +259,10 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           quantity: Number(l.quantity) || 0,
           unitPrice: Number(l.unit_price) || 0,
         })),
+        subtotal: Number(inv.subtotal) || Number(inv.total) || 0,
+        discountType: inv.discount_type || null,
+        discountValue: Number(inv.discount_value) || 0,
+        discountAmount: Number(inv.discount_amount) || 0,
         total: Number(inv.total) || 0,
       };
 
@@ -412,6 +431,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     Alert.alert(
       "تأكيد الحفظ",
       `فاتورة مبيعات بمبلغ ${total.toFixed(2)} ${symbol}\n` +
+        (discountAmount > 0 ? `الخصم: ${discountAmount.toFixed(2)} ${symbol}\n` : "") +
         `العميل: ${customer.name}\n` +
         `الدفع: ${paymentType === "cash" ? "نقدي" : "أجل"}`,
       [
@@ -448,18 +468,22 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
          (id, invoice_no, invoice_type, party_id, party_name, status,
           subtotal, tax, total, created_at,
           currency_code, exchange_rate, payment_type, cashbox_id,
-          sales_rep_id, sales_rep_name, commission_rate, commission_amount)
-         VALUES (?, ?, 'sales', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sales_rep_id, sales_rep_name, commission_rate, commission_amount,
+          discount_type, discount_value, discount_amount)
+         VALUES (?, ?, 'sales', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           invoiceId, invoiceNo, customer.id, customer.name,
           paymentType === "cash" ? "paid" : "posted",
-          total, total, now,
+          subtotal, total, now,
           currency.code, rate, paymentType,
           paymentType === "cash" && cashbox ? cashbox.id : null,
           salesRep?.id || null,
           salesRep?.name || null,
           salesRep ? Number(salesRep.commission_rate) : 0,
           salesRep ? commissionAmount : 0,
+          discountAmount > 0 ? discountType : null,
+          discountAmount > 0 ? Number(discountValue) : 0,
+          discountAmount,
         ]
       );
 
@@ -525,6 +549,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
       setLines([]);
       setNotes("");
       setSalesRep(null);
+      setDiscountValue("");
+      setDiscountType("percent");
       if (paymentType === "cash") setCashbox(null);
 
       await loadItems();
@@ -742,8 +768,46 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           </View>
         )}
 
+        <Text style={styles.label}>الخصم (اختياري)</Text>
+        <View style={styles.discountTypeRow}>
+          <Pressable
+            style={[styles.discountTypeBtn, discountType === "percent" && styles.discountTypeBtnActive]}
+            onPress={() => setDiscountType("percent")}
+          >
+            <Text style={[styles.discountTypeText, discountType === "percent" && styles.discountTypeTextActive]}>نسبة %</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.discountTypeBtn, discountType === "fixed" && styles.discountTypeBtnActive]}
+            onPress={() => setDiscountType("fixed")}
+          >
+            <Text style={[styles.discountTypeText, discountType === "fixed" && styles.discountTypeTextActive]}>مبلغ ثابت</Text>
+          </Pressable>
+        </View>
+        <TextInput
+          style={styles.input}
+          value={discountValue}
+          onChangeText={setDiscountValue}
+          keyboardType="decimal-pad"
+          textAlign="right"
+          placeholder={discountType === "percent" ? "مثال: 10" : "مثال: 100"}
+          placeholderTextColor="#9CA3AF"
+        />
+
+        {discountAmount > 0 && (
+          <View style={styles.summaryBox}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>الإجمالي الفرعي</Text>
+              <Text style={styles.summaryValue}>{subtotal.toFixed(2)} {symbol}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>الخصم {discountType === "percent" ? `(${discountValue}%)` : ""}</Text>
+              <Text style={[styles.summaryValue, { color: "#DC2626" }]}>- {discountAmount.toFixed(2)} {symbol}</Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.totalBox}>
-          <Text style={styles.totalLabel}>الإجمالي</Text>
+          <Text style={styles.totalLabel}>الإجمالي النهائي</Text>
           <Text style={styles.totalValue}>{total.toFixed(2)} {symbol}</Text>
         </View>
 
@@ -904,6 +968,15 @@ const styles = StyleSheet.create({
   commissionBox: { marginTop: 8, backgroundColor: "#FFF7ED", padding: 12, borderRadius: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   commissionLabel: { color: "#9A3412", fontWeight: "600", fontSize: 13, flex: 1 },
   commissionValue: { color: "#C2410C", fontWeight: "800", fontSize: 16 },
+  discountTypeRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+  discountTypeBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "#D6E3F8", backgroundColor: "#ffffff", alignItems: "center" },
+  discountTypeBtnActive: { backgroundColor: "#F97316", borderColor: "#F97316" },
+  discountTypeText: { color: "#0F172A", fontWeight: "700", fontSize: 14 },
+  discountTypeTextActive: { color: "#ffffff" },
+  summaryBox: { backgroundColor: "#FEF2F2", padding: 12, borderRadius: 10, marginTop: 12 },
+  summaryRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
+  summaryLabel: { color: "#7F1D1D", fontWeight: "600", fontSize: 13 },
+  summaryValue: { color: "#0F172A", fontWeight: "700", fontSize: 13 },
   primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10, marginTop: 16 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
   secondary: { backgroundColor: "#1E40AF", padding: 12, borderRadius: 8, marginTop: 8 },
