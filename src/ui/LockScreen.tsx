@@ -119,7 +119,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
   ];
 
   return (
-    <ScrollView contentContainerStyle={{flexGrow: 1}}>
+    
     <View style={styles.root}>
       <View style={styles.productWrap}>
         <Image
@@ -203,7 +203,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
                       color={COLORS.text}
                     />
                   </Pressable>
-                  </ScrollView>
+                  
   );
               }
               return (
