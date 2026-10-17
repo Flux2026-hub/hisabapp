@@ -367,68 +367,51 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
   // ============ تعديل فاتورة ============
   const editInvoice = async (invoiceId: string) => {
-    Alert.alert(
-      "تعديل الفاتورة",
-      "سيتم حذف الفاتورة الحالية وفتح نموذج جديد بنفس البيانات للتعديل.\n\nمتابعة؟",
-      [
-        { text: "إلغاء", style: "cancel" },
-        {
-          text: "متابعة",
-          onPress: async () => {
-            try {
-              const inv: any = await sqlite.getFirstAsync(
-                "SELECT * FROM invoices WHERE id = ?",
-                [invoiceId]
-              );
-              if (!inv) return;
+    Alert.alert("تعديل الفاتورة", "سيتم فتح الفاتورة للتعديل المباشر. متابعة؟", [
+      { text: "إلغاء", style: "cancel" },
+      { text: "متابعة", onPress: async () => {
+          try {
+            const inv: any = await sqlite.getFirstAsync("SELECT * FROM invoices WHERE id = ?", [invoiceId]);
+            if (!inv) return;
+            const invLines: any = await sqlite.getAllAsync(`SELECT l.*, i.name as item_name, i.sku as item_sku, i.unit as item_unit FROM invoice_lines l LEFT JOIN items i ON i.id = l.item_id WHERE l.invoice_id = ?`, [invoiceId]);
 
-              const invLines: any = await sqlite.getAllAsync(
-                `SELECT l.*, i.name as item_name, i.sku as item_sku, i.unit as item_unit
-                 FROM invoice_lines l
-                 LEFT JOIN items i ON i.id = l.item_id
-                 WHERE l.invoice_id = ?`,
-                [invoiceId]
-              );
+            setEditingId(inv.id);
+            setEditingNo(inv.invoice_no);
+            if (inv.created_at) setDateStr(new Date(inv.created_at).toISOString().slice(0, 10));
 
-              // بيانات مؤقتة قبل الحذف
-              const oldCustomer = customers.find((c) => c.id === inv.party_id);
-              const oldCurrency = currencies.find((c) => c.code === inv.currency_code);
-              const oldCashbox = cashboxes.find((c) => c.id === inv.cashbox_id);
-              const oldPaymentType = (inv.payment_type as PaymentType) || "cash";
-
-              await deleteInvoice(invoiceId);
-
-              // ملء النموذج
-              if (oldCustomer) setCustomer(oldCustomer);
-              if (oldCurrency) setCurrency(oldCurrency);
-              if (oldCashbox) setCashbox(oldCashbox);
-              setPaymentType(oldPaymentType);
-
-              setLines(
-                (invLines || []).map((l: any) => ({
-                  key: newId(),
-                  itemId: l.item_id,
-                  itemName: l.item_name || l.description || "—",
-                  itemSku: l.item_sku || "",
-                  available: 0,
-                  unit: l.item_unit || "",
-                  quantity: Number(l.quantity),
-                  unitPrice: Number(l.unit_price),
-                }))
-              );
-
-              await loadItems();
-              Alert.alert(
-                "تم التحميل",
-                "الفاتورة جاهزة للتعديل — أكمل ثم احفظ كفاتورة جديدة"
-              );
-            } catch (e) {
-              Alert.alert("تعذر التعديل", String(e));
+            const oldCustomer = customers.find((c) => c.id === inv.party_id);
+            const oldCurrency = currencies.find((c) => c.code === inv.currency_code);
+            const oldCashbox = cashboxes.find((c) => c.id === inv.cashbox_id);
+            const oldSalesRep = salesReps.find((r) => r.id === inv.sales_rep_id);
+            
+            if (oldCustomer) setCustomer(oldCustomer);
+            if (oldCurrency) setCurrency(oldCurrency);
+            if (oldCashbox) setCashbox(oldCashbox);
+            if (oldSalesRep) setSalesRep(oldSalesRep); else setSalesRep(null);
+            
+            setPaymentType((inv.payment_type as PaymentType) || "cash");
+            
+            if (inv.discount_type) {
+                setDiscountType(inv.discount_type);
+                setDiscountValue(String(inv.discount_value || ""));
+            } else {
+                setDiscountType("percent");
+                setDiscountValue("");
             }
-          },
-        },
-      ]
-    );
+
+            setLines((invLines || []).map((l: any) => ({
+                key: newId(),
+                itemId: l.item_id,
+                itemName: l.item_name || l.description || "—",
+                itemSku: l.item_sku || "",
+                available: 0,
+                unit: l.item_unit || "",
+                quantity: Number(l.quantity),
+                unitPrice: Number(l.unit_price),
+            })));
+          } catch (e) { Alert.alert("تعذر التعديل", String(e)); }
+      }},
+    ]);
   };
 
   const save = () => {
@@ -451,105 +434,80 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     if (!customer || !currency) return;
     setSaving(true);
     try {
-      const now = Date.now();
-      const invoiceId = newId();
-      const prefix = "SAL";
-      const last: any = await sqlite.getAllAsync(
-        `SELECT invoice_no FROM invoices WHERE invoice_type = 'sales' AND invoice_no LIKE ?
-         ORDER BY created_at DESC LIMIT 1`,
-        [`${prefix}-%`]
-      );
-      let nextNum = 1;
-      if (last && last.length > 0) {
-        nextNum = parseInt(String(last[0].invoice_no).replace(/\D/g, ""), 10) + 1;
-      }
-      const invoiceNo = `${prefix}-${String(nextNum).padStart(3, "0")}`;
+      const finalDate = dateStr ? new Date(dateStr).getTime() : Date.now();
+      let currentInvoiceId = editingId;
+      let currentInvoiceNo = editingNo;
 
       const rate = Number(currency.exchangeRate) || 1;
       const isBase = !!currency.isBase;
       const baseAmount = isBase ? total : total * rate;
 
-      await sqlite.runAsync(
-        `INSERT INTO invoices
-         (id, invoice_no, invoice_type, party_id, party_name, status,
-          subtotal, tax, total, created_at,
-          currency_code, exchange_rate, payment_type, cashbox_id,
-          sales_rep_id, sales_rep_name, commission_rate, commission_amount,
-          discount_type, discount_value, discount_amount)
-         VALUES (?, ?, 'sales', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          invoiceId, invoiceNo, customer.id, customer.name,
-          paymentType === "cash" ? "paid" : "posted",
-          subtotal, total, now,
-          currency.code, rate, paymentType,
-          paymentType === "cash" && cashbox ? cashbox.id : null,
-          salesRep?.id || null,
-          salesRep?.name || null,
-          salesRep ? Number(salesRep.commission_rate) : 0,
-          salesRep ? commissionAmount : 0,
-          discountAmount > 0 ? discountType : null,
-          discountAmount > 0 ? Number(discountValue) : 0,
-          discountAmount,
-        ]
-      );
+      if (!currentInvoiceId) {
+        // إنشاء جديد
+        currentInvoiceId = newId();
+        const prefix = "SAL";
+        const last: any = await sqlite.getAllAsync(`SELECT invoice_no FROM invoices WHERE invoice_type = 'sales' AND invoice_no LIKE ? ORDER BY created_at DESC LIMIT 1`, [`${prefix}-%`]);
+        let nextNum = 1;
+        if (last && last.length > 0) nextNum = parseInt(String(last[0].invoice_no).replace(/\D/g, ""), 10) + 1;
+        currentInvoiceNo = `${prefix}-${String(nextNum).padStart(3, "0")}`;
+
+        await sqlite.runAsync(
+          `INSERT INTO invoices (id, invoice_no, invoice_type, party_id, party_name, status, subtotal, tax, total, created_at, currency_code, exchange_rate, payment_type, cashbox_id, sales_rep_id, sales_rep_name, commission_rate, commission_amount, discount_type, discount_value, discount_amount) 
+           VALUES (?, ?, 'sales', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [currentInvoiceId, currentInvoiceNo, customer.id, customer.name, paymentType === "cash" ? "paid" : "posted", subtotal, total, finalDate, currency.code, rate, paymentType, paymentType === "cash" && cashbox ? cashbox.id : null, salesRep?.id || null, salesRep?.name || null, salesRep ? Number(salesRep.commission_rate) : 0, salesRep ? commissionAmount : 0, discountAmount > 0 ? discountType : null, discountAmount > 0 ? Number(discountValue) : 0, discountAmount]
+        );
+      } else {
+        // تعديل فاتورة قائمة
+        const oldInv: any = await sqlite.getFirstAsync("SELECT * FROM invoices WHERE id = ?", [currentInvoiceId]);
+        const oldLines: any = await sqlite.getAllAsync("SELECT * FROM invoice_lines WHERE invoice_id = ?", [currentInvoiceId]);
+        
+        for (const l of oldLines) {
+          await sqlite.runAsync("UPDATE items SET stock_quantity = stock_quantity + ?, updated_at = ? WHERE id = ?", [Number(l.quantity), Date.now(), l.item_id]);
+        }
+        
+        const baseCur = currencies.find(c => c.isBase);
+        const oldRate = Number(oldInv.exchange_rate) || 1;
+        const oldBaseAmount = oldInv.currency_code === baseCur?.code ? Number(oldInv.total) : Number(oldInv.total) * oldRate;
+        
+        if (oldInv.payment_type === "credit" && oldInv.party_id) {
+          await sqlite.runAsync("UPDATE customers SET balance = balance - ? WHERE id = ?", [oldBaseAmount, oldInv.party_id]);
+        } else if (oldInv.payment_type === "cash" && oldInv.cashbox_id) {
+          await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE id = ?", [oldBaseAmount, oldInv.cashbox_id]);
+        }
+
+        await sqlite.runAsync("DELETE FROM invoice_lines WHERE invoice_id = ?", [currentInvoiceId]);
+        await sqlite.runAsync("DELETE FROM stock_movements WHERE source_type = 'sales_invoice' AND source_id = ?", [currentInvoiceId]);
+
+        await sqlite.runAsync(
+          `UPDATE invoices SET party_id=?, party_name=?, status=?, subtotal=?, total=?, created_at=?, currency_code=?, exchange_rate=?, payment_type=?, cashbox_id=?, sales_rep_id=?, sales_rep_name=?, commission_rate=?, commission_amount=?, discount_type=?, discount_value=?, discount_amount=? WHERE id=?`,
+          [customer.id, customer.name, paymentType === "cash" ? "paid" : "posted", subtotal, total, finalDate, currency.code, rate, paymentType, paymentType === "cash" && cashbox ? cashbox.id : null, salesRep?.id || null, salesRep?.name || null, salesRep ? Number(salesRep.commission_rate) : 0, salesRep ? commissionAmount : 0, discountAmount > 0 ? discountType : null, discountAmount > 0 ? Number(discountValue) : 0, discountAmount, currentInvoiceId]
+        );
+      }
 
       for (const l of lines) {
         await sqlite.runAsync(
-          `INSERT INTO invoice_lines
-           (id, invoice_id, item_id, description, quantity, unit_price, line_total)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [newId(), invoiceId, l.itemId, l.itemName, l.quantity, l.unitPrice, l.quantity * l.unitPrice]
+          `INSERT INTO invoice_lines (id, invoice_id, item_id, description, quantity, unit_price, line_total) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [newId(), currentInvoiceId, l.itemId, l.itemName, l.quantity, l.unitPrice, l.quantity * l.unitPrice]
         );
-
+        await sqlite.runAsync("UPDATE items SET stock_quantity = stock_quantity - ?, updated_at = ? WHERE id = ?", [l.quantity, Date.now(), l.itemId]);
         await sqlite.runAsync(
-          "UPDATE items SET stock_quantity = stock_quantity - ?, updated_at = ? WHERE id = ?",
-          [l.quantity, now, l.itemId]
-        );
-
-        await sqlite.runAsync(
-          `INSERT INTO stock_movements
-           (id, source_type, source_id, item_id, warehouse_id, movement_type,
-            quantity_in, quantity_out, planned_quantity, waste_quantity,
-            unit_cost, created_at)
-           VALUES (?, 'sales_invoice', ?, ?, 'wh-final', 'sale_out',
-                   0, ?, 0, 0, ?, ?)`,
-          [newId(), invoiceId, l.itemId, l.quantity, l.unitPrice, now]
+          `INSERT INTO stock_movements (id, source_type, source_id, item_id, warehouse_id, movement_type, quantity_in, quantity_out, planned_quantity, waste_quantity, unit_cost, created_at) VALUES (?, 'sales_invoice', ?, ?, 'wh-final', 'sale_out', 0, ?, 0, 0, ?, ?)`,
+          [newId(), currentInvoiceId, l.itemId, l.quantity, l.unitPrice, Date.now()]
         );
       }
 
       if (paymentType === "credit") {
-        await sqlite.runAsync(
-          "UPDATE customers SET balance = balance + ? WHERE id = ?",
-          [baseAmount, customer.id]
-        );
+        await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [baseAmount, customer.id]);
       } else if (cashbox) {
-        await sqlite.runAsync(
-          "UPDATE cashboxes SET balance = balance + ? WHERE id = ?",
-          [baseAmount, cashbox.id]
-        );
+        await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [baseAmount, cashbox.id]);
       }
 
-      const currentData = buildCurrentInvoiceData(invoiceNo);
-      Alert.alert(
-        "تم الحفظ بنجاح",
-        `رقم الفاتورة: ${invoiceNo}\n\nهل تريد طباعة الفاتورة؟`,
-        [
-          { text: "لاحقاً", style: "cancel" },
-          {
-            text: "طباعة",
-            onPress: async () => {
-              if (currentData) printHtml(await buildInvoiceHtml(currentData));
-            },
-          },
-          {
-            text: "مشاركة PDF",
-            onPress: async () => {
-              if (currentData)
-                shareHtmlAsPdf(await buildInvoiceHtml(currentData), `فاتورة-${invoiceNo}.pdf`);
-            },
-          },
-        ]
-      );
+      const currentData = buildCurrentInvoiceData(currentInvoiceNo || "—");
+      Alert.alert("تم الحفظ بنجاح", `رقم الفاتورة: ${currentInvoiceNo}\n\nهل تريد طباعة الفاتورة؟`, [
+        { text: "لاحقاً", style: "cancel" },
+        { text: "طباعة", onPress: async () => { if (currentData) printHtml(await buildInvoiceHtml(currentData)); } },
+        { text: "مشاركة PDF", onPress: async () => { if (currentData) shareHtmlAsPdf(await buildInvoiceHtml(currentData), `فاتورة-${currentInvoiceNo}.pdf`); } },
+      ]);
 
       setCustomer(null);
       setLines([]);
@@ -557,6 +515,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
       setSalesRep(null);
       setDiscountValue("");
       setDiscountType("percent");
+      setEditingId(null);
+      setEditingNo(null);
       if (paymentType === "cash") setCashbox(null);
 
       await loadItems();
