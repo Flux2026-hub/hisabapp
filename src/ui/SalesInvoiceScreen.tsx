@@ -335,28 +335,21 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  <View style={{ flexDirection: "row", gap: 4 }}>
-                    <Pressable
-                      onPress={() => {
-                        Alert.alert(
-                          `الفاتورة ${h.invoice_no}`,
-                          "اختر الإجراء المطلوب:",
-                          [
-                            { text: "طباعة", onPress: () => printInvoiceById(h.id) },
-                            { text: "تعديل", onPress: () => editInvoice(h.id) },
-                            { text: "إرجاع", onPress: () => setReturnInvoiceId(h.id) },
-                            { text: "حذف", style: "destructive", onPress: () => confirmDelete(h.id, h.invoice_no) },
-                            { text: "إلغاء", style: "cancel" },
-                          ]
-                        );
-                      }}
-                      style={styles.iconBtn}
-                    >
-                      <Text style={{ fontSize: 20, fontWeight: "bold" }}>⋮</Text>
-                    </Pressable>
+                  {/* الأيقونات في اليمين */}
+                  <View style={styles.histActions}>
+                    <Pressable onPress={() => setReturnInvoiceId(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
+                    <Pressable onPress={() => printInvoiceById(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
+                    <Pressable onPress={() => editInvoice(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                    <Pressable onPress={() => confirmDelete(h.id, h.invoice_no)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
-                  <View style={styles.histRight}><Text style={styles.histTotal}>{Number(h.total).toFixed(2)} {h.currency_code}</Text><Text style={styles.histType}>{h.payment_type === "cash" ? "نقدي" : "أجل"}</Text></View>
-                  <View style={styles.histInfo}><Text style={styles.histName}>{h.party_name}</Text><Text style={styles.histMeta}>{h.invoice_no}</Text><Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text></View>
+                  {/* التفاصيل والمبلغ في اليسار */}
+                  <View style={styles.histDetails}>
+                    <Text style={styles.histName}>{h.party_name}</Text>
+                    <Text style={styles.histMeta}>{h.invoice_no}</Text>
+                    <Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
+                    <Text style={styles.histTotal}>{Number(h.total).toFixed(2)} {h.currency_code}</Text>
+                    <Text style={styles.histType}>{h.payment_type === "cash" ? "نقدي" : "أجل"}</Text>
+                  </View>
                 </View>
               ))}
             </View>
@@ -368,6 +361,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  histDetails: { flex: 1, alignItems: "flex-end", paddingRight: 12 },
+  histActions: { flexDirection: "row-reverse", gap: 6, alignItems: "center" },
   back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-end" },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 12, fontFamily: "CodecBold",  alignSelf: "flex-end",textAlign: "right", writingDirection: "rtl", width: "100%"},
@@ -410,13 +405,13 @@ const styles = StyleSheet.create({
   cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 12, borderRadius: 10, marginTop: 8 },
   cancelText: { color: "#0F172A", textAlign: "center", fontWeight: "700" },
   disabled: { opacity: 0.5 },
-  histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10,  flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
+  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   histInfo: { flex: 1, alignItems: "flex-end" },
   histRight: { alignItems: "flex-end", paddingRight: 8 },
-  histName: { fontWeight: "700", color: "#0F172A", textAlign: "right" },
+  histName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: "#8494B0", marginTop: 2, textAlign: "right" },
-  histTotal: { fontWeight: "800", fontSize: 15, color: "#1E40AF" },
-  histType: { fontSize: 11, color: "#8494B0", marginTop: 2 },
-  iconBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 6 },
+  histTotal: { fontWeight: "800", fontSize: 16, color: "#1E40AF", marginTop: 6, textAlign: "right" },
+  histType: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
+  iconBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
 });
