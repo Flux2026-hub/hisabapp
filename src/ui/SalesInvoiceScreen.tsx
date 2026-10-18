@@ -342,7 +342,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                     <Pressable onPress={() => editInvoice(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
                     <Pressable onPress={() => confirmDelete(h.id, h.invoice_no)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
-                  {/* التفاصيل والمبلغ في اليسار */}
+                  {/* البيانات في اليسار */}
                   <View style={styles.histDetails}>
                     <Text style={styles.histName}>{h.party_name}</Text>
                     <Text style={styles.histMeta}>{h.invoice_no}</Text>
@@ -405,8 +405,8 @@ const styles = StyleSheet.create({
   cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 12, borderRadius: 10, marginTop: 8 },
   cancelText: { color: "#0F172A", textAlign: "center", fontWeight: "700" },
   disabled: { opacity: 0.5 },
-  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  histInfo: { flex: 1, alignItems: "flex-end" },
+  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  histInfo: { flex: 1, alignItems: "flex-end", paddingLeft: 12 },
   histRight: { alignItems: "flex-end", paddingRight: 8 },
   histName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
