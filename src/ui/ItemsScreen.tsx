@@ -224,6 +224,8 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
         </Pressable>
 
         <Text style={styles.screenTitle}>الأصناف والمواد</Text>
+        <BrandBanner />
+
         <Text style={styles.hint}>
           تصنيف الأصناف: مواد إنتاج وعبوات تُخزَّن في "مخزن تحت الإنتاج"،
           والمنتج النهائي في "مخزن المخزون التام".
@@ -301,50 +303,6 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
             )}
           </View>
         )}
-
-        {/* القائمة */}
-        <Text style={styles.sectionTitle}>
-          {CATEGORIES.find((c) => c.key === activeTab)?.label} ({tabRows.length})
-        </Text>
-        <View style={styles.list}>
-          {filteredRows.length === 0 ? (
-            <Text style={styles.empty}>
-              لا توجد أصناف في هذا التصنيف — ابدأ بإضافة صنف من النموذج أدناه
-            </Text>
-          ) : (
-            filteredRows.map((r) => (
-              <View key={r.id} style={styles.row}>
-                <View style={styles.rowActions}>
-                  <Pressable onPress={() => edit(r)} style={styles.editBtn}>
-                    <Text style={styles.editText}>تعديل</Text>
-                  </Pressable>
-                  <Pressable onPress={() => remove(r)} style={styles.delBtn}>
-                    <Text style={styles.delText}>حذف</Text>
-                  </Pressable>
-                </View>
-                <View style={styles.rowInfo}>
-                  <Text style={styles.rowName}>{r.name}</Text>
-                  <Text style={styles.rowMeta}>
-                    {r.sku} · {r.unit}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.rowStock,
-                      { color: stockColor(r.stockQuantity) },
-                    ]}
-                  >
-                    الرصيد: {Number(r.stockQuantity || 0).toFixed(2)} {r.unit}
-                  </Text>
-                  {Number(r.averageCost) > 0 && (
-                    <Text style={styles.rowCost}>
-                      التكلفة: {Number(r.averageCost).toFixed(2)}
-                    </Text>
-                  )}
-                </View>
-              </View>
-            ))
-          )}
-        </View>
 
         {/* نموذج الإضافة/التعديل */}
         <Text style={styles.sectionTitle}>
@@ -434,7 +392,52 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
             </Pressable>
           )}
         </View>
-      </ScrollView>
+      
+        {/* القائمة */}
+        <Text style={styles.sectionTitle}>
+          {CATEGORIES.find((c) => c.key === activeTab)?.label} ({tabRows.length})
+        </Text>
+        <View style={styles.list}>
+          {filteredRows.length === 0 ? (
+            <Text style={styles.empty}>
+              لا توجد أصناف في هذا التصنيف — ابدأ بإضافة صنف من النموذج أدناه
+            </Text>
+          ) : (
+            filteredRows.map((r) => (
+              <View key={r.id} style={styles.row}>
+                <View style={styles.rowActions}>
+                  <Pressable onPress={() => edit(r)} style={styles.editBtn}>
+                    <Text style={{ fontSize: 14 }}>✏️</Text>
+                  </Pressable>
+                  <Pressable onPress={() => remove(r)} style={styles.delBtn}>
+                    <Text style={{ fontSize: 14 }}>🗑️</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowName}>{r.name}</Text>
+                  <Text style={styles.rowMeta}>
+                    {r.sku} · {r.unit}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.rowStock,
+                      { color: stockColor(r.stockQuantity) },
+                    ]}
+                  >
+                    الرصيد: {Number(r.stockQuantity || 0).toFixed(2)} {r.unit}
+                  </Text>
+                  {Number(r.averageCost) > 0 && (
+                    <Text style={styles.rowCost}>
+                      التكلفة: {Number(r.averageCost).toFixed(2)}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
+        </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -495,17 +498,8 @@ fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "10
     color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
   list: { gap: 8, marginTop: 4 },
   empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
-  row: {
-    backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 10,
-    padding: 10,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  rowInfo: { flex: 1, alignItems: "flex-end" },
+  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   rowName: {fontWeight: "700",
     fontSize: 14,
     color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
@@ -522,10 +516,10 @@ fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "10
     fontWeight: "600",
   },
   rowCost: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
-  rowActions: { flexDirection: "row-reverse", gap: 6 },
-  editBtn: { backgroundColor: "#EFF6FF", padding: 8, borderRadius: 7 },
+  rowActions: { flexDirection: "row", gap: 6, alignItems: "center" },
+  editBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   editText: { color: "#0F172A", fontSize: 12 },
-  delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
+  delBtn: { backgroundColor: "#fee2e2", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   delText: { color: "#0F172A", fontSize: 12 },
   suggestBox: {
     marginTop: 4,
