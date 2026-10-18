@@ -131,14 +131,20 @@ export default function HomeScreen() {
         {tab === "accounting" && (
           <>
             <Text style={styles.title}>المحاسبة والإدارة</Text>
-            <AccountingModule />
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>الوحدات المحاسبية</Text>
+              <AccountingModule />
+            </View>
           </>
         )}
 
         {tab === "settings" && (
           <>
             <Text style={styles.title}>الإعدادات</Text>
-            <SettingsModule onBack={() => go("home")} />
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>إعدادات التقارير</Text>
+              <SettingsModule onBack={() => go("home")} />
+            </View>
           </>
         )}
       </ScrollView>

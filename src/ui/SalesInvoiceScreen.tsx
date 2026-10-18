@@ -335,7 +335,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  <View style={{ flexDirection: "row-reverse", gap: 4 }}>
+                  <View style={{ flexDirection: "row", gap: 4 }}>
                     <Pressable onPress={() => setReturnInvoiceId(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
                     <Pressable onPress={() => printInvoiceById(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
                     <Pressable onPress={() => editInvoice(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>

@@ -747,7 +747,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  <View style={{ flexDirection: "row-reverse", gap: 4 }}>
+                  <View style={{ flexDirection: "row", gap: 4 }}>
                     <Pressable
                       onPress={() => setReturnInvoiceId(h.id)}
                       style={{
