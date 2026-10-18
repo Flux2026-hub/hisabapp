@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { sqlite } from "../db/local";
+import BrandBanner from "./components/BrandBanner";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -140,6 +141,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
           <Text style={styles.backText}>{"->"} العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
+        <BrandBanner />
         <Text style={styles.screenTitle}>قيد يومية جديد</Text>
         
         <View style={styles.headerBox}>
@@ -288,8 +290,14 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  <View style={styles.histRight}><Text style={styles.histAmount}>{Number(h.total_debit).toFixed(2)}</Text></View>
-                  <View style={styles.histInfo}><Text style={styles.histName}>{h.description}</Text><Text style={styles.histMeta}>{h.entry_no}</Text><Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text></View>
+                  <View style={styles.histInfo}>
+                    <Text style={styles.histName}>{h.description}</Text>
+                    <Text style={styles.histMeta}>{h.entry_no}</Text>
+                    <Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
+                  </View>
+                  <View style={styles.histRight}>
+                    <Text style={styles.histAmount}>{Number(h.total_debit).toFixed(2)}</Text>
+                  </View>
                 </View>
               ))}
             </View>
@@ -348,11 +356,11 @@ const styles = StyleSheet.create({
   primaryText: { color: "#fff", fontWeight: "800", fontSize: 16, textAlign: "center" },
   disabled: { opacity: 0.5 },
   list: { gap: 8, marginTop: 4 },
-  histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10,  flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
-  histInfo: { flex: 1, alignItems: "flex-end" },
-  histRight: { alignItems: "flex-end", paddingRight: 8 },
-  histName: { fontWeight: "700", color: "#0F172A", textAlign: "right" },
+  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  histInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
+  histRight: { alignItems: "flex-start" },
+  histName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: "#8494B0", marginTop: 2, textAlign: "right" },
-  histAmount: { fontWeight: "800", fontSize: 15, color: "#1E40AF" },
+  histAmount: { fontWeight: "800", fontSize: 16, color: "#1E40AF" },
 });
