@@ -520,10 +520,10 @@ const styles = StyleSheet.create({
   sectionTitle: {fontSize: 15,
     
     color: COLORS.blue,
-    textAlign: "right",
+    
     marginTop: 16,
     marginBottom: 8,
-  fontFamily: "CodecBold"},
+  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
   empty: {
     textAlign: "right",
     color: COLORS.textMuted,
@@ -543,12 +543,10 @@ const styles = StyleSheet.create({
   },
   rowInfo: { flex: 1, alignItems: "flex-end" },
   rowRight: { alignItems: "flex-end" },
-  rowName: {
-    fontWeight: "700",
+  rowName: {fontWeight: "700",
     color: COLORS.text,
-    textAlign: "right",
-    fontSize: 14,
-  },
+    
+    fontSize: 14,textAlign: "right", writingDirection: "rtl", width: "100%"},
   rowMeta: {
     fontSize: 11,
     color: COLORS.textMuted,

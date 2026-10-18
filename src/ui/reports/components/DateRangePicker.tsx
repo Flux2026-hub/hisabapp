@@ -123,19 +123,15 @@ const styles = StyleSheet.create({
   quickText: { fontSize: 11, color: "#0F172A", fontWeight: "600" },
   quickTextActive: { color: "#fff", fontWeight: "700" },
   row: { flexDirection: "row-reverse", gap: 8, marginTop: 10 },
-  label: {
-    fontSize: 12,
+  label: {fontSize: 12,
     color: "#526078",
-    textAlign: "right",
-    marginBottom: 4,
-  },
-  input: {
-    backgroundColor: "#f8fafc",
+    
+    marginBottom: 4,textAlign: "right", writingDirection: "rtl", width: "100%"},
+  input: {backgroundColor: "#f8fafc",
     borderWidth: 1,
     borderColor: "#D6E3F8",
     borderRadius: 8,
     padding: 10,
     color: "#0F172A",
-    fontSize: 13,
-  },
+    fontSize: 13,textAlign: "right", writingDirection: "rtl", width: "100%"},
 });

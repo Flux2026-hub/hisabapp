@@ -57,13 +57,13 @@ const styles = StyleSheet.create({
   title: {fontSize: 20,
     
     color: "#0F172A",
-    textAlign: "right",
-  fontFamily: "CodecBold"},
+    
+  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
   subtitle: {fontSize: 12,
     color: "#526078",
-    textAlign: "right",
+    
     marginTop: 4,
-  fontFamily: "CodecBold"},
+  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
   period: {
     fontSize: 11,
     color: "#8494B0",

@@ -419,32 +419,28 @@ const styles = StyleSheet.create({
   screenTitle: {fontSize: 20,
     
     color: "#0F172A",
-    textAlign: "right",
+    
     marginBottom: 12,
-fontFamily: "CodecBold"},
+fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
   sectionTitle: {fontSize: 16,
     
     color: "#0F172A",
-    textAlign: "right",
+    
     marginTop: 16,
     marginBottom: 8,
-  fontFamily: "CodecBold"},
-  label: {
-    fontSize: 12,
+  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  label: {fontSize: 12,
     color: "#526078",
-    textAlign: "right",
+    
     marginTop: 8,
-    marginBottom: 4,
-  },
-  input: {
-    backgroundColor: "#f8fafc",
+    marginBottom: 4,textAlign: "right", writingDirection: "rtl", width: "100%"},
+  input: {backgroundColor: "#f8fafc",
     borderWidth: 1,
     borderColor: "#D6E3F8",
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
-    color: "#0F172A",
-  },
+    color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
   list: { gap: 8, marginTop: 4 },
   empty: {
     textAlign: "right",
@@ -463,12 +459,9 @@ fontFamily: "CodecBold"},
     justifyContent: "space-between",
   },
   rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowName: {
-    fontWeight: "700",
+  rowName: {fontWeight: "700",
     fontSize: 14,
-    color: "#0F172A",
-    textAlign: "right",
-  },
+    color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
   rowMeta: {
     fontSize: 11,
     color: "#8494B0",

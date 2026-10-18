@@ -198,14 +198,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   syncButtonText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
-  hint: {
-    color: COLORS.textMuted,
+  hint: {color: COLORS.textMuted,
     fontSize: 12,
-    textAlign: "right",
+    
     marginBottom: 14,
     lineHeight: 18,
-    paddingHorizontal: 4,
-  },
+    paddingHorizontal: 4,textAlign: "right", writingDirection: "rtl", width: "100%"},
   sectionBlock: { width: "100%", marginTop: 14 },
   sectionTitleRow: {
     flexDirection: "row-reverse",

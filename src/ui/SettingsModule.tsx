@@ -491,16 +491,14 @@ const styles = StyleSheet.create({
   screenTitle: {fontSize: 22,
     
     color: COLORS.text,
-    textAlign: "right",
+    
     marginBottom: 4,
-fontFamily: "CodecBold"},
-  hint: {
-    fontSize: 12,
+fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  hint: {fontSize: 12,
     color: COLORS.textMuted,
-    textAlign: "right",
+    
     marginBottom: 14,
-    lineHeight: 18,
-  },
+    lineHeight: 18,textAlign: "right", writingDirection: "rtl", width: "100%"},
   tabs: {
     flexDirection: "row-reverse",
     gap: 6,
@@ -535,23 +533,19 @@ fontFamily: "CodecBold"},
     marginTop: 18,
     marginBottom: 8,
   },
-  label: {
-    fontSize: 12,
+  label: {fontSize: 12,
     color: COLORS.textMuted,
-    textAlign: "right",
+    
     marginTop: 10,
     marginBottom: 5,
-    fontWeight: "700",
-  },
-  input: {
-    backgroundColor: COLORS.surface,
+    fontWeight: "700",textAlign: "right", writingDirection: "rtl", width: "100%"},
+  input: {backgroundColor: COLORS.surface,
     borderWidth: 1.2,
     borderColor: COLORS.border,
     borderRadius: 12,
     padding: 12,
     fontSize: 14,
-    color: COLORS.text,
-  },
+    color: COLORS.text,textAlign: "right", writingDirection: "rtl", width: "100%"},
   inputMultiline: { minHeight: 70, textAlignVertical: "top" },
   switchRow: {
     flexDirection: "row-reverse",

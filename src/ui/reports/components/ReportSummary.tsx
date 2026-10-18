@@ -38,6 +38,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#cce9e0",
   },
-  label: { color: "#1E40AF", fontSize: 13, fontWeight: "600" },
+  label: {color: "#1E40AF", fontSize: 13, fontWeight: "600", textAlign: "right", writingDirection: "rtl", width: "100%"},
   value: { color: "#1E40AF", fontSize: 15, fontWeight: "800" },
 });

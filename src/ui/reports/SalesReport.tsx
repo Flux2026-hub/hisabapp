@@ -213,10 +213,10 @@ const styles = StyleSheet.create({
   sectionTitle: {fontSize: 15,
     
     color: "#1E40AF",
-    textAlign: "right",
+    
     marginTop: 14,
     marginBottom: 8,
-  fontFamily: "CodecBold"},
+  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
   empty: {
     textAlign: "right",
     color: "#8494B0",
@@ -236,12 +236,10 @@ const styles = StyleSheet.create({
   },
   rowInfo: { flex: 1, alignItems: "flex-end" },
   rowRight: { alignItems: "flex-end" },
-  rowName: {
-    fontWeight: "700",
+  rowName: {fontWeight: "700",
     color: "#0F172A",
-    textAlign: "right",
-    fontSize: 14,
-  },
+    
+    fontSize: 14,textAlign: "right", writingDirection: "rtl", width: "100%"},
   rowMeta: {
     fontSize: 11,
     color: "#1E40AF",

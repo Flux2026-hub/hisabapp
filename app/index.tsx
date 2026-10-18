@@ -201,19 +201,15 @@ const styles = StyleSheet.create({
   },
   logo: { width: 90, height: 70 },
   content: { padding: 16, paddingBottom: 40 },
-  title: {
-    color: COLORS.text,
+  title: {color: COLORS.text,
     fontSize: 22,
-    textAlign: "right",
+    
     marginTop: 7,
-    fontFamily: "CodecBold",
-  },
-  hint: {
-    color: COLORS.textMuted,
+    fontFamily: "CodecBold",textAlign: "right", writingDirection: "rtl", width: "100%"},
+  hint: {color: COLORS.textMuted,
     fontSize: 12,
-    textAlign: "right",
-    marginVertical: 8,
-  },
+    
+    marginVertical: 8,textAlign: "right", writingDirection: "rtl", width: "100%"},
   nav: {
     flexDirection: "row",
     backgroundColor: COLORS.surface,
@@ -263,13 +259,11 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 12,
   },
-  cardTitle: {
-    fontSize: 16,
+  cardTitle: {fontSize: 16,
     fontFamily: "CodecBold",
     color: COLORS.text,
-    textAlign: "right",
-    marginBottom: 10,
-  },
+    
+    marginBottom: 10,textAlign: "right", writingDirection: "rtl", width: "100%"},
   action: {
     flexDirection: "row",
     alignItems: "center",
@@ -278,12 +272,9 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.bg,
   },
   actionArrow: { color: COLORS.orange, fontSize: 18, marginLeft: 10 },
-  actionLabel: {
-    fontSize: 15,
+  actionLabel: {fontSize: 15,
     fontFamily: "CodecBold",
-    color: COLORS.text,
-    textAlign: "right",
-  },
+    color: COLORS.text,textAlign: "right", writingDirection: "rtl", width: "100%"},
   small: {
     fontSize: 12,
     color: COLORS.textMuted,

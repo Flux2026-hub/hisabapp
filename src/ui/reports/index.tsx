@@ -63,10 +63,10 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
   backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {fontSize: 22,  color: "#0F172A", textAlign: "right", marginBottom: 6, fontFamily: "CodecBold"},
-  hint: { fontSize: 12, color: "#8494B0", textAlign: "right", marginBottom: 14, lineHeight: 18 },
+  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 6, fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  hint: {fontSize: 12, color: "#8494B0",  marginBottom: 14, lineHeight: 18, textAlign: "right", writingDirection: "rtl", width: "100%"},
   grid: { gap: 10 },
   card: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 16 },
-  cardTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A", textAlign: "right" },
+  cardTitle: {fontSize: 16, fontWeight: "800", color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
   cardDesc: { fontSize: 12, color: "#8494B0", textAlign: "right", marginTop: 6 },
 });

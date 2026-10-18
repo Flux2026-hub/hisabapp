@@ -593,16 +593,14 @@ const styles = StyleSheet.create({
   screenTitle: {fontSize: 22,
     
     color: C.ink,
-    textAlign: "right",
+    
     marginBottom: 4,
-fontFamily: "CodecBold"},
-  hint: {
-    fontSize: 12,
+fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  hint: {fontSize: 12,
     color: C.muted,
-    textAlign: "right",
+    
     marginBottom: 16,
-    lineHeight: 18,
-  },
+    lineHeight: 18,textAlign: "right", writingDirection: "rtl", width: "100%"},
 
   sectionHeader: {
     flexDirection: "row-reverse",
@@ -620,8 +618,8 @@ fontFamily: "CodecBold"},
   sectionTitle: {fontSize: 16,
     
     color: C.ink,
-    textAlign: "right",
-  fontFamily: "CodecBold"},
+    
+  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
 
   // ===== Toggle =====
   toggleRow: { flexDirection: "row-reverse", gap: 10 },
@@ -695,24 +693,20 @@ fontFamily: "CodecBold"},
   pickerArrow: { color: C.muted, fontSize: 12, marginLeft: 8 },
 
   // ===== Input =====
-  label: {
-    fontSize: 12,
+  label: {fontSize: 12,
     color: C.muted,
-    textAlign: "right",
+    
     marginTop: 12,
     marginBottom: 5,
-    fontWeight: "700",
-  },
-  input: {
-    backgroundColor: C.card,
+    fontWeight: "700",textAlign: "right", writingDirection: "rtl", width: "100%"},
+  input: {backgroundColor: C.card,
     borderWidth: 1.2,
     borderColor: C.line,
     borderRadius: 12,
     padding: 13,
     fontSize: 14,
     color: C.ink,
-    fontWeight: "600",
-  },
+    fontWeight: "600",textAlign: "right", writingDirection: "rtl", width: "100%"},
 
   // ===== Primary Button =====
   primary: {
@@ -780,7 +774,7 @@ fontFamily: "CodecBold"},
     borderColor: C.line,
     borderRadius: 12,
     padding: 12,
-    flexDirection: "row-reverse",
+     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
