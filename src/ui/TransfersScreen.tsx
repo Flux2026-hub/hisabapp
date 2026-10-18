@@ -3,6 +3,7 @@ import {
   Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView,
   StyleSheet, Text, TextInput, View,
 } from "react-native";
+import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -121,7 +122,8 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        <Text style={styles.screenTitle}>التحويلات بين الصناديق</Text>
+        <BrandBanner />
+        <Text style={[styles.screenTitle, { marginTop: 15 }]}>التحويلات بين الصناديق</Text>
         <Text style={styles.hint}>
           نقل مبلغ من صندوق إلى آخر. يجب أن يكون رصيد الصندوق المصدر كافياً.
         </Text>
@@ -202,13 +204,13 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  <View style={styles.histRight}>
-                    <Text style={styles.histAmount}>{Number(h.amount).toFixed(2)}</Text>
-                  </View>
                   <View style={styles.histInfo}>
                     <Text style={styles.histName}>{h.from_account} → {h.to_account}</Text>
                     <Text style={styles.histMeta}>{h.transfer_no}</Text>
                     <Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
+                  </View>
+                  <View style={styles.histRight}>
+                    <Text style={styles.histAmount}>{Number(h.amount).toFixed(2)}</Text>
                   </View>
                 </View>
               ))}
@@ -240,11 +242,11 @@ const styles = StyleSheet.create({
   primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10, marginTop: 16 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
   disabled: { opacity: 0.5 },
-  histRow: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10,  flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
-  histInfo: { flex: 1, alignItems: "flex-end" },
-  histRight: { alignItems: "flex-end", paddingRight: 8 },
-  histName: { fontWeight: "700", color: "#0F172A", textAlign: "right" },
+  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  histInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
+  histRight: { alignItems: "flex-start" },
+  histName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: "#8494B0", marginTop: 2, textAlign: "right" },
-  histAmount: { fontWeight: "800", fontSize: 15, color: "#1E40AF" },
+  histAmount: { fontWeight: "800", fontSize: 16, color: "#1E40AF" },
 });
