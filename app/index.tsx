@@ -152,27 +152,23 @@ export default function HomeScreen() {
   );
 }
 
-function Action({
-  label,
-  sub,
-  onPress,
-}: {
-  label: string;
-  sub: string;
-  onPress: () => void;
-}) {
+function Action({ label, sub, onPress }: { label: string; sub: string; onPress: () => void; }) {
   return (
     <Pressable onPress={onPress} style={styles.action}>
-      <View style={{ flex: 1, alignItems: "flex-end" }}>
+      <View style={styles.actionTextWrap}>
         <Text style={styles.actionLabel}>{label}</Text>
         <Text style={styles.small}>{sub}</Text>
       </View>
-      <Text style={styles.actionArrow}>{"->"}</Text>
+      <View style={styles.actionIconWrap}>
+        <Text style={styles.actionArrow}>{"<-"}</Text>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  actionIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: "#FFF7ED", justifyContent: "center", alignItems: "center" },
+  actionTextWrap: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   root: { flex: 1, backgroundColor: COLORS.bg },
   header: {
     backgroundColor: COLORS.navy,
@@ -273,24 +269,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     width: "100%",
   },
-  action: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.bg,
-  },
-  actionArrow: { color: COLORS.orange, fontSize: 18, marginRight: 10 },
-  actionLabel: {
-    fontSize: 15,
-    fontFamily: "CodecBold",
-    color: COLORS.text,
-    textAlign: "right",
-  },
-  small: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    textAlign: "right",
-    marginTop: 2,
-  },
+  action: { flexDirection: "row", alignItems: "center", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: "#E2E8F0" },
+  actionArrow: { color: "#F97316", fontSize: 18, fontWeight: "bold" },
+  actionLabel: { fontSize: 16, fontFamily: "CodecBold", color: "#0F172A", textAlign: "right" },
+  small: { fontSize: 12, color: "#64748B", textAlign: "right", marginTop: 4 },
 });

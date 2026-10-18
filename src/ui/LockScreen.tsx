@@ -1,4 +1,4 @@
-import { Dimensions,  useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -232,17 +232,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
     paddingHorizontal: 28,
-    paddingTop: 30,
+    paddingTop: 20,
     paddingBottom: 30,
   },
   productWrap: {
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
     marginBottom: 20,
   },
   productImage: {
-    width: 220,
-    height: 220,
+    width: 140,
+    height: 140,
   },
   modeRow: {
     alignItems: "center",
