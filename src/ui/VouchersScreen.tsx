@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { buildVoucherHtml, printHtml } from "../utils/printDocument";
@@ -289,7 +290,8 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        <Text style={styles.screenTitle}>السندات (قبض / دفع)</Text>
+        <BrandBanner />
+        <Text style={[styles.screenTitle, { marginTop: 15 }]}>السندات (قبض / دفع)</Text>
         <Text style={styles.hint}>
           سند القبض يُضيف للصندوق، وسند الدفع يُنقص منه. يمكن ربط السند بطرف
           (عميل / مورد / حساب).
@@ -549,27 +551,19 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
             </View>
             {history.map((h) => (
               <View key={h.id} style={styles.histRow}>
+                <View style={styles.histInfo}>
+                  <Text style={styles.histName}>{h.party_name || "—"}</Text>
+                  <Text style={styles.histMeta}>{h.voucher_no}</Text>
+                  <Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
+                </View>
                 <Text
                   style={[
                     styles.histAmount,
-                    {
-                      color:
-                        h.voucher_type === "receipt" ? C.success : C.danger,
-                    },
+                    { color: h.voucher_type === "receipt" ? C.success : C.danger },
                   ]}
                 >
-                  {h.voucher_type === "receipt" ? "+" : "-"}
-                  {Number(h.amount).toFixed(2)}
+                  {h.voucher_type === "receipt" ? "+" : "-"}{Number(h.amount).toFixed(2)}
                 </Text>
-                <View style={styles.histInfo}>
-                  <Text style={styles.histName}>
-                    {h.party_name || "—"}
-                  </Text>
-                  <Text style={styles.histMeta}>{h.voucher_no}</Text>
-                  <Text style={styles.histDate}>
-                    {new Date(h.created_at).toLocaleString("ar-EG")}
-                  </Text>
-                </View>
               </View>
             ))}
           </>
@@ -768,37 +762,10 @@ fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "10
   },
 
   // ===== History =====
-  histRow: {
-    backgroundColor: C.card,
-    borderWidth: 1.2,
-    borderColor: C.line,
-    borderRadius: 12,
-    padding: 12,
-     flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    marginBottom: 8,
-  },
-  histInfo: { flex: 1, alignItems: "flex-end" },
-  histName: {
-    fontWeight: "700",
-    color: C.ink,
-    textAlign: "right",
-    fontSize: 13,
-  },
-  histMeta: {
-    fontSize: 11,
-    color: C.blue,
-    marginTop: 2,
-    textAlign: "right",
-    fontWeight: "700",
-  },
-  histDate: {
-    fontSize: 10,
-    color: C.muted,
-    marginTop: 2,
-    textAlign: "right",
-  },
-  histAmount: { fontWeight: "800", fontSize: 15 },
+  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  histInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
+  histName: { fontWeight: "700", fontSize: 14, color: C.ink, textAlign: "right" },
+  histMeta: { fontSize: 11, color: C.blue, marginTop: 2, textAlign: "right", fontWeight: "600" },
+  histDate: { fontSize: 10, color: C.muted, marginTop: 2, textAlign: "right" },
+  histAmount: { fontWeight: "800", fontSize: 16 },
 });
