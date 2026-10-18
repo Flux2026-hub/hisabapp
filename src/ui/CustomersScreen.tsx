@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import BrandBanner from "./components/BrandBanner";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -257,7 +258,8 @@ export default function CustomersScreen({
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        <Text style={styles.screenTitle}>{cfg.plural}</Text>
+        <BrandBanner />
+        <Text style={[styles.screenTitle, { marginTop: 15 }]}>{cfg.plural}</Text>
 
         <Text style={styles.label}>بحث</Text>
         <TextInput
@@ -294,42 +296,6 @@ export default function CustomersScreen({
             )}
           </View>
         )}
-
-        <Text style={styles.sectionTitle}>
-          استعراض {cfg.plural} ({rows.length})
-        </Text>
-        <View style={styles.list}>
-          {filteredRows.length === 0 ? (
-            <Text style={styles.empty}>لا توجد سجلات</Text>
-          ) : (
-            filteredRows.map((r) => (
-              <View key={r.id} style={styles.row}>
-                <View style={styles.rowActions}>
-                  <Pressable onPress={() => edit(r)} style={styles.editBtn}>
-                    <Text style={styles.editText}>✏️</Text>
-                  </Pressable>
-                  <Pressable onPress={() => remove(r)} style={styles.delBtn}>
-                    <Text style={styles.delText}>🗑️</Text>
-                  </Pressable>
-                </View>
-                <View style={styles.rowInfo}>
-                  <Text style={styles.rowName}>{r.name}</Text>
-                  <Text style={styles.rowMeta}>
-                    {r.code ?? ""} · {r.phone || "—"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.rowBalance,
-                      { color: balanceColor(r.balance) },
-                    ]}
-                  >
-                    الرصيد: {Number(r.balance || 0).toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-            ))
-          )}
-        </View>
 
         <Text style={styles.sectionTitle}>
           {editingId ? `تعديل ${cfg.singular}` : `إضافة ${cfg.singular}`}
@@ -408,7 +374,45 @@ export default function CustomersScreen({
             </Pressable>
           )}
         </View>
-      </ScrollView>
+      
+
+        <Text style={styles.sectionTitle}>
+          استعراض {cfg.plural} ({rows.length})
+        </Text>
+        <View style={styles.list}>
+          {filteredRows.length === 0 ? (
+            <Text style={styles.empty}>لا توجد سجلات</Text>
+          ) : (
+            filteredRows.map((r) => (
+              <View key={r.id} style={styles.row}>
+                <View style={styles.rowActions}>
+                  <Pressable onPress={() => edit(r)} style={styles.editBtn}>
+                    <Text style={styles.editText}>✏️</Text>
+                  </Pressable>
+                  <Pressable onPress={() => remove(r)} style={styles.delBtn}>
+                    <Text style={styles.delText}>🗑️</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowName}>{r.name}</Text>
+                  <Text style={styles.rowMeta}>
+                    {r.code ?? ""} · {r.phone || "—"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.rowBalance,
+                      { color: balanceColor(r.balance) },
+                    ]}
+                  >
+                    الرصيد: {Number(r.balance || 0).toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
+        </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -448,17 +452,8 @@ fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "10
     fontSize: 12,
     padding: 10,
   },
-  row: {
-    backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 10,
-    padding: 10,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  rowInfo: { flex: 1, alignItems: "flex-end" },
+  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   rowName: {fontWeight: "700",
     fontSize: 14,
     color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
@@ -469,10 +464,10 @@ fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "10
     textAlign: "right",
   },
   rowBalance: { fontSize: 11, marginTop: 3, textAlign: "right" },
-  rowActions: { flexDirection: "row-reverse", gap: 6 },
-  editBtn: { backgroundColor: "#EFF6FF", padding: 8, borderRadius: 7 },
+  rowActions: { flexDirection: "row", gap: 6, alignItems: "center" },
+  editBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   editText: { color: "#0F172A", fontSize: 12 },
-  delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
+  delBtn: { backgroundColor: "#fee2e2", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   delText: { color: "#0F172A", fontSize: 12 },
   suggestBox: {
     marginTop: 4,

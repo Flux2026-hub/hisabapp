@@ -224,8 +224,9 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        <Text style={styles.screenTitle}>الأصناف والمواد</Text>
+        
         <BrandBanner />
+        <Text style={styles.screenTitle}>الأصناف والمواد</Text>
 
         <Text style={styles.hint}>
           تصنيف الأصناف: مواد إنتاج وعبوات تُخزَّن في "مخزن تحت الإنتاج"،
@@ -446,7 +447,7 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
   backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {fontSize: 20,
+  screenTitle: { marginTop: 15, fontSize: 20,
     
     color: "#0F172A",
     
