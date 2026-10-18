@@ -336,10 +336,24 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
                   <View style={{ flexDirection: "row", gap: 4 }}>
-                    <Pressable onPress={() => setReturnInvoiceId(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
-                    <Pressable onPress={() => printInvoiceById(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
-                    <Pressable onPress={() => editInvoice(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
-                    <Pressable onPress={() => confirmDelete(h.id, h.invoice_no)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                    <Pressable
+                      onPress={() => {
+                        Alert.alert(
+                          `الفاتورة ${h.invoice_no}`,
+                          "اختر الإجراء المطلوب:",
+                          [
+                            { text: "طباعة", onPress: () => printInvoiceById(h.id) },
+                            { text: "تعديل", onPress: () => editInvoice(h.id) },
+                            { text: "إرجاع", onPress: () => setReturnInvoiceId(h.id) },
+                            { text: "حذف", style: "destructive", onPress: () => confirmDelete(h.id, h.invoice_no) },
+                            { text: "إلغاء", style: "cancel" },
+                          ]
+                        );
+                      }}
+                      style={styles.iconBtn}
+                    >
+                      <Text style={{ fontSize: 20, fontWeight: "bold" }}>⋮</Text>
+                    </Pressable>
                   </View>
                   <View style={styles.histRight}><Text style={styles.histTotal}>{Number(h.total).toFixed(2)} {h.currency_code}</Text><Text style={styles.histType}>{h.payment_type === "cash" ? "نقدي" : "أجل"}</Text></View>
                   <View style={styles.histInfo}><Text style={styles.histName}>{h.party_name}</Text><Text style={styles.histMeta}>{h.invoice_no}</Text><Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text></View>
