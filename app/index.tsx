@@ -130,9 +130,9 @@ export default function HomeScreen() {
 
         {tab === "accounting" && (
           <>
-            <Text style={styles.title}>المحاسبة والإدارة</Text>
+            <View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.title}>المحاسبة والإدارة</Text></View>
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>الوحدات المحاسبية</Text>
+              <View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.cardTitle}>الوحدات المحاسبية</Text></View>
               <AccountingModule />
             </View>
           </>
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   title: {
     color: COLORS.text,
     fontSize: 24,
-    textAlign: "right",
+    
     marginTop: 7,
     fontFamily: "CodecBold",
     width: "100%",
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "CodecBold",
     color: COLORS.text,
-    textAlign: "right",
+    
     marginBottom: 10,
     width: "100%",
   },

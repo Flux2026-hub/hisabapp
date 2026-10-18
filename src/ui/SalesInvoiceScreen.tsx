@@ -361,7 +361,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  histDetails: { flex: 1, alignItems: "flex-end", paddingRight: 12 },
+  histDetails: { flex: 1, alignItems: "flex-end", paddingLeft: 12 },
   histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
   back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-end" },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 12, borderRadius: 10, marginTop: 8 },
   cancelText: { color: "#0F172A", textAlign: "center", fontWeight: "700" },
   disabled: { opacity: 0.5 },
-  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   histInfo: { flex: 1, alignItems: "flex-end" },
   histRight: { alignItems: "flex-end", paddingRight: 8 },
   histName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
