@@ -48,42 +48,47 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
+      {/* الشريط العلوي */}
       <View style={styles.header}>
-        <View style={[styles.brandRow, { flexDirection: "row-reverse", justifyContent: "space-between" }]}>
-          <View style={[styles.brandTextWrap, { alignItems: "flex-end" }]}>
-            <Text style={styles.brandName}>فلوكس</Text>
-            <Text style={{ fontSize: 11, color: "#94A3B8", marginTop: -2, fontFamily: "Alexandria-Regular" }}>لأنابيب أكثر نظافة</Text>
-          </View>
+        <View style={styles.brandRow}>
           <Image
             source={require("../assets/images/flux-logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
+          <View style={styles.brandTextWrap}>
+            <Text style={styles.brandName}>فلوكس</Text>
+            <Text style={styles.brandSub}>لأنابيب أكثر نظافة</Text>
+          </View>
         </View>
       </View>
 
-      <View style={[styles.nav, { flexDirection: "row-reverse" }]}>
+      {/* شريط التبويبات */}
+      <View style={styles.nav}>
         <Pressable
           style={styles.menuButton}
           onPress={() => setMenuOpen((v) => !v)}
         >
-          <Text style={{ fontSize: 24, color: "#fff", fontWeight: "bold" }}>☰</Text>
+          <Text style={styles.menuText}>☰</Text>
         </Pressable>
-        {sections.map(([key, label]) => (
-          <Pressable
-            key={key}
-            onPress={() => go(key)}
-            style={[styles.navItem, tab === key && styles.navActive]}
-          >
-            <Text style={tab === key ? styles.navTextActive : styles.navText}>
-              {label}
-            </Text>
-          </Pressable>
-        ))}
+        <View style={styles.navTabs}>
+          {sections.map(([key, label]) => (
+            <Pressable
+              key={key}
+              onPress={() => go(key)}
+              style={[styles.navItem, tab === key && styles.navActive]}
+            >
+              <Text style={tab === key ? styles.navTextActive : styles.navText}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
+      {/* القائمة المنسدلة */}
       {menuOpen && (
-        <View style={[styles.dropdown, { alignItems: "flex-end", right: "auto", left: 10 }]}>
+        <View style={styles.dropdown}>
           {sections.map(([key, label]) => (
             <Pressable
               key={key}
@@ -96,6 +101,7 @@ export default function HomeScreen() {
         </View>
       )}
 
+      {/* المحتوى */}
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -157,11 +163,11 @@ function Action({
 }) {
   return (
     <Pressable onPress={onPress} style={styles.action}>
-      <Text style={styles.actionArrow}>-></Text>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, alignItems: "flex-end" }}>
         <Text style={styles.actionLabel}>{label}</Text>
         <Text style={styles.small}>{sub}</Text>
       </View>
+      <Text style={styles.actionArrow}>{"<-"}</Text>
     </Pressable>
   );
 }
@@ -183,24 +189,25 @@ const styles = StyleSheet.create({
   brandName: {
     fontFamily: FONTS.heading,
     color: "#FFF",
-    fontSize: 21,
+    fontSize: 24,
     textAlign: "right",
   },
   brandSub: {
-    fontFamily: FONTS.subheading,
-    color: COLORS.blueSoft,
-    fontSize: 12,
+    fontFamily: "Alexandria-Regular",
+    color: "#94A3B8",
+    fontSize: 11,
     textAlign: "right",
-    marginTop: 3,
+    marginTop: -2,
   },
-  logo: { width: 100, height: 80 },
+  logo: { width: 90, height: 70 },
   content: { padding: 16, paddingBottom: 40 },
-  title: {color: COLORS.text,
+  title: {
+    color: COLORS.text,
     fontSize: 24,
-    
     textAlign: "right",
     marginTop: 7,
-  fontFamily: "CodecBold"},
+    fontFamily: "CodecBold",
+  },
   hint: {
     color: COLORS.textMuted,
     fontSize: 12,
@@ -208,36 +215,41 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   nav: {
-    flexDirection: "row-reverse",
+    flexDirection: "row",
     backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     paddingVertical: 10,
     alignItems: "center",
+    paddingHorizontal: 10,
+  },
+  navTabs: {
+    flex: 1,
+    flexDirection: "row-reverse",
+    justifyContent: "space-around",
   },
   menuButton: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: COLORS.navy,
     borderRadius: 8,
-    marginHorizontal: 4,
   },
-  menuText: { color: "#FFF", fontSize: 10, fontWeight: "700" },
-  navItem: { flex: 1, alignItems: "center", paddingVertical: 6 },
+  menuText: { color: "#FFF", fontSize: 20, fontWeight: "700" },
+  navItem: { alignItems: "center", paddingVertical: 6, paddingHorizontal: 12 },
   navActive: { borderBottomWidth: 3, borderBottomColor: COLORS.orange },
-  navText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "600" },
-  navTextActive: { color: COLORS.blue, fontWeight: "800", fontSize: 11 },
+  navText: { color: COLORS.textMuted, fontSize: 13, fontWeight: "600" },
+  navTextActive: { color: COLORS.blue, fontWeight: "800", fontSize: 13 },
   dropdown: {
     position: "absolute",
     top: 130,
-    right: 8,
+    left: 10,
     zIndex: 20,
     elevation: 8,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 12,
-    width: 210,
+    width: 200,
   },
   dropdownItem: {
     padding: 13,
@@ -248,37 +260,34 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
-    borderWidth: 1.2,
-    borderColor: COLORS.border,
     padding: 16,
-    marginTop: 14,
+    marginTop: 12,
   },
   cardTitle: {
-    color: COLORS.text,
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "CodecBold",
+    color: COLORS.text,
     textAlign: "right",
     marginBottom: 10,
   },
   action: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.bg,
   },
+  actionArrow: { color: COLORS.orange, fontSize: 18, marginLeft: 10 },
   actionLabel: {
+    fontSize: 15,
+    fontFamily: "CodecBold",
     color: COLORS.text,
-    fontWeight: "700",
     textAlign: "right",
-    fontSize: 14,
   },
-  actionArrow: { color: COLORS.orange, fontSize: 22, fontWeight: "800" },
   small: {
+    fontSize: 12,
     color: COLORS.textMuted,
-    fontSize: 11,
     textAlign: "right",
-    marginTop: 3,
+    marginTop: 2,
   },
 });
