@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import BrandBanner from "./components/BrandBanner";
 import {
   Alert,
   KeyboardAvoidingView,
