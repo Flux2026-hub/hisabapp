@@ -131,20 +131,14 @@ export default function HomeScreen() {
         {tab === "accounting" && (
           <>
             <Text style={styles.title}>المحاسبة والإدارة</Text>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>الوحدات المحاسبية</Text>
-              <AccountingModule />
-            </View>
+            <AccountingModule />
           </>
         )}
 
         {tab === "settings" && (
           <>
             <Text style={styles.title}>الإعدادات</Text>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>إعدادات التقارير</Text>
-              <SettingsModule onBack={() => go("home")} />
-            </View>
+            <SettingsModule onBack={() => go("home")} />
           </>
         )}
       </ScrollView>
@@ -189,7 +183,7 @@ const styles = StyleSheet.create({
   brandName: {
     fontFamily: FONTS.heading,
     color: "#FFF",
-    fontSize: 24,
+    fontSize: 22,
     textAlign: "right",
   },
   brandSub: {
@@ -203,7 +197,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
   title: {
     color: COLORS.text,
-    fontSize: 24,
+    fontSize: 22,
     textAlign: "right",
     marginTop: 7,
     fontFamily: "CodecBold",

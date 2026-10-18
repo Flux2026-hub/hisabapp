@@ -821,11 +821,11 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
   backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {fontSize: 20,  color: "#0F172A", textAlign: "right", marginBottom: 6, fontFamily: "CodecBold"},
+  screenTitle: { fontSize: 20,  color: "#0F172A",  marginBottom: 6, fontFamily: "CodecBold" textAlign: "right", alignSelf: "flex-end", width: "100%", },
   hint: { fontSize: 12, color: "#8494B0", textAlign: "right", marginBottom: 12, lineHeight: 18 },
   sectionTitle: {fontSize: 16,  color: "#0F172A", textAlign: "right", marginTop: 16, marginBottom: 8 , fontFamily: "CodecBold"},
   label: { fontSize: 12, color: "#526078", textAlign: "right", marginTop: 8, marginBottom: 4 },
-  input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A" },
+  input: {  backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A"  textAlign: "right", },
   picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   pickerText: { color: "#0F172A", textAlign: "right", flex: 1, fontSize: 13 },
   pickerArrow: { color: "#8494B0", fontSize: 12, marginLeft: 8 },

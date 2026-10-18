@@ -356,9 +356,9 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-end" },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: {fontSize: 22,  color: "#0F172A", textAlign: "right", marginBottom: 12, fontFamily: "CodecBold"},
+  screenTitle: { fontSize: 22,  color: "#0F172A",  marginBottom: 12, fontFamily: "CodecBold" textAlign: "right", alignSelf: "flex-end", width: "100%", },
   label: { fontSize: 12, color: "#526078", textAlign: "right", marginTop: 8, marginBottom: 4 },
-  input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A" },
+  input: {  backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A"  textAlign: "right", },
   picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   pickerText: { color: "#0F172A", textAlign: "right", flex: 1, fontSize: 14 },
   pickerArrow: { color: "#8494B0", fontSize: 12, marginLeft: 8 },
