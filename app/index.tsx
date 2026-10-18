@@ -201,15 +201,15 @@ const styles = StyleSheet.create({
   },
   logo: { width: 90, height: 70 },
   content: { padding: 16, paddingBottom: 40 },
-  title: {color: COLORS.text,
+  title: : { color: COLORS.text,
     fontSize: 22,
     
     marginTop: 7,
-    fontFamily: "CodecBold",textAlign: "right", writingDirection: "rtl", width: "100%"},
-  hint: {color: COLORS.textMuted,
+    fontFamily: "CodecBold",textAlign: "right", writingDirection: "rtl", width: "100%" },
+  hint: : { color: COLORS.textMuted,
     fontSize: 12,
     
-    marginVertical: 8,textAlign: "right", writingDirection: "rtl", width: "100%"},
+    marginVertical: 8,textAlign: "right", writingDirection: "rtl", width: "100%" },
   nav: {
     flexDirection: "row",
     backgroundColor: COLORS.surface,
@@ -259,11 +259,11 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 12,
   },
-  cardTitle: {fontSize: 16,
+  cardTitle: : { fontSize: 16,
     fontFamily: "CodecBold",
     color: COLORS.text,
     
-    marginBottom: 10,textAlign: "right", writingDirection: "rtl", width: "100%"},
+    marginBottom: 10,textAlign: "right", writingDirection: "rtl", width: "100%" },
   action: {
     flexDirection: "row",
     alignItems: "center",
