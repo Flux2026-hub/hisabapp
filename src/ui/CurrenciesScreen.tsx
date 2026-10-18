@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import BrandBanner from "./components/BrandBanner";
 import {
   createCurrency,
   deleteCurrency,
@@ -205,46 +206,12 @@ export default function CurrenciesScreen({ onBack }: { onBack: () => void }) {
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        <Text style={styles.screenTitle}>العملات وأسعار الصرف</Text>
+        <BrandBanner />
+        <Text style={[styles.screenTitle, { marginTop: 15 }]}>العملات وأسعار الصرف</Text>
         <Text style={styles.hint}>
           العملة الأساسية هي المرجع لكل الحسابات. باقي العملات تُحوَّل إليها
           حسب سعر الصرف الذي تحدده. يمكنك تعديل سعر الصرف في أي وقت.
         </Text>
-
-        <Text style={styles.sectionTitle}>العملات المسجلة ({rows.length})</Text>
-        <View style={styles.list}>
-          {rows.map((r) => (
-            <View key={r.id} style={styles.row}>
-              <View style={styles.rowActions}>
-                <Pressable onPress={() => edit(r)} style={styles.editBtn}>
-                  <Text style={styles.editText}>✏️</Text>
-                </Pressable>
-                {!r.isBase && (
-                  <Pressable onPress={() => remove(r)} style={styles.delBtn}>
-                    <Text style={styles.delText}>🗑️</Text>
-                  </Pressable>
-                )}
-              </View>
-              <View style={styles.rowInfo}>
-                <View style={styles.rowHead}>
-                  <Text style={styles.rowName}>{r.name}</Text>
-                  {!!r.isBase && <Text style={styles.baseBadge}>أساسية</Text>}
-                </View>
-                <Text style={styles.rowMeta}>
-                  {r.code} · {r.symbol}
-                </Text>
-                {r.isBase ? (
-                  <Text style={styles.rowRateBase}>المرجع (1.00)</Text>
-                ) : (
-                  <Text style={styles.rowRate}>
-                    1 {r.code} = {Number(r.exchangeRate || 0).toFixed(2)}{" "}
-                    {baseCurrency?.code ?? "YER"}
-                  </Text>
-                )}
-              </View>
-            </View>
-          ))}
-        </View>
 
         <Text style={styles.sectionTitle}>
           {editingId ? "تعديل العملة" : "إضافة عملة جديدة"}
@@ -326,7 +293,44 @@ export default function CurrenciesScreen({ onBack }: { onBack: () => void }) {
             </Pressable>
           )}
         </View>
-      </ScrollView>
+      
+
+        <Text style={styles.sectionTitle}>العملات المسجلة ({rows.length})</Text>
+        <View style={styles.list}>
+          {rows.map((r) => (
+            <View key={r.id} style={styles.row}>
+              <View style={styles.rowActions}>
+                <Pressable onPress={() => edit(r)} style={styles.editBtn}>
+                  <Text style={styles.editText}>✏️</Text>
+                </Pressable>
+                {!r.isBase && (
+                  <Pressable onPress={() => remove(r)} style={styles.delBtn}>
+                    <Text style={styles.delText}>🗑️</Text>
+                  </Pressable>
+                )}
+              </View>
+              <View style={styles.rowInfo}>
+                <View style={styles.rowHead}>
+                  <Text style={styles.rowName}>{r.name}</Text>
+                  {!!r.isBase && <Text style={styles.baseBadge}>أساسية</Text>}
+                </View>
+                <Text style={styles.rowMeta}>
+                  {r.code} · {r.symbol}
+                </Text>
+                {r.isBase ? (
+                  <Text style={styles.rowRateBase}>المرجع (1.00)</Text>
+                ) : (
+                  <Text style={styles.rowRate}>
+                    1 {r.code} = {Number(r.exchangeRate || 0).toFixed(2)}{" "}
+                    {baseCurrency?.code ?? "YER"}
+                  </Text>
+                )}
+              </View>
+            </View>
+          ))}
+        </View>
+
+        </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -365,17 +369,8 @@ fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "10
     fontSize: 14,
     color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
   list: { gap: 8, marginTop: 4 },
-  row: {
-    backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 10,
-    padding: 10,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  rowInfo: { flex: 1, alignItems: "flex-end" },
+  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   rowHead: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
   rowName: {fontWeight: "700",
     fontSize: 14,
@@ -409,10 +404,10 @@ fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "10
     textAlign: "right",
     fontWeight: "600",
   },
-  rowActions: { flexDirection: "row-reverse", gap: 6 },
-  editBtn: { backgroundColor: "#EFF6FF", padding: 8, borderRadius: 7 },
+  rowActions: { flexDirection: "row", gap: 6, alignItems: "center" },
+  editBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   editText: { color: "#0F172A", fontSize: 12 },
-  delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
+  delBtn: { backgroundColor: "#fee2e2", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   delText: { color: "#0F172A", fontSize: 12 },
   baseNote: {
     backgroundColor: "#EFF6FF",
