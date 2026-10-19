@@ -12,7 +12,7 @@ function baseStyles() {
   body {
     font-family: -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
     direction: rtl; text-align: right; color: #0F172A;
-    font-size: 15px; margin: 0; padding: 0; line-height: 1.6;
+    font-size: 17px; margin: 0; padding: 0; line-height: 1.6;
   }
   h1 { font-size: 28px; margin: 0 0 6px; color: #1E40AF; }
   h2 { font-size: 19px; margin: 22px 0 10px; border-bottom: 2px solid #D6E3F8;
@@ -20,39 +20,39 @@ function baseStyles() {
   .header { display: flex; justify-content: space-between; align-items: flex-start;
             padding-bottom: 16px; border-bottom: 3px solid #F97316; margin-bottom: 20px; }
   .brand { font-size: 26px; font-weight: 800; color: #1E40AF; letter-spacing: 0.5px; }
-  .brand-sub { font-size: 12px; color: #8494B0; font-weight: 700; margin-top: 2px; }
-  .company-info { font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5; }
-  .doc-title { font-size: 20px; font-weight: 700; color: #0F172A; }
-  .meta { font-size: 13px; color: #64748B; margin-top: 4px; }
+  .brand-sub { font-size: 18px; color: #8494B0; font-weight: 700; margin-top: 2px; }
+  .company-info { font-size: 18px; color: #64748B; margin-top: 4px; line-height: 1.5; }
+  .doc-title { font-size: 24px; font-weight: 700; color: #0F172A; }
+  .meta { font-size: 17px; color: #64748B; margin-top: 4px; }
   .info-grid { display: flex; gap: 14px; margin-bottom: 18px; }
   .info-cell { flex: 1; background: #EFF6FF; border: 1.5px solid #D6E3F8;
                border-radius: 10px; padding: 14px; }
-  .info-label { font-size: 12px; color: #8494B0; margin-bottom: 5px; font-weight: 700; }
-  .info-value { font-size: 16px; font-weight: 800; color: #0F172A; }
+  .info-label { font-size: 18px; color: #8494B0; margin-bottom: 5px; font-weight: 700; }
+  .info-value { font-size: 18px; font-weight: 800; color: #0F172A; }
   table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-  th { background: #0B2545; color: #FFFFFF; padding: 12px 10px; font-size: 14px;
+  th { background: #0B2545; color: #FFFFFF; padding: 12px 10px; font-size: 18px;
        text-align: right; font-weight: 700; }
-  td { padding: 11px 10px; border-bottom: 1.5px solid #E2E8F0; font-size: 14px;
+  td { padding: 11px 10px; border-bottom: 1.5px solid #E2E8F0; font-size: 18px;
        text-align: right; color: #0F172A; }
   tr:nth-child(even) td { background: #F8FAFC; }
   .totals { margin-top: 18px; display: flex; justify-content: flex-end; }
   .totals-box { width: 65%; }
   .total-row { display: flex; justify-content: space-between; padding: 8px 0;
-               border-bottom: 1.5px dashed #D6E3F8; font-size: 14px; color: #0F172A; }
+               border-bottom: 1.5px dashed #D6E3F8; font-size: 18px; color: #0F172A; }
   .total-row.grand { border-top: 3px solid #F97316; border-bottom: none;
-                     font-size: 20px; font-weight: 800; color: #F97316;
+                     font-size: 24px; font-weight: 800; color: #F97316;
                      padding-top: 14px; margin-top: 6px; }
   .notes { margin-top: 22px; padding: 14px; background: #EFF6FF;
            border-left: 5px solid #1E40AF; border-radius: 8px;
-           font-size: 14px; color: #0F172A; }
+           font-size: 18px; color: #0F172A; }
   .signature { margin-top: 50px; display: flex; justify-content: space-between;
-               font-size: 13px; color: #64748B; }
+               font-size: 17px; color: #64748B; }
   .signature .line { border-top: 1.5px solid #8494B0; padding-top: 6px;
                      width: 200px; text-align: center; font-weight: 600; }
   .footer { margin-top: 35px; padding-top: 12px; border-top: 1.5px solid #D6E3F8;
-            font-size: 12px; color: #8494B0; text-align: center; font-weight: 600; }
+            font-size: 18px; color: #8494B0; text-align: center; font-weight: 600; }
   .badge { display: inline-block; padding: 4px 12px; border-radius: 6px;
-           font-size: 13px; font-weight: 800; }
+           font-size: 17px; font-weight: 800; }
   .badge-cash { background: #DCFCE7; color: #059669; }
   .badge-credit { background: #FEF3C7; color: #D97706; }
 `;
