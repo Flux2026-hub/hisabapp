@@ -143,9 +143,12 @@ export default function AccountingModule() {
 
       {sections.map((sectionName) => (
         <View key={sectionName} style={styles.sectionBlock}>
-          <View style={styles.sectionTitleRow}>
-            <View style={styles.sectionAccent} />
-            <Text style={styles.sectionLabel}>{sectionName}</Text>
+          <View style={{ marginBottom: 12 }}>
+            <View style={styles.sectionTitleRow}>
+              
+              <Text style={styles.sectionLabel}>{sectionName}</Text>
+            </View>
+            <View style={styles.sectionDivider} />
           </View>
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
@@ -205,25 +208,9 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     paddingHorizontal: 4,textAlign: "right", writingDirection: "rtl", width: "100%"},
   sectionBlock: { width: "100%", marginTop: 14 },
-  sectionTitleRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    alignSelf: "stretch",
-    marginBottom: 8,
-    gap: 8,
-  },
-  sectionAccent: {
-    width: 4,
-    height: 20,
-    backgroundColor: COLORS.orange,
-    borderRadius: 2,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: COLORS.blue,
-    textAlign: "right",
-  },
+  
+  
+  
   grid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
@@ -250,5 +237,26 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: "700",
     textAlign: "right",
+  },
+
+  sectionTitleRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 6,
+    marginBottom: 4,
+  },
+  
+  sectionLabel: {
+    fontSize: 16,
+    fontFamily: "CodecBold",
+    color: "#1E40AF",
+    textAlign: "right",
+  },
+  sectionDivider: {
+    height: 2,
+    backgroundColor: "#F97316",
+    width: "100%",
+    borderRadius: 1,
   },
 });
