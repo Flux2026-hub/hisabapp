@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -56,7 +57,8 @@ export default function SalesRepsScreen({ onBack }: { onBack: () => void }) {
           <Text style={styles.backText}>{"->"} العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        <Text style={styles.screenTitle}>مناديب المبيعات</Text>
+        <BrandBanner />
+        <Text style={[styles.screenTitle, { marginTop: 15 }]}>مناديب المبيعات</Text>
         <Text style={styles.hint}>أضف مناديب المبيعات وحدد نسبة العمولة لكل واحد.</Text>
 
         <View style={styles.formBox}>
