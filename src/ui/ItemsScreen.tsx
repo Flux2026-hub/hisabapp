@@ -447,12 +447,12 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
   backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: { marginTop: 15, fontSize: 20,
+  screenTitle: {marginTop: 15, fontSize: 20,
     
     color: "#0F172A",
     
     marginBottom: 6,
-fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+ textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   hint: {fontSize: 12,
     color: "#8494B0",
     
@@ -485,7 +485,7 @@ fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "10
     
     marginTop: 16,
     marginBottom: 8,
-  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   label: {fontSize: 12,
     color: "#526078",
     

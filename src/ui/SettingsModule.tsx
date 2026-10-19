@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     
     marginBottom: 4,
-fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+ textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   hint: {fontSize: 12,
     color: COLORS.textMuted,
     

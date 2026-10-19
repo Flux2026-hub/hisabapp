@@ -425,14 +425,14 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     
     marginBottom: 12,
-fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+ textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   sectionTitle: {fontSize: 16,
     
     color: "#0F172A",
     
     marginTop: 16,
     marginBottom: 8,
-  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   label: {fontSize: 12,
     color: "#526078",
     

@@ -117,7 +117,7 @@ export default function CommissionsReport({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
   backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 6, fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 6,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   hint: {fontSize: 12, color: "#8494B0",  marginBottom: 14, lineHeight: 18, textAlign: "right", writingDirection: "rtl", width: "100%"},
   filterBox: { backgroundColor: "#EFF6FF", padding: 14, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: "#D6E3F8" },
   label: {fontSize: 13, color: "#0F172A", marginTop: 8, marginBottom: 4, fontWeight: "700",textAlign: "right", writingDirection: "rtl", width: "100%"},
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   totalItem: { flex: 1, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12 },
   totalLabel: { fontSize: 12, color: "#8494B0", marginBottom: 4, textAlign: "right" },
   totalValue: { fontSize: 18, fontWeight: "800", color: "#0F172A", textAlign: "right" },
-  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 8, marginBottom: 8 , fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 8, marginBottom: 8 ,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   empty: { textAlign: "center", color: "#8494B0", padding: 20 },
   repCard: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 14, marginBottom: 10 },
   repHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },

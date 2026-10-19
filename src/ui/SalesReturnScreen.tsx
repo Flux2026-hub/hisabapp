@@ -108,9 +108,9 @@ export default function SalesReturnScreen({ invoiceId, onBack }: { invoiceId: st
 const styles = StyleSheet.create({
   back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-end" },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 6, fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 6,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   hint: {fontSize: 12, color: "#8494B0",  marginBottom: 14, textAlign: "right", writingDirection: "rtl", width: "100%"},
-  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 16, marginBottom: 8 , fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 16, marginBottom: 8 ,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   lineBox: { backgroundColor: "#f8fafc", padding: 12, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: "#D6E3F8" },
   lineName: { fontSize: 14, fontWeight: "700", color: "#0F172A", textAlign: "right" },
   lineMeta: { fontSize: 12, color: "#8494B0", textAlign: "right", marginTop: 4 },

@@ -199,7 +199,7 @@ export default function HomeScreen() {
 
         {tab === "accounting" && (
           <>
-            <Text style={styles.title}>المحاسبة والإدارة</Text>
+            <View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.title}>المحاسبة والإدارة</Text></View>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>الوحدات المحاسبية</Text>
               <AccountingModule />

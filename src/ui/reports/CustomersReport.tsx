@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     
     marginTop: 16,
     marginBottom: 8,
-  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   empty: {
     textAlign: "right",
     color: COLORS.textMuted,

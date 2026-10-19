@@ -298,10 +298,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         </Text>
 
         {/* ===== نوع السند ===== */}
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionAccent} />
-          <Text style={styles.sectionTitle}>نوع السند</Text>
-        </View>
+        
 
         <View style={styles.toggleRow}>
           <Pressable
@@ -339,10 +336,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         </View>
 
         {/* ===== نوع الطرف ===== */}
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionAccent} />
-          <Text style={styles.sectionTitle}>نوع الطرف</Text>
-        </View>
+        
 
         <View style={styles.partyRow}>
           {(
@@ -589,7 +583,7 @@ const styles = StyleSheet.create({
     color: C.ink,
     
     marginBottom: 4,
-fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+ textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   hint: {fontSize: 12,
     color: C.muted,
     
@@ -613,7 +607,7 @@ fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "10
     
     color: C.ink,
     
-  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
 
   // ===== Toggle =====
   toggleRow: { flexDirection: "row-reverse", gap: 10 },

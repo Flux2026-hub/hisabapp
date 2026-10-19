@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     
     marginTop: 14,
     marginBottom: 8,
-  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   empty: {
     textAlign: "right",
     color: "#8494B0",

@@ -58,12 +58,12 @@ const styles = StyleSheet.create({
     
     color: "#0F172A",
     
-  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   subtitle: {fontSize: 12,
     color: "#526078",
     
     marginTop: 4,
-  fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   period: {
     fontSize: 11,
     color: "#8494B0",

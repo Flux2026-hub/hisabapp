@@ -311,11 +311,11 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   back: { alignSelf: "flex-end",  paddingVertical: 10, marginBottom: 8 },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 12, fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 12,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   headerBox: { flexDirection: "row-reverse", gap: 8, marginBottom: 16 },
   label: {fontSize: 12, color: "#526078",  marginTop: 8, marginBottom: 4, textAlign: "right", writingDirection: "rtl", width: "100%"},
   input: {backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A", textAlign: "right", writingDirection: "rtl", width: "100%"},
-  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 16, marginBottom: 8 , fontFamily: "CodecBold", textAlign: "right", writingDirection: "rtl", width: "100%"},
+  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 16, marginBottom: 8 ,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   tableBox: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, overflow: "hidden" },
   empty: { textAlign: "center", color: "#8494B0", fontSize: 13, padding: 20 },
   tableRow: { borderBottomWidth: 1, borderBottomColor: "#E2E8F0", padding: 12 },
