@@ -97,7 +97,7 @@ const config: ExpoConfig = {
       "expo-splash-screen",
       {
         image: "./assets/images/flux-icon.png",
-        imageWidth: 280,
+        imageWidth: 180,
         resizeMode: "contain",
         backgroundColor: "#0B2545",
         dark: { backgroundColor: "#0B2545" },
