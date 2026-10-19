@@ -143,13 +143,12 @@ export default function AccountingModule() {
 
       {sections.map((sectionName) => (
         <View key={sectionName} style={styles.sectionBlock}>
-          <View style={{ marginBottom: 12 }}>
-            <View style={styles.sectionTitleRow}>
-              
-              <Text style={styles.sectionLabel}>{sectionName}</Text>
+          <View style={{ marginBottom: 12, width: "100%" }}>
+              <View style={{ width: "100%", alignItems: "flex-end", marginBottom: 4 }}>
+                <Text style={styles.sectionLabel}>{sectionName}</Text>
+              </View>
+              <View style={styles.sectionDivider} />
             </View>
-            <View style={styles.sectionDivider} />
-          </View>
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
               <Pressable
