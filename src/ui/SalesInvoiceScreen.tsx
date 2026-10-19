@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import BrandBanner from "./components/BrandBanner";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { sqlite } from "../db/local";
 import { buildInvoiceHtml, printHtml, shareHtmlAsPdf, type InvoicePrintData } from "../utils/printDocument";
@@ -253,6 +254,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
         <Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>{"->"} العودة</Text></Pressable>
+        <BrandBanner />
         <Text style={styles.screenTitle}>{editingNo ? `تعديل الفاتورة ${editingNo}` : "فاتورة مبيعات جديدة"}</Text>
 
         <Text style={styles.label}>التاريخ</Text>

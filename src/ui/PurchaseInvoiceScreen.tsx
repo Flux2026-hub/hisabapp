@@ -3,6 +3,7 @@ import {
   Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView,
   StyleSheet, Text, TextInput, View,
 } from "react-native";
+import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
 import PurchaseReturnScreen from "./PurchaseReturnScreen";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -522,6 +523,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
+        <BrandBanner />
         <Text style={styles.screenTitle}>فاتورة مشتريات جديدة</Text>
         <Text style={styles.hint}>
           تُسجَّل من الموردين، وتضيف إلى مخزون تحت الإنتاج (مواد خام وعبوات).
