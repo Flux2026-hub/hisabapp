@@ -97,13 +97,13 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
       const toTs = new Date(to + "T23:59:59").getTime() || Date.now();
 
       const invoices: any = await sqlite.getAllAsync(
-        "SELECT 'invoice' as kind, invoice_no as ref, total as amount, currency_code, exchange_rate, payment_type, created_at, invoice_type FROM invoices WHERE party_id = ? AND created_at BETWEEN ? AND ? ORDER BY created_at ASC",
-        [customer.id, fromTs, toTs]
+        "SELECT 'invoice' as kind, invoice_no as ref, total as amount, currency_code, exchange_rate, payment_type, created_at, invoice_type, 0 as debit, 0 as credit, NULL as entry_id FROM invoices WHERE party_id = ? AND created_at BETWEEN ? AND ? UNION ALL SELECT 'journal' as kind, je.entry_no as ref, CASE WHEN jl.debit > 0 THEN jl.debit ELSE jl.credit END as amount, je.currency_code, je.exchange_rate, 'journal' as payment_type, je.created_at, 'journal' as invoice_type, jl.debit, jl.credit, je.id as entry_id FROM journal_lines jl JOIN journal_entries je ON jl.entry_id = je.id WHERE jl.party_id = ? AND jl.party_type = 'customer' AND je.created_at BETWEEN ? AND ? ORDER BY created_at ASC",
+        [customer.id, fromTs, toTs, customer.id, fromTs, toTs]
       );
 
       const vouchers: any = await sqlite.getAllAsync(
         "SELECT 'voucher' as kind, voucher_no as ref, amount, currency_code, exchange_rate, voucher_type as payment_type, created_at, NULL as invoice_type FROM vouchers WHERE party_type = 'customer' AND party_id = ? AND created_at BETWEEN ? AND ? ORDER BY created_at ASC",
-        [customer.id, fromTs, toTs]
+        [customer.id, fromTs, toTs, customer.id, fromTs, toTs]
       );
 
       const all = [...(invoices || []), ...(vouchers || [])].sort(
