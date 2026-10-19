@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import BrandBanner from "./components/BrandBanner";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "./theme";
 import { clearSettingsCache } from "../utils/getSettings";
@@ -199,7 +200,8 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
           </Pressable>
         )}
 
-        <Text style={styles.screenTitle}>إعدادات النظام</Text>
+        <BrandBanner />
+        <Text style={[styles.screenTitle, { marginTop: 15 }]}>إعدادات النظام</Text>
         <Text style={styles.hint}>
           تظهر هذه الإعدادات في ترويسة الفواتير والتقارير المطبوعة
         </Text>

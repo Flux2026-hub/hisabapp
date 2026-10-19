@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
 
 type Item = {
@@ -246,7 +247,8 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        <Text style={styles.screenTitle}>التركيبة (وصفة الإنتاج)</Text>
+        <BrandBanner />
+        <Text style={[styles.screenTitle, { marginTop: 15 }]}>التركيبة (وصفة الإنتاج)</Text>
         <Text style={styles.hint}>
           حدّد مكونات كل منتج نهائي. هذه التركيبة تُستخدم لاحقاً في أمر الإنتاج
           لحساب المواد المطلوبة وخصمها من المخزون.

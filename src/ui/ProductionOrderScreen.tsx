@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
 
 type Item = {
@@ -237,7 +238,8 @@ export default function ProductionOrderScreen({
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        <Text style={styles.screenTitle}>أمر الإنتاج</Text>
+        <BrandBanner />
+        <Text style={[styles.screenTitle, { marginTop: 15 }]}>أمر الإنتاج</Text>
         <Text style={styles.hint}>
           أنتج كمية من المنتج النهائي. سيتم خصم المواد الخام تلقائياً حسب
           التركيبة، وإضافة المنتج إلى المخزون التام.
