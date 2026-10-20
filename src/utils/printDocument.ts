@@ -99,18 +99,28 @@ async function buildHeaderBlock(docTitle: string, docNumber: string, dateStr: st
   if (s.commercialRegister) contactLines.push("السجل التجاري: " + s.commercialRegister);
 
   const contactHtml = contactLines.length
-    ? `
-        <div class="total-row" style="color:#DC2626;">
-          <span>الخصم ${data.discountType === "percent" ? `(${data.discountValue}%)` : ""}</span>
-          <span>- ${(data.discountAmount || 0).toFixed(2)} ${symbol}</span>
+    ? `<div class="company-info">${contactLines.join("<br/>")}</div>`
+    : "";
+
+  const totalsHtml = `
+    <div class="totals">
+      <div class="totals-box">
+        ${(data.discountAmount ?? 0) > 0 ? `
+          <div class="total-row">
+            <span>الإجمالي الفرعي</span>
+            <span>${(data.subtotal ?? data.total).toFixed(2)} ${symbol}</span>
+          </div>
+          <div class="total-row" style="color:#DC2626;">
+            <span>الخصم ${data.discountType === "percent" ? `(${data.discountValue}%)` : ""}</span>
+            <span>- ${(data.discountAmount || 0).toFixed(2)} ${symbol}</span>
+          </div>
+        ` : ''}
+        <div class="total-row grand">
+          <span>الإجمالي النهائي</span>
+          <span>${data.total.toFixed(2)} ${symbol}</span>
         </div>
-      ` : ''}
-      <div class="total-row grand">
-        <span>الإجمالي النهائي</span>
-        <span>${data.total.toFixed(2)} ${symbol}</span>
       </div>
-    </div>
-  </div>
+    </div>`
 
   ${data.notes ? `<div class="notes"><strong>ملاحظات:</strong> ${data.notes}</div>` : ""}
 
