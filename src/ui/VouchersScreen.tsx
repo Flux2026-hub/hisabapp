@@ -275,6 +275,55 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
     }
   };
 
+
+  const printVoucher = async (h: any) => {
+    try {
+      const html = await buildVoucherHtml({
+        voucherNo: h.voucher_no, voucherType: h.voucher_type, createdAt: h.created_at,
+        partyName: h.party_name || "—", cashboxName: "—", amount: Number(h.amount),
+        currencySymbol: "ر.ي", description: h.description,
+      });
+      printHtml(html);
+    } catch (e) { Alert.alert("تعذر الطباعة", String(e)); }
+  };
+
+  const editVoucher = (h: any) => {
+    setVType(h.voucher_type);
+    setAmount(String(h.amount));
+    setDescription(h.description || "");
+    Alert.alert("تنبيه", "تم تحميل بيانات السند للتعديل. (لحفظ التعديل مالياً يرجى حذف السند وإعادة إنشائه).");
+  };
+
+  const deleteVoucher = (id: string) => {
+    Alert.alert("تأكيد الحذف", "هل أنت متأكد من حذف هذا السند؟ سيتم عكس تأثيره على الصندوق والطرف.", [
+      { text: "إلغاء", style: "cancel" },
+      { text: "حذف", style: "destructive", onPress: async () => {
+          try {
+            const v: any = await sqlite.getFirstAsync("SELECT * FROM vouchers WHERE id = ?", [id]);
+            if (!v) return;
+            const rate = Number(v.exchange_rate) || 1;
+            const baseAmount = Number(v.amount) * rate;
+            const delta = v.voucher_type === "receipt" ? -baseAmount : baseAmount;
+            
+            await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [delta, v.cashbox_id]);
+            if (v.party_id && v.party_type !== "none") {
+               let pDelta = 0;
+               if (v.party_type === "customer") pDelta = v.voucher_type === "receipt" ? baseAmount : -baseAmount;
+               else if (v.party_type === "supplier") pDelta = v.voucher_type === "payment" ? baseAmount : -baseAmount;
+               else if (v.party_type === "account") pDelta = v.voucher_type === "receipt" ? -baseAmount : baseAmount;
+               
+               if (v.party_type === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [pDelta, v.party_id]);
+               else if (v.party_type === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [pDelta, v.party_id]);
+               else if (v.party_type === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [pDelta, v.party_id]);
+            }
+            await sqlite.runAsync("DELETE FROM vouchers WHERE id = ?", [id]);
+            await loadHistory();
+            Alert.alert("تم الحذف", "تم حذف السند وعكس تأثيره.");
+          } catch (e) { Alert.alert("تعذر الحذف", String(e)); }
+      }},
+    ]);
+  };
+
   const isReceipt = vType === "receipt";
 
   return (
@@ -545,17 +594,17 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
             </View>
             {history.map((h) => (
               <View key={h.id} style={styles.histRow}>
+                <View style={styles.histActions}>
+                  <Pressable onPress={() => printVoucher(h)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
+                  <Pressable onPress={() => editVoucher(h)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                  <Pressable onPress={() => deleteVoucher(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                </View>
                 <View style={styles.histInfo}>
                   <Text style={styles.histName}>{h.party_name || "—"}</Text>
                   <Text style={styles.histMeta}>{h.voucher_no}</Text>
                   <Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
                 </View>
-                <Text
-                  style={[
-                    styles.histAmount,
-                    { color: h.voucher_type === "receipt" ? C.success : C.danger },
-                  ]}
-                >
+                <Text style={[styles.histAmount, { color: h.voucher_type === "receipt" ? C.success : C.danger }]}>
                   {h.voucher_type === "receipt" ? "+" : "-"}{Number(h.amount).toFixed(2)}
                 </Text>
               </View>
@@ -568,6 +617,8 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  iconBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
   scrollContent: { paddingBottom: 40, paddingHorizontal: 14 },
 
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 4 },
@@ -610,7 +661,7 @@ const styles = StyleSheet.create({
    textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
 
   // ===== Toggle =====
-  toggleRow: { flexDirection: "row-reverse", gap: 10 },
+  toggleRow: { flexDirection: "row-reverse", gap: 10, marginBottom: 16 },
   toggleBtn: {
     flex: 1,
     paddingVertical: 14,
@@ -637,7 +688,7 @@ const styles = StyleSheet.create({
   toggleTextActive: { color: "#FFFFFF", fontWeight: "800" },
 
   // ===== Party =====
-  partyRow: { flexDirection: "row-reverse", gap: 8, flexWrap: "wrap" },
+  partyRow: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginBottom: 16 },
   partyBtn: {
     flex: 1,
     minWidth: 70,
@@ -761,5 +812,5 @@ const styles = StyleSheet.create({
   histName: { fontWeight: "700", fontSize: 14, color: C.ink, textAlign: "right" },
   histMeta: { fontSize: 11, color: C.blue, marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: C.muted, marginTop: 2, textAlign: "right" },
-  histAmount: { fontWeight: "800", fontSize: 16 },
+  histAmount: { fontWeight: "800", fontSize: 16, color: C.ink, textAlign: "left" },
 });

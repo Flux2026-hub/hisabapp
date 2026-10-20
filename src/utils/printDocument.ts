@@ -24,13 +24,13 @@ function baseStyles() {
   .company-info { font-size: 18px; color: #64748B; margin-top: 4px; line-height: 1.5; }
   .doc-title { font-size: 24px; font-weight: 700; color: #0F172A; }
   .meta { font-size: 17px; color: #64748B; margin-top: 4px; }
-  .info-grid { display: flex; gap: 14px; margin-bottom: 18px; }
+  .info-grid { display: flex; gap: 10px; margin-bottom: 18px; }
   .info-cell { flex: 1; background: #EFF6FF; border: 1.5px solid #D6E3F8;
-               border-radius: 10px; padding: 14px; }
+               border-radius: 10px; padding: 8px; }
   .info-label { font-size: 18px; color: #8494B0; margin-bottom: 5px; font-weight: 700; }
-  .info-value { font-size: 18px; font-weight: 800; color: #0F172A; }
+  .info-value { font-size: 14px; font-weight: 800; color: #0F172A; }
   table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-  th { background: #0B2545; color: #FFFFFF; padding: 12px 10px; font-size: 18px;
+  th { background: #1E40AF; color: #FFFFFF; padding: 12px 10px; font-size: 18px;
        text-align: right; font-weight: 700; }
   td { padding: 11px 10px; border-bottom: 1.5px solid #E2E8F0; font-size: 18px;
        text-align: right; color: #0F172A; }
@@ -99,155 +99,7 @@ async function buildHeaderBlock(docTitle: string, docNumber: string, dateStr: st
   if (s.commercialRegister) contactLines.push("السجل التجاري: " + s.commercialRegister);
 
   const contactHtml = contactLines.length
-    ? `<div style="font-size:12px; color:#64748B; margin-top:10px; line-height:1.9; text-align:center;">${contactLines.join(" &nbsp;•&nbsp; ")}</div>`
-    : "";
-
-  const logoHtml = logo
-    ? `<img src="${logo}" alt="logo" style="height:100px; object-fit:contain; display:block; margin:0 auto 12px;" />`
-    : "";
-
-  return `
-    <div style="text-align:center; padding-bottom:16px; border-bottom:3px solid #F97316; margin-bottom:18px;">
-      ${logoHtml}
-      <div style="font-size:24px; font-weight:800; color:#1E40AF;">${s.companyNameAr || "فلوكس"}</div>
-      <div style="font-size:13px; font-weight:700; color:#8494B0; margin-top:2px;">${s.companyNameEn || "Flux"}</div>
-      ${contactHtml}
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1.5px solid #D6E3F8;">
-      <div style="font-size:18px; font-weight:800; color:#0F172A;">${docTitle}</div>
-      <div style="text-align:left;">
-        <div style="font-size:13px; color:#64748B;">رقم: <strong style="color:#0F172A;">${docNumber}</strong></div>
-        <div style="font-size:13px; color:#64748B;">التاريخ: ${dateStr}</div>
-      </div>
-    </div>
-  `;
-}
-
-export type InvoicePrintLine = {
-  itemName: string;
-  itemSku: string;
-  unit: string;
-  quantity: number;
-  unitPrice: number;
-};
-
-export type InvoicePrintData = {
-  type: "sales" | "purchase";
-  invoiceNo: string;
-  createdAt: number;
-  partyLabel: string;
-  partyName: string;
-  partyPhone?: string;
-  currencyCode: string;
-  currencySymbol: string;
-  exchangeRate: number;
-  isBase: boolean;
-  paymentType: "cash" | "credit";
-  cashboxName?: string;
-  lines: InvoicePrintLine[];
-  subtotal?: number;
-  discountType?: "percent" | "fixed" | null;
-  discountValue?: number;
-  discountAmount?: number;
-  total: number;
-  notes?: string;
-};
-
-export async function buildInvoiceHtml(data: InvoicePrintData): Promise<string> {
-  const s = await getSettings();
-  const docTitle =
-    data.type === "sales" ? "فاتورة مبيعات" : "فاتورة مشتريات";
-  const dateStr = new Date(data.createdAt).toLocaleString("ar-EG");
-  const paymentLabel = data.paymentType === "cash" ? "نقدي" : "أجل";
-  const paymentClass =
-    data.paymentType === "cash" ? "badge-cash" : "badge-credit";
-  const symbol = data.currencySymbol || data.currencyCode;
-
-  const linesHtml = data.lines
-    .map(
-      (l, i) => `
-      <tr>
-        <td style="width:40px; text-align:center;">${i + 1}</td>
-        <td>${l.itemName}
-          <div style="font-size:12px; color:#8494B0; margin-top:3px;">${l.itemSku}</div>
-        </td>
-        <td style="width:110px; text-align:center;">${l.quantity} ${l.unit}</td>
-        <td style="width:110px;">${l.unitPrice.toFixed(2)}</td>
-        <td style="width:130px; font-weight:800; color:#1E40AF;">${(l.quantity * l.unitPrice).toFixed(2)}</td>
-      </tr>`
-    )
-    .join("");
-
-  const baseEquivalent =
-    !data.isBase && data.exchangeRate && data.exchangeRate !== 1
-      ? `<div class="total-row" style="font-size:13px; color:#8494B0;">
-           <span>ما يعادل</span>
-           <span>${(data.total * data.exchangeRate).toFixed(2)}</span>
-         </div>`
-      : "";
-
-  const signaturesHtml = s.showSignatures
-    ? `<div class="signature">
-         <div class="line">${s.signatureRight || "توقيع المستلم"}</div>
-         <div class="line">${s.signatureLeft || "توقيع البائع"}</div>
-       </div>`
-    : "";
-
-  const headerBlock = await buildHeaderBlock(
-    s.invoiceHeaderTitle
-      ? `${s.invoiceHeaderTitle} - ${docTitle}`
-      : docTitle,
-    data.invoiceNo,
-    dateStr
-  );
-
-  return `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <title>${docTitle} - ${data.invoiceNo}</title>
-  <style>${baseStyles()}</style>
-</head>
-<body>
-  ${headerBlock}
-
-  <div class="info-grid">
-    <div class="info-cell">
-      <div class="info-label">${data.partyLabel}</div>
-      <div class="info-value">${data.partyName}</div>
-      ${data.partyPhone ? `<div class="meta">${data.partyPhone}</div>` : ""}
-    </div>
-    <div class="info-cell">
-      <div class="info-label">تفاصيل الدفع</div>
-      <div class="info-value">
-        <span class="badge ${paymentClass}">${paymentLabel}</span>
-      </div>
-      ${data.cashboxName ? `<div class="meta">${data.cashboxName}</div>` : ""}
-      <div class="meta">العملة: ${symbol}</div>
-    </div>
-  </div>
-
-  <h2>الأصناف (${data.lines.length})</h2>
-  <table>
-    <thead>
-      <tr>
-        <th style="text-align:center;">#</th>
-        <th>الصنف</th>
-        <th style="text-align:center;">الكمية</th>
-        <th>السعر</th>
-        <th>الإجمالي</th>
-      </tr>
-    </thead>
-    <tbody>${linesHtml}</tbody>
-  </table>
-
-  <div class="totals">
-    <div class="totals-box">
-      ${(data.discountAmount ?? 0) > 0 ? `
-        <div class="total-row">
-          <span>الإجمالي الفرعي</span>
-          <span>${(data.subtotal ?? data.total).toFixed(2)} ${symbol}</span>
-        </div>
+    ? `
         <div class="total-row" style="color:#DC2626;">
           <span>الخصم ${data.discountType === "percent" ? `(${data.discountValue}%)` : ""}</span>
           <span>- ${(data.discountAmount || 0).toFixed(2)} ${symbol}</span>
