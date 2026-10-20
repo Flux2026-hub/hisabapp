@@ -22,7 +22,7 @@ const env = {
   logoUrl: "",
   scheme: schemeFromBundleId,
   iosBundleId: bundleId,
-  androidPackage: bundleId,
+  androidPackage: bundleId
 };
 
 const publicRuntime = {
@@ -42,7 +42,8 @@ const publicRuntime = {
     process.env.EXPO_PUBLIC_APP_ID ??
     "",
   apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "",
-  eas: { projectId: "9e9a50db-853d-4485-b0c3-40e2e8c29e51" },
+  eas: { projectId: "187ad966-f690-427d-9ca2-a02f29af2606" },
+  
 };
 
 const config: ExpoConfig = {
@@ -113,7 +114,7 @@ const config: ExpoConfig = {
       },
     ],
   ],
-  experiments: { typedRoutes: true, reactCompiler: true },
+  experiments: { typedRoutes: true, reactCompiler: true }
 };
 
 export default config;

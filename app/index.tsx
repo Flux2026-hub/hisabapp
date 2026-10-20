@@ -140,7 +140,7 @@ export default function HomeScreen() {
       >
         {tab === "home" && (
           <>
-            <View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><Text style={{ ...styles.title, textAlign: "right", width: "100%", writingDirection: "rtl" }}>لوحة التحكم</Text></View></View>
+            <View style={{ width: "100%", alignItems: "flex-start" }}><View style={{ width: "100%", alignItems: "flex-start" }}><Text style={{ ...styles.title, textAlign: "right", width: "100%", writingDirection: "rtl" }}>لوحة التحكم</Text></View></View>
             <Text style={styles.hint}>
               نظرة سريعة على أرصدة المصنع
             </Text>
@@ -199,9 +199,9 @@ export default function HomeScreen() {
 
         {tab === "accounting" && (
           <>
-            <View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><Text style={{ ...styles.title, textAlign: "right", width: "100%", writingDirection: "rtl" }}>المحاسبة والإدارة</Text></View></View></View>
+            <View style={{ width: "100%", alignItems: "flex-start" }}><View style={{ width: "100%", alignItems: "flex-start" }}><View style={{ width: "100%", alignItems: "flex-start" }}><Text style={{ ...styles.title, textAlign: "right", width: "100%", writingDirection: "rtl" }}>المحاسبة والإدارة</Text></View></View></View>
             <View style={styles.card}>
-              <View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><Text style={{ ...styles.cardTitle, textAlign: "right", width: "100%", writingDirection: "rtl" }}>الوحدات المحاسبية</Text></View></View>
+              <View style={{ width: "100%", alignItems: "flex-start" }}><View style={{ width: "100%", alignItems: "flex-start" }}><Text style={{ ...styles.cardTitle, textAlign: "right", width: "100%", writingDirection: "rtl" }}>الوحدات المحاسبية</Text></View></View>
               <AccountingModule />
             </View>
           </>
@@ -209,7 +209,7 @@ export default function HomeScreen() {
 
         {tab === "settings" && (
           <>
-            <View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><Text style={{ ...styles.title, textAlign: "right", width: "100%", writingDirection: "rtl" }}>الإعدادات</Text></View></View>
+            <View style={{ width: "100%", alignItems: "flex-start" }}><View style={{ width: "100%", alignItems: "flex-start" }}><Text style={{ ...styles.title, textAlign: "right", width: "100%", writingDirection: "rtl" }}>الإعدادات</Text></View></View>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>إعدادات التقارير</Text>
               <SettingsModule onBack={() => go("home")} />
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg },
   header: { backgroundColor: COLORS.navy, paddingHorizontal: 18, paddingVertical: 20, paddingTop: 26 },
   brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
-  brandTextWrap: { alignItems: "flex-end" },
+  brandTextWrap: { alignItems: "flex-start" },
   brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 22, textAlign: "right" },
   brandSub: { fontFamily: "Alexandria-Regular", color: "#94A3B8", fontSize: 11, textAlign: "right", marginTop: -2 },
   logo: { width: 90, height: 70 },
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: COLORS.surface, borderRadius: 14, padding: 16, marginTop: 12 },
   cardTitle: {fontSize: 16, fontFamily: "CodecBold", color: COLORS.text,  marginBottom: 10, width: "100%" ,  writingDirection: "rtl"},
   action: { flexDirection: "row", alignItems: "center", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: "#E2E8F0" },
-  actionTextWrap: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
+  actionTextWrap: { flex: 1, alignItems: "flex-start", paddingRight: 10 },
   actionIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: "#FFF7ED", justifyContent: "center", alignItems: "center" },
   actionArrow: { color: "#F97316", fontSize: 18, fontWeight: "bold" },
   actionLabel: { fontSize: 16, fontFamily: "CodecBold", color: "#0F172A", textAlign: "right" },
