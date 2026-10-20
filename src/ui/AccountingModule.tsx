@@ -143,10 +143,7 @@ export default function AccountingModule() {
 
       {sections.map((sectionName) => (
         <View key={sectionName} style={styles.sectionBlock}>
-          <View style={{ marginBottom: 12, width: "100%" }}>
-              <View style={{ width: "100%", alignItems: "flex-end", marginBottom: 4 }}>
-                <Text style={styles.sectionLabel}>{sectionName}</Text>
-              </View>
+          <View style={{ marginBottom: 12, width: "100%" }}><Text style={{ ...styles.sectionLabel, textAlign: "right", width: "100%" }}>{sectionName}</Text>
               <View style={styles.sectionDivider} />
             </View>
           <View style={styles.grid}>
@@ -250,7 +247,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "CodecBold",
     color: "#1E40AF",
-    textAlign: "right",
+    
   },
   sectionDivider: {
     height: 2,
