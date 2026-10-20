@@ -98,11 +98,106 @@ async function buildHeaderBlock(docTitle: string, docNumber: string, dateStr: st
   if (s.taxNumber) contactLines.push("الرقم الضريبي: " + s.taxNumber);
   if (s.commercialRegister) contactLines.push("السجل التجاري: " + s.commercialRegister);
 
-  const contactHtml = contactLines.length
-    ? `<div class="company-info">${contactLines.join("<br/>")}</div>`
-    : "";
+  return `
+    <div class="header">
+      <div>
+        ${logo ? `<img src="${logo}" style="height:100px; object-fit:contain; display:block; margin-bottom:12px;" />` : ""}
+        <div class="brand">${s.companyNameAr || "فلوكس"}</div>
+        <div class="brand-sub">${s.companyNameEn || ""}</div>
+        <div class="company-info">${contactLines.join("<br/>")}</div>
+      </div>
+      <div style="text-align:left;">
+        <div class="doc-title">${docTitle}</div>
+        <div class="meta">رقم: ${docNumber}</div>
+        <div class="meta">التاريخ: ${dateStr}</div>
+      </div>
+    </div>
+  `;
+}
 
-  const totalsHtml = `
+export type InvoicePrintLine = {
+  itemName: string;
+  itemSku: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+export type InvoicePrintData = {
+  type: "sales" | "purchase";
+  invoiceNo: string;
+  createdAt: number;
+  partyLabel: string;
+  partyName: string;
+  partyPhone?: string;
+  currencyCode: string;
+  currencySymbol: string;
+  exchangeRate: number;
+  isBase: boolean;
+  paymentType: "cash" | "credit";
+  cashboxName?: string;
+  lines: InvoicePrintLine[];
+  subtotal?: number;
+  discountType?: "percent" | "fixed" | null;
+  discountValue?: number;
+  discountAmount?: number;
+  total: number;
+  notes?: string;
+};
+
+export async function buildInvoiceHtml(data: InvoicePrintData): Promise<string> {
+  const s = await getSettings();
+  const docTitle = data.type === "sales" ? "فاتورة مبيعات" : "فاتورة مشتريات";
+  const dateStr = new Date(data.createdAt).toLocaleString("ar-EG");
+  const paymentLabel = data.paymentType === "cash" ? "نقدي" : "أجل";
+  const paymentClass = data.paymentType === "cash" ? "badge-cash" : "badge-credit";
+  const symbol = data.currencySymbol || data.currencyCode;
+
+  const headerBlock = await buildHeaderBlock(docTitle, data.invoiceNo, dateStr);
+
+  const rows = data.lines.map(l => `
+    <tr>
+      <td>${l.itemName}</td>
+      <td>${l.quantity} ${l.unit}</td>
+      <td>${l.unitPrice.toFixed(2)}</td>
+      <td>${(l.quantity * l.unitPrice).toFixed(2)}</td>
+    </tr>
+  `).join("");
+
+  return `<!DOCTYPE html>
+  <html lang="ar" dir="rtl">
+  <head><meta charset="utf-8" /><title>${docTitle}</title><style>${baseStyles()}</style></head>
+  <body>
+    ${headerBlock}
+
+    <div class="info-grid">
+      <div class="info-cell">
+        <div class="info-label">${data.partyLabel}</div>
+        <div class="info-value">${data.partyName}</div>
+      </div>
+      <div class="info-cell">
+        <div class="info-label">تفاصيل الدفع</div>
+        <div class="info-value">
+          <span class="badge ${paymentClass}">${paymentLabel}</span>
+        </div>
+        <div class="info-label" style="margin-top:4px;">العملة: ${data.currencyCode}</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>الصنف</th>
+          <th>الكمية</th>
+          <th>السعر</th>
+          <th>الإجمالي</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+
     <div class="totals">
       <div class="totals-box">
         ${(data.discountAmount ?? 0) > 0 ? `
@@ -120,15 +215,13 @@ async function buildHeaderBlock(docTitle: string, docNumber: string, dateStr: st
           <span>${data.total.toFixed(2)} ${symbol}</span>
         </div>
       </div>
-    </div>`
+    </div>
 
-  ${data.notes ? `<div class="notes"><strong>ملاحظات:</strong> ${data.notes}</div>` : ""}
+    ${data.notes ? `<div class="notes"><strong>ملاحظات:</strong> ${data.notes}</div>` : ""}
 
-  ${signaturesHtml}
-
-  <div class="footer">${s.invoiceFooterText || s.companyNameAr}</div>
-</body>
-</html>`;
+    <div class="footer">${s.invoiceFooterText || s.companyNameAr}</div>
+  </body>
+  </html>`;
 }
 
 export type VoucherPrintData = {
