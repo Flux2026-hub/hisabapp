@@ -140,7 +140,7 @@ export default function HomeScreen() {
       >
         {tab === "home" && (
           <>
-            <View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.title}>لوحة التحكم</Text></View>
+            <View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.title}>لوحة التحكم</Text></View></View>
             <Text style={styles.hint}>
               نظرة سريعة على أرصدة المصنع
             </Text>
@@ -199,9 +199,9 @@ export default function HomeScreen() {
 
         {tab === "accounting" && (
           <>
-            <View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.title}>المحاسبة والإدارة</Text></View></View>
+            <View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.title}>المحاسبة والإدارة</Text></View></View></View>
             <View style={styles.card}>
-              <View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.cardTitle}>الوحدات المحاسبية</Text></View>
+              <View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.cardTitle}>الوحدات المحاسبية</Text></View></View>
               <AccountingModule />
             </View>
           </>
@@ -209,7 +209,7 @@ export default function HomeScreen() {
 
         {tab === "settings" && (
           <>
-            <View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.title}>الإعدادات</Text></View>
+            <View style={{ width: "100%", alignItems: "flex-end" }}><View style={{ width: "100%", alignItems: "flex-end" }}><Text style={styles.title}>الإعدادات</Text></View></View>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>إعدادات التقارير</Text>
               <SettingsModule onBack={() => go("home")} />
