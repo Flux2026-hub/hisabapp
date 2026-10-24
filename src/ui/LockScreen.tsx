@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   Image,
+  ImageBackground,
   Pressable,
   StyleSheet,
   Text,
@@ -115,31 +116,20 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
     ["1", "2", "3"],
     ["4", "5", "6"],
     ["7", "8", "9"],
-    ["", "0", "->"],
+    ["BIO", "0", "DEL"],
   ];
 
   return (
-    
-    <View style={styles.root}>
+    <ImageBackground
+      source={require("../../assets/images/lock-bg.jpg")}
+      style={styles.root}
+      imageStyle={{ opacity: 0.75 }}
+    >
       <View style={styles.productWrap}>
         <Image
           source={require("../../assets/images/flux-product.png")}
           style={styles.productImage}
           resizeMode="contain"
-        />
-      </View>
-
-      <View style={styles.modeRow}>
-        <MaterialCommunityIcons
-          name={
-            setupMode
-              ? firstPin
-                ? "lock-check-outline"
-                : "lock-plus-outline"
-              : "lock-outline"
-          }
-          size={18}
-          color={COLORS.blue}
         />
       </View>
 
@@ -154,66 +144,44 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
 
       <View style={styles.errorWrap}>
         {error ? (
-          <>
-            <MaterialCommunityIcons
-              name="alert-circle-outline"
-              size={14}
-              color={COLORS.danger}
-            />
-            <Text style={styles.errorText}>{error}</Text>
-          </>
+          <Text style={styles.errorText}>{error}</Text>
         ) : (
-          <View style={{ height: 18 }} />
+          <View style={{ height: 20 }} />
         )}
       </View>
-
-      {biometricAvailable && !setupMode ? (
-        <Pressable
-          style={({ pressed }) => [
-            styles.biometricBtn,
-            pressed && styles.biometricBtnPressed,
-          ]}
-          onPress={tryBiometric}
-        >
-          <MaterialCommunityIcons name="fingerprint" size={42} color={COLORS.blue} />
-        </Pressable>
-      ) : (
-        <View style={styles.biometricPlaceholder} />
-      )}
 
       <View style={styles.pad}>
         {digits.map((row, ri) => (
           <View key={ri} style={styles.padRow}>
             {row.map((d, di) => {
-              if (d === "") return <View key={di} style={styles.padBtn} />;
-              if (d === "->") {
+              if (d === "BIO") {
+                return biometricAvailable && !setupMode ? (
+                  <Pressable
+                    key={di}
+                    style={({ pressed }) => [styles.padBtn, pressed && styles.padBtnPressed]}
+                    onPress={tryBiometric}
+                  >
+                    <MaterialCommunityIcons name="fingerprint" size={30} color="#2563EB" />
+                  </Pressable>
+                ) : (
+                  <View key={di} style={styles.padBtn} />
+                );
+              }
+              if (d === "DEL") {
                 return (
                   <Pressable
                     key={di}
-                    style={({ pressed }) => [
-                      styles.padBtn,
-                      styles.padBtnGhost,
-                      pressed && styles.padBtnGhostPressed,
-                    ]}
+                    style={({ pressed }) => [styles.padBtn, pressed && styles.padBtnPressed]}
                     onPress={removeDigit}
                   >
-                    <MaterialCommunityIcons
-                      name="backspace-outline"
-                      size={28}
-                      color={COLORS.text}
-                    />
+                    <MaterialCommunityIcons name="backspace-outline" size={28} color="#0B2545" />
                   </Pressable>
-                  
-  );
+                );
               }
               return (
                 <Pressable
                   key={di}
-                  style={({ pressed }) => [
-                    styles.padBtn,
-                    styles.padBtnPrimary,
-                    pressed && styles.padBtnPressed,
-                  ]}
+                  style={({ pressed }) => [styles.padBtn, pressed && styles.padBtnPressed]}
                   onPress={() => appendDigit(d)}
                 >
                   <Text style={styles.padBtnText}>{d}</Text>
@@ -223,131 +191,83 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
           </View>
         ))}
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.bg,
-    paddingHorizontal: 28,
-    paddingTop: 20,
-    paddingBottom: 30,
-  },
-  productWrap: {
+    backgroundColor: "#F0F9FF",
     alignItems: "center",
-    marginTop: 10,
-    marginBottom: 20,
+    justifyContent: "center",
+    paddingHorizontal: 24,
   },
-  productImage: {
-    width: 140,
-    height: 140,
-  },
-  modeRow: {
-    alignItems: "center",
-    marginTop: 4,
-    marginBottom: 10,
-  },
+  productWrap: { alignItems: "center", marginTop: 60, marginBottom: 30 },
+  productImage: { width: 180, height: 180 },
   dotsRow: {
-    flexDirection: "row-reverse",
+    flexDirection: "row",
     justifyContent: "center",
     gap: 20,
-    marginBottom: 8,
+    marginBottom: 20,
   },
   dot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2.5,
   },
   dotFilled: {
-    backgroundColor: COLORS.orange,
-    borderColor: COLORS.orange,
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
   dotEmpty: {
     backgroundColor: "transparent",
-    borderColor: COLORS.blueSoft,
+    borderColor: "#93C5FD",
   },
   errorWrap: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
+    height: 20,
+    marginBottom: 20,
     justifyContent: "center",
-    gap: 5,
-    height: 18,
-    marginBottom: 12,
+    alignItems: "center",
   },
   errorText: {
-    color: COLORS.danger,
-    fontSize: 12,
+    color: "#DC2626",
+    fontSize: 14,
     fontWeight: "700",
-  },
-  biometricBtn: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: COLORS.blueSoft,
-    shadowColor: COLORS.blue,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  biometricBtnPressed: {
-    backgroundColor: COLORS.bluePale,
-    transform: [{ scale: 0.94 }],
-  },
-  biometricPlaceholder: {
-    height: 68,
-    marginBottom: 16,
   },
   pad: {
-    flex: 1,
-    justifyContent: "center",
-    gap: 16,
+    width: "100%",
+    maxWidth: 300, // تصغير عرض اللوحة كاملة
   },
   padRow: {
-    flexDirection: "row-reverse",
-    justifyContent: "center",
-    gap: 24,
+    flexDirection: "row", // هذا الترتيب يجعل الأرقام 1 2 3 من اليسار لليمين
+    justifyContent: "space-between",
+    marginBottom: 12,
   },
   padBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  padBtnPrimary: {
+    width: "26%", // تصغير الأزرار
+    aspectRatio: 1.15, // تعديل النسبة لتصبح أصغر
     backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(11, 37, 69, 0.04)",
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: "#E2E8F0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   padBtnPressed: {
-    backgroundColor: COLORS.orangePale,
-    transform: [{ scale: 0.93 }],
-    shadowOpacity: 0.04,
-  },
-  padBtnGhost: {
-    backgroundColor: "transparent",
-  },
-  padBtnGhostPressed: {
-    backgroundColor: "rgba(11, 37, 69, 0.06)",
+    backgroundColor: "#F8FAFC",
+    transform: [{ scale: 0.95 }],
   },
   padBtnText: {
-    color: COLORS.text,
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "700",
+    color: "#0B2545",
+    fontFamily: "CodecBold",
   },
 });

@@ -143,9 +143,11 @@ export default function AccountingModule() {
 
       {sections.map((sectionName) => (
         <View key={sectionName} style={styles.sectionBlock}>
-          <View style={{ marginBottom: 12, width: "100%" }}><Text style={{ ...styles.sectionLabel, textAlign: "right", width: "100%" }}>{sectionName}</Text>
-              <View style={styles.sectionDivider} />
-            </View>
+          <View style={{ flexDirection: "row", width: "100%" }}>
+            <View style={{ flex: 1 }} />
+            <Text style={{ ...styles.sectionLabel, marginBottom: 8, marginTop: 10 }}>{sectionName}</Text>
+          </View>
+          <View style={styles.sectionDivider} />
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
               <Pressable
@@ -243,13 +245,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   
-  sectionLabel: {
-    fontSize: 16,
-    fontFamily: "CodecBold",
-    color: "#1E40AF",
-    
-  },
-  sectionDivider: {
+  sectionLabel: { fontSize: 16, fontFamily: "CodecBold", color: "#1E40AF", textAlign: "right", width: "100%", marginLeft: "auto" },
+  sectionDivider: { marginTop: 5, marginBottom: 15, 
     height: 2,
     backgroundColor: "#F97316",
     width: "100%",

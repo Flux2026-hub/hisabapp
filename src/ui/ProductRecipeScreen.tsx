@@ -239,9 +239,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView
-        keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}
-        contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}
+      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40,  paddingBottom: 40, paddingHorizontal: 4   }}
       >
         <Pressable style={styles.back} onPress={onBack}>
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>

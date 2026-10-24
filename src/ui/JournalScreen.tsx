@@ -39,6 +39,9 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
 
   const [showAccount, setShowAccount] = useState(false);
   const [showPartyPicker, setShowPartyPicker] = useState(false);
+  const [lineCurrency, setLineCurrency] = useState<any | null>(null);
+  const [lineExchangeRate, setLineExchangeRate] = useState("1");
+  const [showLineCurrency, setShowLineCurrency] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -71,7 +74,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
   const totalDebitBase = useMemo(() => lines.reduce((s, l) => s + l.debitBase, 0), [lines]);
   const totalCreditBase = useMemo(() => lines.reduce((s, l) => s + l.creditBase, 0), [lines]);
   
-  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0;
+  const isBalanced = Math.abs(totalDebitBase - totalCreditBase) < 0.01 && totalDebitBase > 0;
   const balanced = isBalanced;
 
   const addLine = () => {
@@ -88,14 +91,23 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
     const finalCode = pickPartyType !== "none" && pickParty ? pickParty.code : pickAccount.code;
     const finalName = pickPartyType !== "none" && pickParty ? pickParty.name : pickAccount.name;
 
+    // تحديد سعر الصرف للسطر
+    let finalRate = 1;
+    if (lineCurrency) {
+      finalRate = Number(lineExchangeRate) || 1;
+    } else if (currency) {
+      finalRate = Number(exchangeRate) || 1;
+    }
+
     setLines([...lines, { 
         key: newId(), accountCode: finalCode, accountName: finalName, 
-        debit, credit, debitBase: debit * rate, creditBase: credit * rate,
+        debit, credit, debitBase: debit * finalRate, creditBase: credit * finalRate,
         partyType: pickPartyType === "none" ? null : pickPartyType,
         partyId: pickParty?.id || null, partyName: pickParty?.name || null, lineDesc: lineDesc.trim()
     }]);
     
     setPickAccount(null); setPickDebit(""); setPickCredit(""); setPickPartyType("none"); setPickParty(null); setLineDesc("");
+    setLineCurrency(null); setLineExchangeRate("1"); setShowLineCurrency(false);
     setShowAccount(false); setShowPartyPicker(false);
   };
 
@@ -134,9 +146,47 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
     } catch (e) { Alert.alert("تعذر الحفظ", String(e)); } finally { setSaving(false); }
   };
 
+
+  const deleteEntry = (id: string) => {
+    Alert.alert("تأكيد الحذف", "هل أنت متأكد من حذف هذا القيد؟", [
+      { text: "إلغاء", style: "cancel" },
+      { text: "حذف", style: "destructive", onPress: async () => {
+          try {
+            await sqlite.runAsync("DELETE FROM journal_lines WHERE entry_id = ?", [id]);
+            await sqlite.runAsync("DELETE FROM journal_entries WHERE id = ?", [id]);
+            await loadHistory();
+          } catch (e) { Alert.alert("تعذر الحذف", String(e)); }
+      }},
+    ]);
+  };
+
+  const editEntry = async (h: any) => {
+    try {
+      const lines: any = await sqlite.getAllAsync("SELECT * FROM journal_lines WHERE entry_id = ?", [h.id]);
+      const newLines = lines.map((l: any) => ({
+        key: newId(),
+        accountCode: l.account_code,
+        accountName: l.account_name,
+        debit: Number(l.debit) || 0,
+        credit: Number(l.credit) || 0,
+        partyType: l.party_type,
+        partyId: l.party_id,
+        partyName: l.party_name,
+        lineDesc: l.line_desc || ""
+      }));
+      setDescription(h.description);
+      setLines(newLines);
+      // حذف القيد القديم ليتم حفظه كجديد
+      await sqlite.runAsync("DELETE FROM journal_lines WHERE entry_id = ?", [h.id]);
+      await sqlite.runAsync("DELETE FROM journal_entries WHERE id = ?", [h.id]);
+      await loadHistory();
+      Alert.alert("للتعديل", "تم تحميل القيد في النموذج. قم بتعديله واضغط حفظ.");
+    } catch (e) { Alert.alert("تعذر التعديل", String(e)); }
+  };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
+      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40,  paddingBottom: 40, paddingHorizontal: 4   }}>
         <Pressable style={styles.back} onPress={onBack}>
           <Text style={styles.backText}>{"->"} العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
@@ -259,20 +309,44 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
           <Text style={styles.label}>بيان السطر (اختياري)</Text>
           <TextInput style={styles.input} value={lineDesc} onChangeText={setLineDesc} placeholder="وصف مختصر للسطر" placeholderTextColor="#9CA3AF" textAlign="right" />
 
+          <Text style={styles.label}>عملة السطر</Text>
+          <Pressable style={styles.picker} onPress={() => setShowLineCurrency((v) => !v)}>
+            <Text style={styles.pickerText}>{lineCurrency ? lineCurrency.code : (currency ? currency.code : "العملة الأساسية")}</Text>
+            <Text style={styles.pickerArrow}>▼</Text>
+          </Pressable>
+          {showLineCurrency && (
+            <View style={styles.suggestBox}>
+              <Pressable style={styles.suggestItem} onPress={() => { setLineCurrency(null); setShowLineCurrency(false); }}>
+                <Text style={styles.suggestName}>العملة الأساسية</Text>
+              </Pressable>
+              {currencies.map((c) => (
+                <Pressable key={c.id} style={styles.suggestItem} onPress={() => { setLineCurrency(c); setLineExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowLineCurrency(false); }}>
+                  <Text style={styles.suggestName}>{c.name} ({c.code})</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          {lineCurrency && !lineCurrency.isBase && (
+            <>
+              <Text style={styles.label}>سعر الصرف</Text>
+              <TextInput style={styles.input} value={lineExchangeRate} onChangeText={setLineExchangeRate} keyboardType="decimal-pad" textAlign="right" />
+            </>
+          )}
+
           <View style={styles.twoCols}>
-            <View style={{ flex: 1 }}><Text style={styles.label}>مدين ({currency?.code})</Text><TextInput style={styles.input} value={pickDebit} onChangeText={(t) => { setPickDebit(t); if (t) setPickCredit(""); }} placeholder="0" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" textAlign="right" /></View>
-            <View style={{ flex: 1 }}><Text style={styles.label}>دائن ({currency?.code})</Text><TextInput style={styles.input} value={pickCredit} onChangeText={(t) => { setPickCredit(t); if (t) setPickDebit(""); }} placeholder="0" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" textAlign="right" /></View>
+            <View style={{ flex: 1 }}><Text style={styles.label}>مدين ({lineCurrency ? lineCurrency.code : currency?.code})</Text><TextInput style={styles.input} value={pickDebit} onChangeText={(t) => { setPickDebit(t); if (t) setPickCredit(""); }} placeholder="0" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" textAlign="right" /></View>
+            <View style={{ flex: 1 }}><Text style={styles.label}>دائن ({lineCurrency ? lineCurrency.code : currency?.code})</Text><TextInput style={styles.input} value={pickCredit} onChangeText={(t) => { setPickCredit(t); if (t) setPickDebit(""); }} placeholder="0" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" textAlign="right" /></View>
           </View>
 
           <Pressable style={styles.addBtn} onPress={addLine}><Text style={styles.addBtnText}>+ إدراج السطر في القيد</Text></Pressable>
         </View>
 
         <View style={styles.balanceBox}>
-          <View style={styles.balRow}><Text style={styles.balLabel}>مجموع المدين:</Text><Text style={styles.balValue}>{totalDebit.toFixed(2)} {currency?.code}</Text></View>
-          <View style={styles.balRow}><Text style={styles.balLabel}>مجموع الدائن:</Text><Text style={styles.balValue}>{totalCredit.toFixed(2)} {currency?.code}</Text></View>
-          {!currency?.isBase && (
+          <View style={styles.balRow}><Text style={styles.balLabel}>مجموع المدين (أساسي):</Text><Text style={styles.balValue}>{totalDebitBase.toFixed(2)} {currency?.code || "YER"}</Text></View>
+          <View style={styles.balRow}><Text style={styles.balLabel}>مجموع الدائن (أساسي):</Text><Text style={styles.balValue}>{totalCreditBase.toFixed(2)} {currency?.code || "YER"}</Text></View>
+          {(!currency?.isBase) && (
             <View style={[styles.balRow, { borderTopWidth: 1, borderTopColor: "#BFDBFE", marginTop: 4, paddingTop: 4 }]}>
-              <Text style={styles.balLabel}>الإجمالي بالعملة الأساسية:</Text><Text style={styles.balValue}>{totalDebitBase.toFixed(2)}</Text>
+              <Text style={styles.balLabel}>إجمالي المدين الأصلي:</Text><Text style={styles.balValue}>{totalDebit.toFixed(2)}</Text>
             </View>
           )}
           <View style={[styles.balStatus, { backgroundColor: balanced ? "#dcfce7" : "#fee2e2" }]}>
@@ -290,14 +364,16 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
+                  <View style={styles.histActions}>
+                    <Pressable onPress={() => editEntry(h)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                    <Pressable onPress={() => deleteEntry(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                  </View>
                   <View style={styles.histInfo}>
                     <Text style={styles.histName}>{h.description}</Text>
                     <Text style={styles.histMeta}>{h.entry_no}</Text>
                     <Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
                   </View>
-                  <View style={styles.histRight}>
-                    <Text style={styles.histAmount}>{Number(h.total_debit).toFixed(2)}</Text>
-                  </View>
+                  <Text style={styles.histAmount}>{Number(h.total_debit).toFixed(2)}</Text>
                 </View>
               ))}
             </View>
@@ -309,6 +385,8 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  iconBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
   back: { alignSelf: "flex-end",  paddingVertical: 10, marginBottom: 8 },
   backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 12,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
@@ -362,5 +440,5 @@ const styles = StyleSheet.create({
   histName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: "#8494B0", marginTop: 2, textAlign: "right" },
-  histAmount: { fontWeight: "800", fontSize: 16, color: "#1E40AF" },
+  histAmount: { fontWeight: "800", fontSize: 16, color: "#1E40AF", textAlign: "left" },
 });

@@ -7,9 +7,10 @@ import CustomersReport from "./CustomersReport";
 import SuppliersReport from "./SuppliersReport";
 import CashboxesReport from "./CashboxesReport";
 import AccountsReport from "./AccountsReport";
+import TrialBalanceScreen from "./TrialBalanceScreen";
 import CommissionsReport from "./CommissionsReport";
 
-type ReportKey = "menu" | "sales" | "purchase" | "inventory" | "customers" | "suppliers" | "cashboxes" | "accounts" | "commissions";
+type ReportKey = "menu" | "sales" | "purchase" | "inventory" | "customers" | "suppliers" | "cashboxes" | "accounts" | "commissions" | "trial";
 
 const MENU: { key: ReportKey; label: string; desc: string; color: string }[] = [
   { key: "sales", label: "تقرير المبيعات", desc: "كل فواتير المبيعات في الفترة", color: "#0b806c" },
@@ -19,6 +20,7 @@ const MENU: { key: ReportKey; label: string; desc: string; color: string }[] = [
   { key: "suppliers", label: "تقرير الموردين", desc: "قائمة الموردين + كشف حساب", color: "#7c2d12" },
   { key: "cashboxes", label: "تقرير الصناديق", desc: "أرصدة وحركات كل صندوق", color: "#1e40af" },
   { key: "accounts", label: "تقرير الحسابات", desc: "شجرة الحسابات والأرصدة", color: "#7c3aed" },
+  { key: "trial", label: "ميزان المراجعة", desc: "ملخص مدين ودائن لجميع الحسابات", color: "#0F172A" },
   { key: "commissions", label: "تقرير العمولات", desc: "مبيعات وعمولات مناديب البيع", color: "#c2410c" },
 ];
 
@@ -33,10 +35,11 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
   if (key === "suppliers") return <SuppliersReport onBack={goMenu} />;
   if (key === "cashboxes") return <CashboxesReport onBack={goMenu} />;
   if (key === "accounts") return <AccountsReport onBack={goMenu} />;
+  if (key === "trial") return <TrialBalanceScreen onBack={goMenu} />;
   if (key === "commissions") return <CommissionsReport onBack={goMenu} />;
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
+    <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
       <Pressable style={styles.back} onPress={onBack}>
         <Text style={styles.backText}>{"->"} العودة إلى الوحدات المحاسبية</Text>
       </Pressable>

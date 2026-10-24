@@ -23,12 +23,12 @@ function baseStyles() {
   .brand-sub { font-size: 18px; color: #8494B0; font-weight: 700; margin-top: 2px; }
   .company-info { font-size: 18px; color: #64748B; margin-top: 4px; line-height: 1.5; }
   .doc-title { font-size: 24px; font-weight: 700; color: #0F172A; }
-  .meta { font-size: 17px; color: #64748B; margin-top: 4px; }
+  .meta { font-size: 16px; color: #0F172A; margin-top: 8px; font-weight: 800; }
   .info-grid { display: flex; gap: 10px; margin-bottom: 18px; }
   .info-cell { flex: 1; background: #EFF6FF; border: 1.5px solid #D6E3F8;
                border-radius: 10px; padding: 8px; }
-  .info-label { font-size: 18px; color: #8494B0; margin-bottom: 5px; font-weight: 700; }
-  .info-value { font-size: 14px; font-weight: 800; color: #0F172A; }
+  .info-label { font-size: 14px; color: #334155; margin-bottom: 5px; font-weight: 800; }
+  .info-value { font-size: 22px; font-weight: 900; color: #0F172A; }
   table { width: 100%; border-collapse: collapse; margin-top: 12px; }
   th { background: #1E40AF; color: #FFFFFF; padding: 12px 10px; font-size: 18px;
        text-align: right; font-weight: 700; }

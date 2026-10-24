@@ -125,7 +125,7 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
 
   return (
     <ScrollView
-      contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}
+      contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}
     >
       <View style={styles.backWrap}>
         <Text style={styles.back} onPress={onBack}>
@@ -201,19 +201,19 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
           const qtyColor = q === 0 ? "#dc2626" : q < 10 ? "#f59e0b" : "#0b806c";
           return (
             <View key={it.id} style={styles.row}>
-              <View style={styles.rowRight}>
-                <Text style={styles.value}>
-                  {value.toFixed(2)} {baseSymbol}
-                </Text>
-                <Text style={styles.cost}>
-                  تكلفة: {c.toFixed(2)}
-                </Text>
-              </View>
               <View style={styles.rowInfo}>
                 <Text style={styles.rowName}>{it.name}</Text>
                 <Text style={styles.rowMeta}>{it.sku}</Text>
                 <Text style={[styles.qty, { color: qtyColor }]}>
                   الرصيد: {q.toFixed(2)} {it.unit}
+                </Text>
+              </View>
+              <View style={styles.rowValues}>
+                <Text style={styles.value}>
+                  {value.toFixed(2)} {baseSymbol}
+                </Text>
+                <Text style={styles.cost}>
+                  تكلفة: {c.toFixed(2)}
                 </Text>
               </View>
             </View>
@@ -225,6 +225,7 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  rowValues: { alignItems: "flex-start", minWidth: 100 },
   backWrap: { paddingVertical: 8 },
   back: { alignSelf: "flex-end",  color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   filterRow: {
@@ -262,35 +263,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     padding: 10,
   },
-  row: {
-    backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 10,
-    padding: 10,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  rowInfo: { flex: 1, alignItems: "flex-end" },
+  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   rowRight: { alignItems: "flex-end" },
-  rowName: {fontWeight: "700",
-    color: "#0F172A",
-    
-    fontSize: 14,textAlign: "right", writingDirection: "rtl", width: "100%"},
-  rowMeta: {
-    fontSize: 11,
-    color: "#8494B0",
-    marginTop: 2,
-    textAlign: "right",
-  },
-  qty: {
-    fontSize: 12,
-    marginTop: 3,
-    textAlign: "right",
-    fontWeight: "700",
-  },
-  value: { color: "#0b806c", fontWeight: "800", fontSize: 14 },
-  cost: { color: "#8494B0", fontSize: 10, marginTop: 2 },
+  rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
+  rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
+  qty: { fontSize: 13, marginTop: 4, textAlign: "right", fontWeight: "700" },
+  value: { fontWeight: "800", fontSize: 16, color: "#1E40AF", textAlign: "left" },
+  cost: { fontSize: 12, color: "#8494B0", marginTop: 2, textAlign: "left" },
 });

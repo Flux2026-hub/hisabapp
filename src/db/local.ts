@@ -64,6 +64,10 @@ export async function initializeLocalDatabase() {
       "ALTER TABLE invoices ADD COLUMN discount_type TEXT",
       "ALTER TABLE invoices ADD COLUMN discount_value REAL DEFAULT 0",
       "ALTER TABLE invoices ADD COLUMN discount_amount REAL DEFAULT 0",
+      "ALTER TABLE account_transfers ADD COLUMN from_currency TEXT",
+      "ALTER TABLE account_transfers ADD COLUMN to_currency TEXT",
+      "ALTER TABLE account_transfers ADD COLUMN exchange_rate REAL DEFAULT 1",
+      "ALTER TABLE account_transfers ADD COLUMN original_amount REAL",
   ]) {
     try {
       await sqlite.execAsync(migration);

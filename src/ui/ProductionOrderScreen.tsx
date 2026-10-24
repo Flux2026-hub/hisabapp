@@ -230,9 +230,7 @@ export default function ProductionOrderScreen({
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView
-        keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}
-        contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}
+      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40,  paddingBottom: 40, paddingHorizontal: 4   }}
       >
         <Pressable style={styles.back} onPress={onBack}>
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
@@ -405,6 +403,7 @@ export default function ProductionOrderScreen({
 }
 
 const styles = StyleSheet.create({
+  histAmount: { fontWeight: "800", fontSize: 16, color: "#0b806c" },
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
   backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
   screenTitle: {fontSize: 20,
@@ -514,17 +513,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   reqAvail: { fontSize: 12, marginTop: 2, textAlign: "right", fontWeight: "600" },
-  histRow: {
-    backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 10,
-    padding: 10,
-     flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  histInfo: { flex: 1, alignItems: "flex-end" },
+  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  histInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   histName: { fontWeight: "700", color: "#0F172A", textAlign: "right" },
   histDate: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
   histQty: { color: "#0b806c", fontWeight: "700", fontSize: 14 },

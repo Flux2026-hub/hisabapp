@@ -13,6 +13,7 @@ import {
 import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { buildVoucherHtml, printHtml } from "../utils/printDocument";
 
 type Row = any;
@@ -42,6 +43,9 @@ const newId = () =>
 
 export default function VouchersScreen({ onBack }: { onBack: () => void }) {
   const [vType, setVType] = useState<VType>("receipt");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [dateStr, setDateStr] = useState(new Date().toISOString().slice(0, 10));
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [partyType, setPartyType] = useState<PartyType>("none");
   const [partyRecord, setPartyRecord] = useState<Row | null>(null);
 
@@ -141,13 +145,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
   const save = () => {
     if (!canSave || !cashbox || !currency) return;
     const amt = Number(amount);
-    if (vType === "payment" && amt > Number(cashbox.balance)) {
-      Alert.alert(
-        "رصيد غير كافٍ",
-        "الصندوق يحتوي على " + Number(cashbox.balance).toFixed(2) + " فقط"
-      );
-      return;
-    }
+    // تم السماح بالرصيد السالب للصناديق
     Alert.alert(
       "تأكيد الحفظ",
       (vType === "receipt" ? "سند قبض" : "سند دفع") +
@@ -169,99 +167,115 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
     if (!cashbox || !currency) return;
     setSaving(true);
     try {
-      const now = Date.now();
+      const now = dateStr ? new Date(dateStr).getTime() : Date.now();
       const amt = Number(amount);
       const rate = Number(currency.exchangeRate) || 1;
       const isBase = !!currency.isBase;
       const baseAmount = isBase ? amt : amt * rate;
 
-      const prefix = vType === "receipt" ? "RCP" : "PAY";
-      const last: any = await sqlite.getAllAsync(
-        "SELECT voucher_no FROM vouchers WHERE voucher_no LIKE ? ORDER BY created_at DESC LIMIT 1",
-        [prefix + "-%"]
-      );
-      let nextNum = 1;
-      if (last && last.length > 0) {
-        nextNum = parseInt(String(last[0].voucher_no).replace(/\D/g, ""), 10) + 1;
-      }
-      const voucherNo = prefix + "-" + String(nextNum).padStart(3, "0");
-
-      await sqlite.runAsync(
-        "INSERT INTO vouchers (id, voucher_no, voucher_type, cashbox_id, party_name, amount, description, created_at, party_type, party_id, currency_code, exchange_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [
-          newId(),
-          voucherNo,
-          vType,
-          cashbox.id,
-          partyRecord?.name || "",
-          amt,
-          description.trim(),
-          now,
-          partyType,
-          partyRecord?.id || null,
-          currency.code,
-          rate,
-        ]
-      );
-
-      const delta = vType === "receipt" ? baseAmount : -baseAmount;
-      await sqlite.runAsync(
-        "UPDATE cashboxes SET balance = balance + ? WHERE id = ?",
-        [delta, cashbox.id]
-      );
-
-      if (partyRecord && partyType !== "none") {
-        let partyDelta = 0;
-        if (partyType === "customer") {
-          partyDelta = vType === "receipt" ? -baseAmount : baseAmount;
-          await sqlite.runAsync(
-            "UPDATE customers SET balance = balance + ? WHERE id = ?",
-            [partyDelta, partyRecord.id]
-          );
-        } else if (partyType === "supplier") {
-          partyDelta = vType === "payment" ? -baseAmount : baseAmount;
-          await sqlite.runAsync(
-            "UPDATE suppliers SET balance = balance + ? WHERE id = ?",
-            [partyDelta, partyRecord.id]
-          );
-        } else if (partyType === "account") {
-          partyDelta = vType === "receipt" ? baseAmount : -baseAmount;
-          await sqlite.runAsync(
-            "UPDATE accounts SET balance = balance + ? WHERE id = ?",
-            [partyDelta, partyRecord.id]
-          );
+      if (editingId) {
+        // 1. عكس تأثير السند القديم
+        const oldV: any = await sqlite.getFirstAsync("SELECT * FROM vouchers WHERE id = ?", [editingId]);
+        if (oldV) {
+          const oldRate = Number(oldV.exchange_rate) || 1;
+          const oldBaseAmount = Number(oldV.amount) * oldRate;
+          const oldDelta = oldV.voucher_type === "receipt" ? -oldBaseAmount : oldBaseAmount;
+          await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [oldDelta, oldV.cashbox_id]);
+          
+          if (oldV.party_id && oldV.party_type !== "none") {
+            let oldPDelta = 0;
+            if (oldV.party_type === "customer") oldPDelta = oldV.voucher_type === "receipt" ? oldBaseAmount : -oldBaseAmount;
+            else if (oldV.party_type === "supplier") oldPDelta = oldV.voucher_type === "payment" ? oldBaseAmount : -oldBaseAmount;
+            else if (oldV.party_type === "account") oldPDelta = oldV.voucher_type === "receipt" ? -oldBaseAmount : oldBaseAmount;
+            
+            if (oldV.party_type === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
+            else if (oldV.party_type === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
+            else if (oldV.party_type === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
+          }
         }
-      }
 
-      Alert.alert(
-        "تم الحفظ بنجاح",
-        "رقم السند: " + voucherNo + "\n\nهل تريد طباعة السند؟",
-        [
-          { text: "لاحقاً", style: "cancel" },
-          {
-            text: "طباعة",
-            onPress: async () => {
-              const html = await buildVoucherHtml({
-                voucherNo,
-                voucherType: vType,
-                createdAt: now,
-                partyName: partyRecord?.name || "—",
-                cashboxName: cashbox.name,
-                amount: amt,
-                currencySymbol: currency.symbol || currency.code,
-                description: description.trim() || undefined,
-              });
-              printHtml(html);
-            },
-          },
-        ]
-      );
+        // 2. تحديث السند
+        await sqlite.runAsync(
+          "UPDATE vouchers SET voucher_type=?, cashbox_id=?, party_name=?, amount=?, description=?, created_at=?, party_type=?, party_id=?, currency_code=?, exchange_rate=? WHERE id=?",
+          [vType, cashbox.id, partyRecord?.name || "", amt, description.trim(), now, partyType, partyRecord?.id || null, currency.code, rate, editingId]
+        );
+
+        // 3. تطبيق التأثير الجديد
+        const newDelta = vType === "receipt" ? baseAmount : -baseAmount;
+        await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [newDelta, cashbox.id]);
+        
+        if (partyRecord && partyType !== "none") {
+           let newPDelta = 0;
+           if (partyType === "customer") newPDelta = vType === "receipt" ? -baseAmount : baseAmount;
+           else if (partyType === "supplier") newPDelta = vType === "payment" ? -baseAmount : baseAmount;
+           else if (partyType === "account") newPDelta = vType === "receipt" ? baseAmount : -baseAmount;
+           
+           if (partyType === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
+           else if (partyType === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
+           else if (partyType === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
+        }
+        
+        Alert.alert("تم التعديل", "تم تحديث السند وتعديل الأرصدة بنجاح");
+        cancelEdit();
+      } else {
+        // --- إنشاء سند جديد ---
+        const prefix = vType === "receipt" ? "RCP" : "PAY";
+        const last: any = await sqlite.getAllAsync(
+          `SELECT voucher_no FROM vouchers WHERE voucher_no LIKE ? ORDER BY created_at DESC LIMIT 1`,
+          [`${prefix}-%`]
+        );
+        let nextNum = 1;
+        if (last && last.length > 0) {
+          nextNum = parseInt(String(last[0].voucher_no).replace(/\D/g, ""), 10) + 1;
+        }
+        const voucherNo = `${prefix}-${String(nextNum).padStart(3, "0")}`;
+
+        await sqlite.runAsync(
+          `INSERT INTO vouchers (id, voucher_no, voucher_type, cashbox_id, party_name, amount, description, created_at, party_type, party_id, currency_code, exchange_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [newId(), voucherNo, vType, cashbox.id, partyRecord?.name || "", amt, description.trim(), now, partyType, partyRecord?.id || null, currency.code, rate]
+        );
+
+        const delta = vType === "receipt" ? baseAmount : -baseAmount;
+        await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [delta, cashbox.id]);
+        
+        if (partyRecord && partyType !== "none") {
+          let partyDelta = 0;
+          if (partyType === "customer") {
+            partyDelta = vType === "receipt" ? -baseAmount : baseAmount;
+            await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          } else if (partyType === "supplier") {
+            partyDelta = vType === "payment" ? -baseAmount : baseAmount;
+            await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          } else if (partyType === "account") {
+            partyDelta = vType === "receipt" ? baseAmount : -baseAmount;
+            await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          }
+        }
+
+        Alert.alert(
+          "تم الحفظ بنجاح",
+          "رقم السند: " + voucherNo + "\n\nهل تريد طباعة السند؟",
+          [
+            { text: "لاحقاً", style: "cancel" },
+            { text: "طباعة", onPress: async () => {
+                const html = await buildVoucherHtml({
+                  voucherNo, voucherType: vType, createdAt: now,
+                  partyName: partyRecord?.name || "—", cashboxName: cashbox.name,
+                  amount: amt, currencySymbol: currency.symbol || currency.code,
+                  description: description.trim() || undefined,
+                });
+                printHtml(html);
+            }},
+          ]
+        );
+      }
 
       setAmount("");
       setDescription("");
       setCashbox(null);
       setPartyRecord(null);
       setPartyType("none");
+      setEditingId(null);
 
       const refreshed: any = await sqlite.getAllAsync(
         "SELECT id, code, name, balance FROM cashboxes ORDER BY name"
@@ -287,11 +301,39 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
     } catch (e) { Alert.alert("تعذر الطباعة", String(e)); }
   };
 
-  const editVoucher = (h: any) => {
+  const editVoucher = async (h: any) => {
+    setEditingId(h.id);
     setVType(h.voucher_type);
     setAmount(String(h.amount));
     setDescription(h.description || "");
-    Alert.alert("تنبيه", "تم تحميل بيانات السند للتعديل. (لحفظ التعديل مالياً يرجى حذف السند وإعادة إنشائه).");
+    setDateStr(h.created_at ? new Date(h.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
+    
+    setPartyType(h.party_type || "none");
+    if (h.party_id && h.party_type !== "none") {
+      let p = null;
+      if (h.party_type === "customer") p = customers.find((c:any) => c.id === h.party_id);
+      else if (h.party_type === "supplier") p = suppliers.find((s:any) => s.id === h.party_id);
+      else if (h.party_type === "account") p = accounts.find((a:any) => a.id === h.party_id);
+      setPartyRecord(p || null);
+    } else {
+      setPartyRecord(null);
+    }
+    
+    if (h.cashbox_id) {
+      const cb = cashboxes.find((c:any) => c.id === h.cashbox_id);
+      setCashbox(cb || null);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setVType("receipt");
+    setAmount("");
+    setDescription("");
+    setDateStr(new Date().toISOString().slice(0, 10));
+    setPartyType("none");
+    setPartyRecord(null);
+    setCashbox(null);
   };
 
   const deleteVoucher = (id: string) => {
@@ -550,6 +592,24 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           </View>
         )}
 
+        
+        <Text style={styles.label}>التاريخ</Text>
+        <Pressable style={styles.picker} onPress={() => setShowDatePicker(true)}>
+          <Text style={styles.pickerText}>{dateStr}</Text>
+          <MaterialCommunityIcons name="calendar" size={20} color="#64748B" />
+        </Pressable>
+        {showDatePicker && (
+          <DateTimePicker
+            value={dateStr ? new Date(dateStr) : new Date()}
+            mode="date"
+            display="default"
+            onChange={(e, d) => {
+              setShowDatePicker(Platform.OS === "ios");
+              if (d) setDateStr(d.toISOString().slice(0, 10));
+            }}
+          />
+        )}
+    
         {/* ===== المبلغ ===== */}
         <Text style={styles.label}>المبلغ ({symbol})</Text>
         <TextInput
@@ -575,15 +635,22 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         />
 
         {/* ===== زر الحفظ ===== */}
-        <Pressable
-          style={[styles.primary, (!canSave || saving) && styles.disabled]}
-          onPress={save}
-          disabled={!canSave || saving}
-        >
-          <Text style={styles.primaryText}>
-            {saving ? "جارٍ الحفظ..." : "حفظ السند"}
-          </Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <Pressable
+            style={[styles.primary, { flex: 1 }, (!canSave || saving) && styles.disabled]}
+            onPress={save}
+            disabled={!canSave || saving}
+          >
+            <Text style={styles.primaryText}>
+              {saving ? "جارٍ الحفظ..." : (editingId ? "تحديث السند" : "حفظ السند")}
+            </Text>
+          </Pressable>
+          {editingId && (
+            <Pressable style={styles.cancelBtn} onPress={cancelEdit}>
+              <Text style={styles.cancelBtnText}>إلغاء</Text>
+            </Pressable>
+          )}
+        </View>
 
         {/* ===== آخر السندات ===== */}
         {history.length > 0 && (
@@ -617,9 +684,11 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  cancelBtn: { backgroundColor: '#f1f5f9', padding: 14, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  cancelBtnText: { color: '#0F172A', fontWeight: '700' },
   iconBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
-  scrollContent: { paddingBottom: 40, paddingHorizontal: 14 },
+  scrollContent: { backgroundColor: "#ffffff", margin: 10, borderRadius: 16, padding: 16,  paddingBottom: 40, paddingHorizontal: 14 },
 
   back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 4 },
   backText: {

@@ -104,7 +104,7 @@ export default function AccountsReport({ onBack }: { onBack: () => void }) {
   }, [accounts]);
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
+    <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
       <View style={styles.backWrap}>
         <Text style={styles.back} onPress={onBack}>
           {"->"} العودة إلى التقارير

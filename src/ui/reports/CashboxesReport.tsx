@@ -6,6 +6,7 @@ import ReportSummary from "./components/ReportSummary";
 import DateRangePicker from "./components/DateRangePicker";
 import ReportActions, { exportCsv } from "./components/ReportActions";
 import { COLORS } from "../theme";
+import { printHtml } from "../../utils/printDocument";
 
 type Row = any;
 type CurrencyFilter = "all" | string;
@@ -162,9 +163,10 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
     return movements.filter((m: any) => m.originalCurrency === currencyFilter);
   }, [movements, currencyFilter]);
 
-  const formatOriginal = (originalAmount: number, originalCurrency: string) => {
+  const formatOriginal = (originalAmount: any, originalCurrency: string) => {
+    const amt = Number(originalAmount) || 0;
     const c = currencies.find((x: any) => x.code === originalCurrency);
-    return `${originalAmount.toFixed(2)} ${c?.symbol || originalCurrency}`;
+    return `${amt.toFixed(2)} ${c?.symbol || originalCurrency || ""}`;
   };
 
   const totalDebit = useMemo(
@@ -217,22 +219,22 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
       const baseAmount = m.debit > 0 ? m.debit : m.credit;
       const displayAmount = viewCurrency === "original"
         ? formatOriginal(m.originalAmount, m.originalCurrency)
-        : fromBase(baseAmount, viewCurrency).toFixed(2) + " " + viewSymbol;
+        : (Number(fromBase(baseAmount, viewCurrency)) || 0).toFixed(2) + " " + viewSymbol;
       const type = m.debit > 0 ? "وارد" : "صادر";
       const color = m.debit > 0 ? "#059669" : "#DC2626";
       return "<tr><td>" + new Date(m.created_at).toLocaleDateString("ar-EG") + "</td><td>" + m.desc + "</td><td>" + m.ref + "</td><td style='color:" + color + ";font-weight:700;'>" + type + "</td><td style='font-weight:700;color:" + color + ";'>" + displayAmount + "</td></tr>";
     }).join("");
 
-    const totalDebitDisplay = viewCurrency === "original" ? totalDebit.toFixed(2) + " " + baseSymbol : fromBase(totalDebit, viewCurrency).toFixed(2) + " " + viewSymbol;
-    const totalCreditDisplay = viewCurrency === "original" ? totalCredit.toFixed(2) + " " + baseSymbol : fromBase(totalCredit, viewCurrency).toFixed(2) + " " + viewSymbol;
-    const balanceDisplay = viewCurrency === "original" ? Number(selected?.balance || 0).toFixed(2) + " " + baseSymbol : fromBase(Number(selected?.balance || 0), viewCurrency).toFixed(2) + " " + viewSymbol;
+    const totalDebitDisplay = viewCurrency === "original" ? (Number(totalDebit) || 0).toFixed(2) + " " + baseSymbol : (Number(fromBase(Number(totalDebit) || 0, viewCurrency)) || 0).toFixed(2) + " " + viewSymbol;
+    const totalCreditDisplay = viewCurrency === "original" ? (Number(totalCredit) || 0).toFixed(2) + " " + baseSymbol : (Number(fromBase(Number(totalCredit) || 0, viewCurrency)) || 0).toFixed(2) + " " + viewSymbol;
+    const balanceDisplay = viewCurrency === "original" ? (Number(selected?.balance) || 0).toFixed(2) + " " + baseSymbol : (Number(fromBase(Number(selected?.balance) || 0, viewCurrency)) || 0).toFixed(2) + " " + viewSymbol;
     const viewLabel = viewCurrency === "original" ? "كما هي" : viewSymbol;
 
     return "<!DOCTYPE html><html lang='ar' dir='rtl'><head><meta charset='utf-8'/><title>حركة صندوق</title><style>@page{size:A4;margin:12mm;}body{font-family:Arial,Tahoma;direction:rtl;color:#0F172A;font-size:13px;margin:0;padding:0;}.header{text-align:center;padding-bottom:14px;border-bottom:3px solid #F97316;margin-bottom:16px;}.brand{font-size:22px;font-weight:800;color:#1E40AF;}.brand-sub{font-size:11px;color:#8494B0;font-weight:700;margin-top:3px;}.info-grid{display:flex;gap:12px;margin-bottom:14px;}.info-cell{flex:1;background:#EFF6FF;border:1.5px solid #D6E3F8;border-radius:8px;padding:10px;}.info-label{font-size:11px;color:#8494B0;margin-bottom:3px;font-weight:700;}.info-value{font-size:14px;font-weight:800;color:#0F172A;}.summary{background:#EFF6FF;border-radius:8px;padding:12px;margin-bottom:14px;}.summary-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;font-weight:700;}table{width:100%;border-collapse:collapse;}th{background:#0B2545;color:#FFF;padding:10px 8px;font-size:12px;text-align:right;}td{padding:9px 8px;border-bottom:1px solid #E2E8F0;font-size:12px;text-align:right;}tr:nth-child(even) td{background:#F8FAFC;}.footer{margin-top:24px;padding-top:10px;border-top:1px solid #D6E3F8;font-size:10px;color:#8494B0;text-align:center;font-weight:600;}.empty{padding:30px;text-align:center;color:#8494B0;}</style></head><body><div class='header'><div class='brand'>فلوكس</div><div class='brand-sub'>مسلك مجاري</div></div><div class='info-grid'><div class='info-cell'><div class='info-label'>الصندوق</div><div class='info-value'>" + (selected?.name || "") + "</div>" + (selected?.code ? "<div style='font-size:11px;color:#64748B;margin-top:3px;'>رمز: " + selected.code + "</div>" : "") + "</div><div class='info-cell'><div class='info-label'>الفترة</div><div class='info-value'>" + from + " → " + to + "</div><div style='font-size:11px;color:#64748B;margin-top:3px;'>عرض المبالغ: " + viewLabel + "</div></div></div><div class='summary'><div class='summary-row'><span>إجمالي الوارد</span><span style='color:#059669;'>" + totalDebitDisplay + "</span></div><div class='summary-row'><span>إجمالي الصادر</span><span style='color:#DC2626;'>" + totalCreditDisplay + "</span></div><div class='summary-row' style='border-top:1.5px solid #D6E3F8;padding-top:8px;margin-top:5px;font-size:15px;'><span>الرصيد</span><span style='color:#1E40AF;'>" + balanceDisplay + "</span></div></div><table><thead><tr><th style='width:90px;'>التاريخ</th><th>البيان</th><th style='width:80px;'>المرجع</th><th style='width:60px;'>النوع</th><th style='width:130px;'>المبلغ</th></tr></thead><tbody>" + (rowsData || "<tr><td colspan='5' class='empty'>لا توجد حركات</td></tr>") + "</tbody></table><div class='footer'>نظام فلوكس المحاسبي - " + new Date().toLocaleString("ar-EG") + "</div></body></html>";
   };
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
+    <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
       <View style={styles.backWrap}>
         <Text style={styles.back} onPress={goBack}>
           -> {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}
@@ -295,9 +297,14 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
 
       <ReportActions
         onRefresh={() => (selected ? loadMovements(selected) : loadCashboxes())}
-        onExportPdf={() => {
-          const html = buildPdfHtml();
-          exportPdf(html, "حركة-" + (selected?.name || "الصناديق") + "-" + from + "-" + to + ".pdf");
+        onExportPdf={async () => {
+          try {
+            const html = buildPdfHtml();
+            await printHtml(html);
+          } catch (error: any) {
+            Alert.alert("خطأ في الطباعة", String(error.message || error));
+            console.error(error);
+          }
         }}
         onExportCsv={() => {
           const header = "التاريخ,البيان,المرجع,وارد,صادر,الرصيد\n";
@@ -341,15 +348,15 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
                 style={styles.row}
                 onPress={() => loadMovements(c)}
               >
-                <View style={styles.rowRight}>
-                  <Text style={[styles.amount, { color: COLORS.blue }]}>
-                    {Number(c.balance || 0).toFixed(2)} {baseSymbol}
-                  </Text>
-                </View>
                 <View style={styles.rowInfo}>
                   <Text style={styles.rowName}>{c.name}</Text>
                   <Text style={styles.rowMeta}>
                     {c.code} · {c.cashbox_type}
+                  </Text>
+                </View>
+            <View style={styles.rowRight}>
+                  <Text style={[styles.amount, { color: COLORS.blue }]}>
+                    {Number(c.balance || 0).toFixed(2)} {baseSymbol}
                   </Text>
                 </View>
               </Pressable>
@@ -407,7 +414,13 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
 
               return (
                 <View key={i} style={styles.row}>
-                  <View style={styles.rowRight}>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowName}>{m.desc}</Text>
+                    <Text style={styles.rowMeta}>
+                      {m.ref} · {new Date(m.created_at).toLocaleDateString("ar-EG")}
+                    </Text>
+                  </View>
+            <View style={styles.rowRight}>
                     <Text
                       style={[
                         styles.amountSmall,
@@ -423,12 +436,6 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
                       </Text>
                     )}
                   </View>
-                  <View style={styles.rowInfo}>
-                    <Text style={styles.rowName}>{m.desc}</Text>
-                    <Text style={styles.rowMeta}>
-                      {m.ref} · {new Date(m.created_at).toLocaleDateString("ar-EG")}
-                    </Text>
-                  </View>
                 </View>
               );
             })
@@ -440,6 +447,9 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  balance: { fontWeight: "800", fontSize: 16, textAlign: "left" },
+  value: { fontWeight: "800", fontSize: 16, textAlign: "left" },
+  rowValues: { alignItems: "flex-start", minWidth: 100 },
   backWrap: { paddingVertical: 8 },
   back: { alignSelf: "flex-end",  color: COLORS.blue, fontWeight: "700", textAlign: "right" },
   filterLabel: {
@@ -484,30 +494,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     padding: 10,
   },
-  row: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1.2,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    padding: 12,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowRight: { alignItems: "flex-end" },
-  rowName: {fontWeight: "700",
-    color: COLORS.text,
-    
-    fontSize: 14,textAlign: "right", writingDirection: "rtl", width: "100%"},
+  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
+  rowRight: { alignItems: "flex-start", minWidth: 100 },
+  rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   rowMeta: {
     fontSize: 11,
     color: COLORS.textMuted,
     marginTop: 2,
     textAlign: "right",
   },
-  amount: { fontWeight: "800", fontSize: 15 },
+  amount: { fontWeight: "800", fontSize: 16, textAlign: "left" },
   amountSmall: { fontWeight: "800", fontSize: 14 },
   conversionHint: {
     fontSize: 10,

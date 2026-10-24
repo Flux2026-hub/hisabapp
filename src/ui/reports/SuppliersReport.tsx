@@ -145,7 +145,7 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}>
+    <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
       <View style={styles.backWrap}>
         <Text style={styles.back} onPress={() => (selected ? setSelected(null) : onBack())}>
           {"->"} {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}
@@ -234,15 +234,15 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
           ) : (
             statement.map((m: any, i: number) => (
               <View key={i} style={styles.row}>
-                <View style={styles.rowRight}>
-                  <Text style={styles.valueSmall}>{Number(m.balance || 0).toFixed(2)}</Text>
-                </View>
                 <View style={styles.rowInfo}>
                   <Text style={styles.rowName}>{m.desc} · {m.ref}</Text>
                   <Text style={styles.rowMeta}>{new Date(m.created_at).toLocaleDateString("ar-EG")}</Text>
                   <Text style={{ fontSize: 11, marginTop: 3, textAlign: "right", color: m.debit > 0 ? "#dc2626" : "#059669" }}>
                     {m.debit > 0 ? "مدين: " + m.debit.toFixed(2) : "دائن: " + m.credit.toFixed(2)}
                   </Text>
+                </View>
+            <View style={styles.rowRight}>
+                  <Text style={styles.valueSmall}>{Number(m.balance || 0).toFixed(2)}</Text>
                 </View>
               </View>
             ))
@@ -254,15 +254,18 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  balance: { fontWeight: "800", fontSize: 16, textAlign: "left" },
+  amount: { fontWeight: "800", fontSize: 16, textAlign: "left" },
+  rowValues: { alignItems: "flex-start", minWidth: 100 },
   backWrap: { paddingVertical: 8 },
   back: { alignSelf: "flex-end",  color: "#1E40AF", fontWeight: "700", textAlign: "right" },
   sectionTitle: {fontSize: 15,  color: "#92400e",  marginTop: 14, marginBottom: 8 ,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
-  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
-  rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowRight: { alignItems: "flex-end" },
-  rowName: {fontWeight: "700", color: "#0F172A",  fontSize: 14, textAlign: "right", writingDirection: "rtl", width: "100%"},
+  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
+  rowRight: { alignItems: "flex-start", minWidth: 100 },
+  rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
-  value: { fontWeight: "800", fontSize: 14 },
+  value: { fontWeight: "800", fontSize: 16, textAlign: "left" },
   valueSmall: { fontWeight: "700", fontSize: 13, color: "#92400e" },
 });

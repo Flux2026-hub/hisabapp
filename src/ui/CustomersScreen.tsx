@@ -250,9 +250,7 @@ export default function CustomersScreen({
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView
-        keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}
-        contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}
+      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40,  paddingBottom: 40, paddingHorizontal: 4   }}
       >
         <Pressable style={styles.back} onPress={onBack}>
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
@@ -387,10 +385,10 @@ export default function CustomersScreen({
               <View key={r.id} style={styles.row}>
                 <View style={styles.rowActions}>
                   <Pressable onPress={() => edit(r)} style={styles.editBtn}>
-                    <Text style={styles.editText}>✏️</Text>
+                    <Text style={{ fontSize: 14 }}>✏️</Text>
                   </Pressable>
                   <Pressable onPress={() => remove(r)} style={styles.delBtn}>
-                    <Text style={styles.delText}>🗑️</Text>
+                    <Text style={{ fontSize: 14 }}>🗑️</Text>
                   </Pressable>
                 </View>
                 <View style={styles.rowInfo}>
@@ -398,15 +396,10 @@ export default function CustomersScreen({
                   <Text style={styles.rowMeta}>
                     {r.code ?? ""} · {r.phone || "—"}
                   </Text>
-                  <Text
-                    style={[
-                      styles.rowBalance,
-                      { color: balanceColor(r.balance) },
-                    ]}
-                  >
-                    الرصيد: {Number(r.balance || 0).toFixed(2)}
-                  </Text>
                 </View>
+                <Text style={[styles.rowBalance, { color: balanceColor(r.balance), fontWeight: "800", fontSize: 16 }]}>
+                  {Number(r.balance || 0).toFixed(2)} ر.ي
+                </Text>
               </View>
             ))
           )}
@@ -452,7 +445,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     padding: 10,
   },
-  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   rowName: {fontWeight: "700",
     fontSize: 14,
