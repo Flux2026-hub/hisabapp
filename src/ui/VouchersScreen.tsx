@@ -66,12 +66,17 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<Row[]>([]);
+  
+  // 🚀 فلاتر السجل (الملاحظة 8)
+  const [filterVType, setFilterVType] = useState<"all" | "receipt" | "payment">("all");
+  const [filterParty, setFilterParty] = useState<"all" | "customer" | "supplier">("all");
 
   useEffect(() => {
     (async () => {
       try {
+        // 🚀 تقييد الصناديق للتحليلية فقط (الملاحظة 4) - نجلب النوع للتحقق
         const cb: any = await sqlite.getAllAsync(
-          "SELECT id, code, name, balance FROM cashboxes ORDER BY name"
+          "SELECT id, code, name, balance, cashbox_type FROM cashboxes ORDER BY name"
         );
         const cur: any = await sqlite.getAllAsync(
           "SELECT id, code, name, symbol, exchange_rate, is_base FROM currencies ORDER BY is_base DESC, code"
@@ -103,22 +108,41 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
         const baseCur = normalized.find((x: any) => x.isBase);
         if (baseCur) setCurrency(baseCur);
-
-        await loadHistory();
       } catch (e) {
         Alert.alert("تعذر التحميل", String(e));
       }
     })();
   }, []);
 
+  // 🚀 تحديث السجل عند تغيير الفلاتر (الملاحظة 8)
+  useEffect(() => {
+    loadHistory();
+  }, [filterVType, filterParty]);
+
   const loadHistory = async () => {
-    const rows: any = await sqlite.getAllAsync(
-      "SELECT id, voucher_no, voucher_type, party_name, amount, currency_code, created_at FROM vouchers ORDER BY created_at DESC LIMIT 15"
-    );
-    setHistory(rows || []);
+    try {
+      let query = "SELECT id, voucher_no, voucher_type, party_name, amount, currency_code, created_at, party_type, cashbox_id, description, exchange_rate FROM vouchers WHERE 1=1";
+      const params: any[] = [];
+
+      if (filterVType !== "all") {
+        query += " AND voucher_type = ?";
+        params.push(filterVType);
+      }
+      if (filterParty !== "all") {
+        query += " AND party_type = ?";
+        params.push(filterParty);
+      }
+
+      query += " ORDER BY created_at DESC LIMIT 30";
+      const rows: any = await sqlite.getAllAsync(query, params);
+      setHistory(rows || []);
+    } catch (e) {
+      console.log("History error", e);
+    }
   };
 
   const symbol = currency?.symbol || currency?.code || "";
+  const sarRate = currencies.find((c: any) => c.code === "SAR")?.exchangeRate || 140;
 
   const partyOptions: Row[] =
     partyType === "customer"
@@ -128,6 +152,11 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
       : partyType === "account"
       ? accounts
       : [];
+
+  // 🚀 فلترة الصناديق المتاحة: التحليلية فقط، أو الصندوق الحالي إذا كنا نعدل
+  const availableCashboxes = cashboxes.filter(
+    (c: any) => c.cashbox_type === "analytical" || c.id === cashbox?.id
+  );
 
   const canSave =
     !!cashbox &&
@@ -145,7 +174,6 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
   const save = () => {
     if (!canSave || !cashbox || !currency) return;
     const amt = Number(amount);
-    // تم السماح بالرصيد السالب للصناديق
     Alert.alert(
       "تأكيد الحفظ",
       (vType === "receipt" ? "سند قبض" : "سند دفع") +
@@ -174,51 +202,47 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
       const baseAmount = isBase ? amt : amt * rate;
 
       if (editingId) {
-        // 1. عكس تأثير السند القديم
         const oldV: any = await sqlite.getFirstAsync("SELECT * FROM vouchers WHERE id = ?", [editingId]);
         if (oldV) {
           const oldRate = Number(oldV.exchange_rate) || 1;
           const oldBaseAmount = Number(oldV.amount) * oldRate;
           const oldDelta = oldV.voucher_type === "receipt" ? -oldBaseAmount : oldBaseAmount;
           await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [oldDelta, oldV.cashbox_id]);
-          
+
           if (oldV.party_id && oldV.party_type !== "none") {
             let oldPDelta = 0;
             if (oldV.party_type === "customer") oldPDelta = oldV.voucher_type === "receipt" ? oldBaseAmount : -oldBaseAmount;
             else if (oldV.party_type === "supplier") oldPDelta = oldV.voucher_type === "payment" ? oldBaseAmount : -oldBaseAmount;
             else if (oldV.party_type === "account") oldPDelta = oldV.voucher_type === "receipt" ? -oldBaseAmount : oldBaseAmount;
-            
+
             if (oldV.party_type === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
             else if (oldV.party_type === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
             else if (oldV.party_type === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
           }
         }
 
-        // 2. تحديث السند
         await sqlite.runAsync(
           "UPDATE vouchers SET voucher_type=?, cashbox_id=?, party_name=?, amount=?, description=?, created_at=?, party_type=?, party_id=?, currency_code=?, exchange_rate=? WHERE id=?",
           [vType, cashbox.id, partyRecord?.name || "", amt, description.trim(), now, partyType, partyRecord?.id || null, currency.code, rate, editingId]
         );
 
-        // 3. تطبيق التأثير الجديد
         const newDelta = vType === "receipt" ? baseAmount : -baseAmount;
         await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [newDelta, cashbox.id]);
-        
+
         if (partyRecord && partyType !== "none") {
            let newPDelta = 0;
            if (partyType === "customer") newPDelta = vType === "receipt" ? -baseAmount : baseAmount;
            else if (partyType === "supplier") newPDelta = vType === "payment" ? -baseAmount : baseAmount;
            else if (partyType === "account") newPDelta = vType === "receipt" ? baseAmount : -baseAmount;
-           
+
            if (partyType === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
            else if (partyType === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
            else if (partyType === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
         }
-        
+
         Alert.alert("تم التعديل", "تم تحديث السند وتعديل الأرصدة بنجاح");
         cancelEdit();
       } else {
-        // --- إنشاء سند جديد ---
         const prefix = vType === "receipt" ? "RCP" : "PAY";
         const last: any = await sqlite.getAllAsync(
           `SELECT voucher_no FROM vouchers WHERE voucher_no LIKE ? ORDER BY created_at DESC LIMIT 1`,
@@ -237,7 +261,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
         const delta = vType === "receipt" ? baseAmount : -baseAmount;
         await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [delta, cashbox.id]);
-        
+
         if (partyRecord && partyType !== "none") {
           let partyDelta = 0;
           if (partyType === "customer") {
@@ -278,7 +302,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
       setEditingId(null);
 
       const refreshed: any = await sqlite.getAllAsync(
-        "SELECT id, code, name, balance FROM cashboxes ORDER BY name"
+        "SELECT id, code, name, balance, cashbox_type FROM cashboxes ORDER BY name"
       );
       setCashboxes(refreshed || []);
       await loadHistory();
@@ -294,20 +318,22 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
     try {
       const html = await buildVoucherHtml({
         voucherNo: h.voucher_no, voucherType: h.voucher_type, createdAt: h.created_at,
-        partyName: h.party_name || "—", cashboxName: "—", amount: Number(h.amount),
-        currencySymbol: "ر.ي", description: h.description,
+        partyName: h.party_name || "—", cashboxName: cashboxes.find(c=>c.id === h.cashbox_id)?.name || "—",
+        amount: Number(h.amount), currencySymbol: h.currency_code || "YER",
+        description: h.description,
       });
       printHtml(html);
     } catch (e) { Alert.alert("تعذر الطباعة", String(e)); }
   };
 
+  // 🚀 إصلاح التعديل المباشر (الملاحظة 7)
   const editVoucher = async (h: any) => {
     setEditingId(h.id);
     setVType(h.voucher_type);
     setAmount(String(h.amount));
     setDescription(h.description || "");
     setDateStr(h.created_at ? new Date(h.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
-    
+
     setPartyType(h.party_type || "none");
     if (h.party_id && h.party_type !== "none") {
       let p = null;
@@ -318,10 +344,16 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
     } else {
       setPartyRecord(null);
     }
-    
+
     if (h.cashbox_id) {
       const cb = cashboxes.find((c:any) => c.id === h.cashbox_id);
       setCashbox(cb || null);
+    }
+
+    // جلب العملة الخاصة بالسند عند التعديل
+    if (h.currency_code) {
+      const cur = currencies.find((c:any) => c.code === h.currency_code);
+      if (cur) setCurrency(cur);
     }
   };
 
@@ -346,14 +378,14 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
             const rate = Number(v.exchange_rate) || 1;
             const baseAmount = Number(v.amount) * rate;
             const delta = v.voucher_type === "receipt" ? -baseAmount : baseAmount;
-            
+
             await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [delta, v.cashbox_id]);
             if (v.party_id && v.party_type !== "none") {
                let pDelta = 0;
                if (v.party_type === "customer") pDelta = v.voucher_type === "receipt" ? baseAmount : -baseAmount;
                else if (v.party_type === "supplier") pDelta = v.voucher_type === "payment" ? baseAmount : -baseAmount;
                else if (v.party_type === "account") pDelta = v.voucher_type === "receipt" ? -baseAmount : baseAmount;
-               
+
                if (v.party_type === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [pDelta, v.party_id]);
                else if (v.party_type === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [pDelta, v.party_id]);
                else if (v.party_type === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [pDelta, v.party_id]);
@@ -384,50 +416,23 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         <BrandBanner />
         <Text style={[styles.screenTitle, { marginTop: 15 }]}>السندات (قبض / دفع)</Text>
         <Text style={styles.hint}>
-          سند القبض يُضيف للصندوق، وسند الدفع يُنقص منه. يمكن ربط السند بطرف
-          (عميل / مورد / حساب).
+          سند القبض يُضيف للصندوق، وسند الدفع يُنقص منه. يمكن ربط السند بطرف (عميل / مورد / حساب).
         </Text>
-
-        {/* ===== نوع السند ===== */}
-        
 
         <View style={styles.toggleRow}>
           <Pressable
-            style={[
-              styles.toggleBtn,
-              isReceipt && styles.toggleBtnActive,
-            ]}
+            style={[styles.toggleBtn, isReceipt && styles.toggleBtnActive]}
             onPress={() => setVType("receipt")}
           >
-            <Text
-              style={[
-                styles.toggleText,
-                isReceipt && styles.toggleTextActive,
-              ]}
-            >
-              قبض
-            </Text>
+            <Text style={[styles.toggleText, isReceipt && styles.toggleTextActive]}>قبض</Text>
           </Pressable>
           <Pressable
-            style={[
-              styles.toggleBtn,
-              !isReceipt && styles.toggleBtnActive,
-            ]}
+            style={[styles.toggleBtn, !isReceipt && styles.toggleBtnActive]}
             onPress={() => setVType("payment")}
           >
-            <Text
-              style={[
-                styles.toggleText,
-                !isReceipt && styles.toggleTextActive,
-              ]}
-            >
-              دفع
-            </Text>
+            <Text style={[styles.toggleText, !isReceipt && styles.toggleTextActive]}>دفع</Text>
           </Pressable>
         </View>
-
-        {/* ===== نوع الطرف ===== */}
-        
 
         <View style={styles.partyRow}>
           {(
@@ -443,19 +448,9 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
               <Pressable
                 key={key}
                 onPress={() => changePartyType(key)}
-                style={[
-                  styles.partyBtn,
-                  active && styles.partyBtnActive,
-                ]}
+                style={[styles.partyBtn, active && styles.partyBtnActive]}
               >
-                <Text
-                  style={[
-                    styles.partyText,
-                    active && styles.partyTextActive,
-                  ]}
-                >
-                  {label}
-                </Text>
+                <Text style={[styles.partyText, active && styles.partyTextActive]}>{label}</Text>
               </Pressable>
             );
           })}
@@ -464,23 +459,11 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         {partyType !== "none" && (
           <>
             <Text style={styles.label}>
-              {partyType === "customer"
-                ? "اختر العميل"
-                : partyType === "supplier"
-                ? "اختر المورد"
-                : "اختر الحساب"}
+              {partyType === "customer" ? "اختر العميل" : partyType === "supplier" ? "اختر المورد" : "اختر الحساب"}
             </Text>
-            <Pressable
-              style={styles.picker}
-              onPress={() => setShowParty((v) => !v)}
-            >
+            <Pressable style={styles.picker} onPress={() => setShowParty((v) => !v)}>
               <Text style={styles.pickerText}>
-                {partyRecord
-                  ? partyRecord.name +
-                    " (" +
-                    Number(partyRecord.balance || 0).toFixed(2) +
-                    ")"
-                  : "اختر..."}
+                {partyRecord ? partyRecord.name + " (" + Number(partyRecord.balance || 0).toFixed(2) + " YER)" : "اختر..."}
               </Text>
               <Text style={styles.pickerArrow}>▼</Text>
             </Pressable>
@@ -489,54 +472,46 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
                 {partyOptions.length === 0 ? (
                   <Text style={styles.suggestEmpty}>لا توجد عناصر</Text>
                 ) : (
-                  partyOptions.map((p) => (
-                    <Pressable
-                      key={p.id}
-                      style={styles.suggestItem}
-                      onPress={() => {
-                        setPartyRecord(p);
-                        setShowParty(false);
-                      }}
-                    >
-                      <Text style={styles.suggestName}>{p.name}</Text>
-                      <Text style={styles.suggestMeta}>
-                        {p.code} · الرصيد:{" "}
-                        {Number(p.balance || 0).toFixed(2)}
-                      </Text>
-                    </Pressable>
-                  ))
+                  partyOptions.map((p) => {
+                    const bal = Number(p.balance || 0);
+                    const sarEq = bal / sarRate;
+                    return (
+                      <Pressable
+                        key={p.id}
+                        style={styles.suggestItem}
+                        onPress={() => { setPartyRecord(p); setShowParty(false); }}
+                      >
+                        <Text style={styles.suggestName}>{p.name}</Text>
+                        {/* 🚀 عرض رصيد العميل/المورد بالعملتين (الملاحظة 11) */}
+                        <Text style={styles.suggestMeta}>
+                          {p.code} · الرصيد: {bal.toFixed(2)} YER (≈ {sarEq.toFixed(2)} SAR)
+                        </Text>
+                      </Pressable>
+                    );
+                  })
                 )}
               </View>
             )}
           </>
         )}
 
-        {/* ===== الصندوق ===== */}
-        <Text style={styles.label}>الصندوق</Text>
-        <Pressable
-          style={styles.picker}
-          onPress={() => setShowCashbox((v) => !v)}
-        >
+        <Text style={styles.label}>الصندوق (تحليلي فقط)</Text>
+        <Pressable style={styles.picker} onPress={() => setShowCashbox((v) => !v)}>
           <Text style={styles.pickerText}>
-            {cashbox
-              ? cashbox.name + " (" + Number(cashbox.balance).toFixed(2) + ")"
-              : "اختر الصندوق"}
+            {cashbox ? cashbox.name + " (" + Number(cashbox.balance).toFixed(2) + ")" : "اختر الصندوق التحليلي"}
           </Text>
           <Text style={styles.pickerArrow}>▼</Text>
         </Pressable>
         {showCashbox && (
           <View style={styles.suggestBox}>
-            {cashboxes.length === 0 ? (
-              <Text style={styles.suggestEmpty}>لا توجد صناديق</Text>
+            {availableCashboxes.length === 0 ? (
+              <Text style={styles.suggestEmpty}>لا توجد صناديق تحليلية (أضف واحداً من شاشة الصناديق)</Text>
             ) : (
-              cashboxes.map((c) => (
+              availableCashboxes.map((c) => (
                 <Pressable
                   key={c.id}
                   style={styles.suggestItem}
-                  onPress={() => {
-                    setCashbox(c);
-                    setShowCashbox(false);
-                  }}
+                  onPress={() => { setCashbox(c); setShowCashbox(false); }}
                 >
                   <Text style={styles.suggestName}>{c.name}</Text>
                   <Text style={styles.suggestMeta}>
@@ -548,22 +523,10 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           </View>
         )}
 
-        {/* ===== العملة ===== */}
         <Text style={styles.label}>العملة</Text>
-        <Pressable
-          style={styles.picker}
-          onPress={() => setShowCurrency((v) => !v)}
-        >
+        <Pressable style={styles.picker} onPress={() => setShowCurrency((v) => !v)}>
           <Text style={styles.pickerText}>
-            {currency
-              ? currency.name +
-                " (" +
-                currency.symbol +
-                ")" +
-                (currency.isBase
-                  ? " — أساسية"
-                  : " — 1 = " + Number(currency.exchangeRate).toFixed(2) + " YER")
-              : "اختر عملة"}
+            {currency ? currency.name + " (" + currency.symbol + ")" + (currency.isBase ? " — أساسية" : " — 1 = " + Number(currency.exchangeRate).toFixed(2) + " YER") : "اختر عملة"}
           </Text>
           <Text style={styles.pickerArrow}>▼</Text>
         </Pressable>
@@ -573,26 +536,17 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
               <Pressable
                 key={c.id}
                 style={styles.suggestItem}
-                onPress={() => {
-                  setCurrency(c);
-                  setShowCurrency(false);
-                }}
+                onPress={() => { setCurrency(c); setShowCurrency(false); }}
               >
-                <Text style={styles.suggestName}>
-                  {c.name} ({c.symbol})
-                </Text>
+                <Text style={styles.suggestName}>{c.name} ({c.symbol})</Text>
                 <Text style={styles.suggestMeta}>
-                  {c.code}
-                  {c.isBase
-                    ? " · أساسية"
-                    : " · 1 = " + Number(c.exchangeRate).toFixed(2) + " YER"}
+                  {c.code} {c.isBase ? " · أساسية" : " · 1 = " + Number(c.exchangeRate).toFixed(2) + " YER"}
                 </Text>
               </Pressable>
             ))}
           </View>
         )}
 
-        
         <Text style={styles.label}>التاريخ</Text>
         <Pressable style={styles.picker} onPress={() => setShowDatePicker(true)}>
           <Text style={styles.pickerText}>{dateStr}</Text>
@@ -609,8 +563,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
             }}
           />
         )}
-    
-        {/* ===== المبلغ ===== */}
+
         <Text style={styles.label}>المبلغ ({symbol})</Text>
         <TextInput
           style={styles.input}
@@ -622,7 +575,6 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           textAlign="right"
         />
 
-        {/* ===== البيان ===== */}
         <Text style={styles.label}>البيان (اختياري)</Text>
         <TextInput
           style={[styles.input, { minHeight: 60 }]}
@@ -634,7 +586,6 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           multiline
         />
 
-        {/* ===== زر الحفظ ===== */}
         <View style={{ flexDirection: "row", gap: 10 }}>
           <Pressable
             style={[styles.primary, { flex: 1 }, (!canSave || saving) && styles.disabled]}
@@ -652,13 +603,40 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           )}
         </View>
 
-        {/* ===== آخر السندات ===== */}
+        {/* ===== السجل ===== */}
         {history.length > 0 && (
           <>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionAccent} />
-              <Text style={styles.sectionTitle}>آخر السندات</Text>
+              <Text style={styles.sectionTitle}>سجل السندات</Text>
             </View>
+
+            {/* 🚀 أزرار الفلترة (الملاحظة 8) */}
+            <View style={styles.filterContainer}>
+              <View style={styles.filterRow}>
+                <Pressable onPress={() => setFilterVType("all")} style={[styles.filterBtn, filterVType === "all" && styles.filterBtnActive]}>
+                  <Text style={[styles.filterText, filterVType === "all" && styles.filterTextActive]}>الكل</Text>
+                </Pressable>
+                <Pressable onPress={() => setFilterVType("receipt")} style={[styles.filterBtn, filterVType === "receipt" && styles.filterBtnActive]}>
+                  <Text style={[styles.filterText, filterVType === "receipt" && styles.filterTextActive]}>قبض</Text>
+                </Pressable>
+                <Pressable onPress={() => setFilterVType("payment")} style={[styles.filterBtn, filterVType === "payment" && styles.filterBtnActive]}>
+                  <Text style={[styles.filterText, filterVType === "payment" && styles.filterTextActive]}>دفع</Text>
+                </Pressable>
+              </View>
+              <View style={styles.filterRow}>
+                <Pressable onPress={() => setFilterParty("all")} style={[styles.filterBtn, filterParty === "all" && styles.filterBtnActive]}>
+                  <Text style={[styles.filterText, filterParty === "all" && styles.filterTextActive]}>الكل</Text>
+                </Pressable>
+                <Pressable onPress={() => setFilterParty("customer")} style={[styles.filterBtn, filterParty === "customer" && styles.filterBtnActive]}>
+                  <Text style={[styles.filterText, filterParty === "customer" && styles.filterTextActive]}>عملاء</Text>
+                </Pressable>
+                <Pressable onPress={() => setFilterParty("supplier")} style={[styles.filterBtn, filterParty === "supplier" && styles.filterBtnActive]}>
+                  <Text style={[styles.filterText, filterParty === "supplier" && styles.filterTextActive]}>موردين</Text>
+                </Pressable>
+              </View>
+            </View>
+
             {history.map((h) => (
               <View key={h.id} style={styles.histRow}>
                 <View style={styles.histActions}>
@@ -668,7 +646,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
                 </View>
                 <View style={styles.histInfo}>
                   <Text style={styles.histName}>{h.party_name || "—"}</Text>
-                  <Text style={styles.histMeta}>{h.voucher_no}</Text>
+                  <Text style={styles.histMeta}>{h.voucher_no} {h.currency_code ? `(${h.currency_code})` : ""}</Text>
                   <Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
                 </View>
                 <Text style={[styles.histAmount, { color: h.voucher_type === "receipt" ? C.success : C.danger }]}>
@@ -688,198 +666,49 @@ const styles = StyleSheet.create({
   cancelBtnText: { color: '#0F172A', fontWeight: '700' },
   iconBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
-  scrollContent: { backgroundColor: "#ffffff", margin: 10, borderRadius: 16, padding: 16,  paddingBottom: 40, paddingHorizontal: 14 },
-
-  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 4 },
-  backText: {
-     color: C.orange, textAlign: "right",
-    fontWeight: "800",
-    textAlign: "right",
-    fontSize: 13,
-  },
-
-  screenTitle: {fontSize: 22,
-    
-    color: C.ink,
-    
-    marginBottom: 4,
- textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  hint: {fontSize: 12,
-    color: C.muted,
-    
-    marginBottom: 16,
-    lineHeight: 18,textAlign: "right", writingDirection: "rtl", width: "100%"},
-
-  sectionHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    marginTop: 18,
-    marginBottom: 10,
-    gap: 8,
-  },
-  sectionAccent: {
-    width: 4,
-    height: 20,
-    backgroundColor: C.orange,
-    borderRadius: 2,
-  },
-  sectionTitle: {fontSize: 16,
-    
-    color: C.ink,
-    
-   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-
-  // ===== Toggle =====
+  scrollContent: { backgroundColor: "#ffffff", margin: 10, borderRadius: 16, padding: 16, paddingBottom: 40, paddingHorizontal: 14 },
+  back: { paddingVertical: 10, alignSelf: "flex-end", marginBottom: 4 },
+  backText: { color: C.orange, textAlign: "right", fontWeight: "800", fontSize: 13 },
+  screenTitle: { fontSize: 22, color: C.ink, marginBottom: 4, textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold" },
+  hint: { fontSize: 12, color: C.muted, marginBottom: 16, lineHeight: 18, textAlign: "right", writingDirection: "rtl", width: "100%" },
+  sectionHeader: { flexDirection: "row-reverse", alignItems: "center", marginTop: 18, marginBottom: 10, gap: 8 },
+  sectionAccent: { width: 4, height: 20, backgroundColor: C.orange, borderRadius: 2 },
+  sectionTitle: { fontSize: 16, color: C.ink, textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold" },
   toggleRow: { flexDirection: "row-reverse", gap: 10, marginBottom: 16 },
-  toggleBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.2,
-    borderColor: C.line,
-    backgroundColor: C.card,
-    alignItems: "center",
-  },
-  toggleBtnActive: {
-    backgroundColor: C.orange,
-    borderColor: C.orange,
-    shadowColor: C.orange,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  toggleText: {
-    color: C.ink,
-    fontWeight: "700",
-    fontSize: 15,
-  },
+  toggleBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1.2, borderColor: C.line, backgroundColor: C.card, alignItems: "center" },
+  toggleBtnActive: { backgroundColor: C.orange, borderColor: C.orange, shadowColor: C.orange, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 4 },
+  toggleText: { color: C.ink, fontWeight: "700", fontSize: 15 },
   toggleTextActive: { color: "#FFFFFF", fontWeight: "800" },
-
-  // ===== Party =====
   partyRow: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginBottom: 16 },
-  partyBtn: {
-    flex: 1,
-    minWidth: 70,
-    paddingVertical: 12,
-    borderRadius: 14,
-    borderWidth: 1.2,
-    borderColor: C.line,
-    backgroundColor: C.card,
-    alignItems: "center",
-  },
-  partyBtnActive: {
-    backgroundColor: C.blue,
-    borderColor: C.blue,
-    shadowColor: C.blue,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
+  partyBtn: { flex: 1, minWidth: 70, paddingVertical: 12, borderRadius: 14, borderWidth: 1.2, borderColor: C.line, backgroundColor: C.card, alignItems: "center" },
+  partyBtnActive: { backgroundColor: C.blue, borderColor: C.blue, shadowColor: C.blue, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 3 },
   partyText: { color: C.ink, fontWeight: "700", fontSize: 12 },
   partyTextActive: { color: "#FFFFFF", fontWeight: "800" },
-
-  // ===== Picker =====
-  picker: {
-    backgroundColor: C.card,
-    borderWidth: 1.2,
-    borderColor: C.line,
-    borderRadius: 12,
-    padding: 14,
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  pickerText: {
-    color: C.ink,
-    textAlign: "right",
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "600",
-  },
+  picker: { backgroundColor: C.card, borderWidth: 1.2, borderColor: C.line, borderRadius: 12, padding: 14, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
+  pickerText: { color: C.ink, textAlign: "right", flex: 1, fontSize: 13, fontWeight: "600" },
   pickerArrow: { color: C.muted, fontSize: 12, marginLeft: 8 },
-
-  // ===== Input =====
-  label: {fontSize: 12,
-    color: C.muted,
-    
-    marginTop: 12,
-    marginBottom: 5,
-    fontWeight: "700",textAlign: "right", writingDirection: "rtl", width: "100%"},
-  input: {backgroundColor: C.card,
-    borderWidth: 1.2,
-    borderColor: C.line,
-    borderRadius: 12,
-    padding: 13,
-    fontSize: 14,
-    color: C.ink,
-    fontWeight: "600",textAlign: "right", writingDirection: "rtl", width: "100%"},
-
-  // ===== Primary Button =====
-  primary: {
-    backgroundColor: C.orange,
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: "center",
-    marginTop: 22,
-    shadowColor: C.orange,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 14,
-    elevation: 5,
-  },
-  primaryText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
+  label: { fontSize: 12, color: C.muted, marginTop: 12, marginBottom: 5, fontWeight: "700", textAlign: "right", writingDirection: "rtl", width: "100%" },
+  input: { backgroundColor: C.card, borderWidth: 1.2, borderColor: C.line, borderRadius: 12, padding: 13, fontSize: 14, color: C.ink, fontWeight: "600", textAlign: "right", writingDirection: "rtl", width: "100%" },
+  primary: { backgroundColor: C.orange, paddingVertical: 16, borderRadius: 14, alignItems: "center", marginTop: 22, shadowColor: C.orange, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.3, shadowRadius: 14, elevation: 5 },
+  primaryText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16, letterSpacing: 0.5 },
   disabled: { opacity: 0.5 },
-
-  // ===== Suggest =====
-  suggestBox: {
-    marginTop: 6,
-    backgroundColor: C.card,
-    borderWidth: 1.2,
-    borderColor: C.line,
-    borderRadius: 12,
-    overflow: "hidden",
-    shadowColor: C.navy,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  suggestItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: C.bg,
-  },
-  suggestName: {
-    fontWeight: "700",
-    color: C.ink,
-    textAlign: "right",
-    fontSize: 13,
-  },
-  suggestMeta: {
-    fontSize: 11,
-    color: C.muted,
-    textAlign: "right",
-    marginTop: 2,
-  },
-  suggestEmpty: {
-    padding: 12,
-    color: C.muted,
-    textAlign: "right",
-    fontSize: 12,
-  },
-
-  // ===== History =====
+  suggestBox: { marginTop: 6, backgroundColor: C.card, borderWidth: 1.2, borderColor: C.line, borderRadius: 12, overflow: "hidden", shadowColor: C.navy, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 4 },
+  suggestItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: C.bg },
+  suggestName: { fontWeight: "700", color: C.ink, textAlign: "right", fontSize: 13 },
+  suggestMeta: { fontSize: 11, color: C.muted, textAlign: "right", marginTop: 2 },
+  suggestEmpty: { padding: 12, color: C.muted, textAlign: "right", fontSize: 12 },
   histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   histInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   histName: { fontWeight: "700", fontSize: 14, color: C.ink, textAlign: "right" },
   histMeta: { fontSize: 11, color: C.blue, marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: C.muted, marginTop: 2, textAlign: "right" },
   histAmount: { fontWeight: "800", fontSize: 16, color: C.ink, textAlign: "left" },
+  
+  // 🚀 تنسيقات الفلترة الجديدة
+  filterContainer: { marginBottom: 15, gap: 8 },
+  filterRow: { flexDirection: "row-reverse", gap: 8 },
+  filterBtn: { flex: 1, backgroundColor: "#F8FAFC", borderWidth: 1, borderColor: "#E2E8F0", paddingVertical: 8, borderRadius: 8, alignItems: "center" },
+  filterBtnActive: { backgroundColor: C.bluePale, borderColor: C.blue },
+  filterText: { fontSize: 12, color: C.muted, fontWeight: "700" },
+  filterTextActive: { color: C.blue, fontWeight: "800" },
 });

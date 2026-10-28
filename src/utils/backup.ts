@@ -1,7 +1,9 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sqlite } from "../db/local";
 
+// 🚀 إضافة جميع الجداول بما فيها المفقودة (الملاحظة 9)
 const TABLES = [
   "items", "warehouses", "product_boms", "product_bom_lines",
   "stock_receipts", "stock_receipt_lines", "stock_movements",
@@ -9,6 +11,7 @@ const TABLES = [
   "invoices", "invoice_lines", "vouchers",
   "journal_entries", "journal_lines", "account_transfers",
   "accounts", "currencies", "sales_reps", "sales_returns", "sales_return_lines",
+  "purchase_returns", "purchase_return_lines", "sync_queue"
 ];
 
 export type BackupFile = {
@@ -16,6 +19,7 @@ export type BackupFile = {
   createdAt: number;
   appName: string;
   data: Record<string, any[]>;
+  settings?: any; // 🚀 إضافة الإعدادات للملف
 };
 
 export async function exportBackup(): Promise<{ success: boolean; uri?: string; error?: string }> {
@@ -29,18 +33,32 @@ export async function exportBackup(): Promise<{ success: boolean; uri?: string; 
         data[table] = [];
       }
     }
+
+    // 🚀 جلب الإعدادات من الذاكرة (الملاحظة 9)
+    let settings = null;
+    try {
+      const rawSettings = await AsyncStorage.getItem("flux_settings_v1");
+      if (rawSettings) settings = JSON.parse(rawSettings);
+    } catch (e) {
+      console.log("Failed to fetch settings for backup", e);
+    }
+
     const backup: BackupFile = {
       version: "1.0",
       createdAt: Date.now(),
       appName: "فلوكس - مسلك مجاري",
       data,
+      settings, // 🚀 تضمين الإعدادات في الملف
     };
+
     const date = new Date().toISOString().slice(0, 10);
     const filename = `flux-backup-${date}.json`;
     const path = FileSystem.cacheDirectory + filename;
+    
     await FileSystem.writeAsStringAsync(path, JSON.stringify(backup, null, 2), {
       encoding: FileSystem.EncodingType.UTF8,
     });
+    
     const can = await Sharing.isAvailableAsync();
     if (can) {
       await Sharing.shareAsync(path, {
@@ -57,8 +75,7 @@ export async function exportBackup(): Promise<{ success: boolean; uri?: string; 
 
 export async function pickBackupFile(): Promise<{ success: boolean; backup?: BackupFile; error?: string }> {
   try {
-    const permissions =
-      await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+    const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
 
     if (!permissions.granted) {
       return { success: false, error: "لم يتم منح صلاحية الوصول للملفات" };
@@ -93,9 +110,20 @@ export async function pickBackupFile(): Promise<{ success: boolean; backup?: Bac
 export async function restoreBackup(backup: BackupFile): Promise<{ success: boolean; restored?: number; error?: string }> {
   try {
     let restored = 0;
+    
+    // 🚀 استعادة الإعدادات أولاً (الملاحظة 9)
+    if (backup.settings) {
+      try {
+        await AsyncStorage.setItem("flux_settings_v1", JSON.stringify(backup.settings));
+      } catch (e) {
+        console.log("Failed to restore settings", e);
+      }
+    }
+
     for (const table of TABLES) {
       const rows = backup.data[table];
       if (!rows || !Array.isArray(rows) || rows.length === 0) continue;
+      
       try {
         await sqlite.execAsync(`DELETE FROM ${table}`);
         for (const row of rows) {
@@ -103,6 +131,7 @@ export async function restoreBackup(backup: BackupFile): Promise<{ success: bool
           const values = keys.map((k) => row[k]);
           const placeholders = keys.map(() => "?").join(", ");
           const cols = keys.join(", ");
+          
           await sqlite.runAsync(
             `INSERT INTO ${table} (${cols}) VALUES (${placeholders})`,
             values

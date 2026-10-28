@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import BrandBanner from "./components/BrandBanner";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -11,6 +10,9 @@ import {
   TextInput,
   View,
 } from "react-native";
+import * as Contacts from 'expo-contacts'; // 🚀 دفتر الهاتف
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import BrandBanner from "./components/BrandBanner";
 import {
   createCustomer,
   createSupplier,
@@ -21,6 +23,7 @@ import {
   updateCustomer,
   updateSupplier,
 } from "../sync/accounting";
+import { sqlite } from "../db/local";
 
 type Kind = "customers" | "suppliers";
 type Row = any;
@@ -40,7 +43,7 @@ const CONFIG: Record<
   customers: {
     singular: "العميل",
     plural: "العملاء",
-    parentAccountCode: "1300",
+    parentAccountCode: "1103", // 🚀 ربط العملاء بحساب 1103 (الملاحظة 15)
     list: listCustomers,
     create: createCustomer,
     update: updateCustomer,
@@ -49,7 +52,7 @@ const CONFIG: Record<
   suppliers: {
     singular: "المورد",
     plural: "الموردون",
-    parentAccountCode: "2100",
+    parentAccountCode: "2101", // 🚀 ربط الموردين بحساب 2101 (الملاحظة 15)
     list: listSuppliers,
     create: createSupplier,
     update: updateSupplier,
@@ -67,6 +70,7 @@ export default function CustomersScreen({
   const cfg = CONFIG[kind];
   const [rows, setRows] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [sarRate, setSarRate] = useState(140);
 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -81,6 +85,9 @@ export default function CustomersScreen({
     try {
       const data = await cfg.list();
       setRows(data || []);
+
+      const sar: any = await sqlite.getFirstAsync("SELECT exchange_rate FROM currencies WHERE code = 'SAR'");
+      if (sar?.exchange_rate) setSarRate(Number(sar.exchange_rate) || 140);
     } catch (e) {
       Alert.alert("تعذر تحميل البيانات", String(e));
     }
@@ -90,7 +97,6 @@ export default function CustomersScreen({
     clearForm();
     setSearch("");
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind]);
 
   const nextCode = useMemo(() => {
@@ -141,6 +147,25 @@ export default function CustomersScreen({
     setPhone("+967" + local);
   };
 
+  // 🚀 جلب جهة الاتصال من دفتر الهاتف (الملاحظة 10)
+  const pickContact = async () => {
+    try {
+      const { status } = await Contacts.requestPermissionsAsync();
+      if (status === 'granted') {
+        const contact = await Contacts.presentContactPickerAsync();
+        if (contact && contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+          const number = contact.phoneNumbers[0].number || "";
+          onPhoneChange(number);
+        }
+      } else {
+        Alert.alert("تنبيه", "نحتاج صلاحية الوصول لجهات الاتصال لاستخدام هذه الميزة");
+      }
+    } catch (e) {
+      Alert.alert("خطأ", "تعذر فتح جهات الاتصال. تأكد من تثبيت expo-contacts بشكل صحيح.");
+      console.log(e);
+    }
+  };
+
   const applySuggestedCode = () => {
     setCode(nextCode);
     setShowCodeSuggest(false);
@@ -152,37 +177,22 @@ export default function CustomersScreen({
       const trimmedCode = code.trim();
       const localPhone = normalizePhone(phone);
 
-      if (!trimmedCode) {
-        Alert.alert("تنبيه", "الرمز مطلوب");
-        return;
-      }
-      if (!trimmedName) {
-        Alert.alert("تنبيه", "الاسم مطلوب");
-        return;
-      }
+      if (!trimmedCode) return Alert.alert("تنبيه", "الرمز مطلوب");
+      if (!trimmedName) return Alert.alert("تنبيه", "الاسم مطلوب");
+      
       const codeDup = rows.some(
-        (r) =>
-          String(r.code ?? "").trim() === trimmedCode && r.id !== editingId
+        (r) => String(r.code ?? "").trim() === trimmedCode && r.id !== editingId
       );
-      if (codeDup) {
-        Alert.alert("تنبيه", "الرمز مستخدم");
-        return;
-      }
+      if (codeDup) return Alert.alert("تنبيه", "الرمز مستخدم");
+
       const nameDup = rows.some(
         (r) =>
-          String(r.name ?? "").trim().toLowerCase() ===
-            trimmedName.toLowerCase() && r.id !== editingId
+          String(r.name ?? "").trim().toLowerCase() === trimmedName.toLowerCase() && r.id !== editingId
       );
-      if (nameDup) {
-        Alert.alert("تنبيه", `يوجد ${cfg.singular} بهذا الاسم مسبقًا`);
-        return;
-      }
+      if (nameDup) return Alert.alert("تنبيه", `يوجد ${cfg.singular} بهذا الاسم مسبقًا`);
+
       if (localPhone && !isValidYemeniPhone(localPhone)) {
-        Alert.alert(
-          "تنبيه",
-          "رقم الهاتف غير صحيح. الصيغة: +9677XXXXXXXX"
-        );
-        return;
+        return Alert.alert("تنبيه", "رقم الهاتف غير صحيح. الصيغة: +9677XXXXXXXX");
       }
 
       const input: any = {
@@ -192,19 +202,13 @@ export default function CustomersScreen({
         parentAccountCode: cfg.parentAccountCode,
       };
 
-      if (editingId) {
-        await cfg.update(editingId, input);
-      } else {
-        await cfg.create(input);
-      }
+      if (editingId) await cfg.update(editingId, input);
+      else await cfg.create(input);
 
       await load();
       const wasEdit = !!editingId;
       clearForm();
-      Alert.alert(
-        "تم الحفظ",
-        `تم ${wasEdit ? "تعديل" : "إضافة"} ${cfg.singular}`
-      );
+      Alert.alert("تم الحفظ", `تم ${wasEdit ? "تعديل" : "إضافة"} ${cfg.singular}`);
     } catch (e) {
       Alert.alert("تعذر الحفظ", String(e));
     }
@@ -250,10 +254,12 @@ export default function CustomersScreen({
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40,  paddingBottom: 40, paddingHorizontal: 4   }}
+      <ScrollView 
+        keyboardShouldPersistTaps="handled" // 🚀 إصلاح البحث مع لوحة المفاتيح (الملاحظة 6)
+        contentContainerStyle={styles.scrollContainer}
       >
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
+          <Text style={styles.backText}>العودة -&gt; إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <BrandBanner />
@@ -286,9 +292,7 @@ export default function CustomersScreen({
                   }}
                 >
                   <Text style={styles.suggestName}>{r.name}</Text>
-                  <Text style={styles.suggestMeta}>
-                    {r.code ?? ""} · {r.phone ?? ""}
-                  </Text>
+                  <Text style={styles.suggestMeta}>{r.code ?? ""} · {r.phone ?? ""}</Text>
                 </Pressable>
               ))
             )}
@@ -337,10 +341,7 @@ export default function CustomersScreen({
               <Pressable
                 key={r.id}
                 style={styles.suggestItem}
-                onPress={() => {
-                  setName(r.name);
-                  setShowNameSuggest(false);
-                }}
+                onPress={() => { setName(r.name); setShowNameSuggest(false); }}
               >
                 <Text style={styles.suggestName}>{r.name}</Text>
                 <Text style={styles.suggestMeta}>{r.code ?? ""}</Text>
@@ -350,15 +351,21 @@ export default function CustomersScreen({
         )}
 
         <Text style={styles.label}>الهاتف</Text>
-        <TextInput
-          style={styles.input}
-          value={phone}
-          onChangeText={onPhoneChange}
-          placeholder="+9677XXXXXXXX"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="phone-pad"
-          textAlign="right"
-        />
+        <View style={styles.phoneRow}>
+          <TextInput
+            style={[styles.input, { flex: 1 }]}
+            value={phone}
+            onChangeText={onPhoneChange}
+            placeholder="+9677XXXXXXXX"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="phone-pad"
+            textAlign="right"
+          />
+          {/* 🚀 زر دفتر الهاتف (الملاحظة 10) */}
+          <Pressable style={styles.contactBtn} onPress={pickContact}>
+            <MaterialCommunityIcons name="contacts" size={24} color="#1E40AF" />
+          </Pressable>
+        </View>
 
         <View style={styles.buttons}>
           <Pressable style={styles.primary} onPress={save}>
@@ -372,7 +379,6 @@ export default function CustomersScreen({
             </Pressable>
           )}
         </View>
-      
 
         <Text style={styles.sectionTitle}>
           استعراض {cfg.plural} ({rows.length})
@@ -381,131 +387,71 @@ export default function CustomersScreen({
           {filteredRows.length === 0 ? (
             <Text style={styles.empty}>لا توجد سجلات</Text>
           ) : (
-            filteredRows.map((r) => (
-              <View key={r.id} style={styles.row}>
-                <View style={styles.rowActions}>
-                  <Pressable onPress={() => edit(r)} style={styles.editBtn}>
-                    <Text style={{ fontSize: 14 }}>✏️</Text>
-                  </Pressable>
-                  <Pressable onPress={() => remove(r)} style={styles.delBtn}>
-                    <Text style={{ fontSize: 14 }}>🗑️</Text>
-                  </Pressable>
+            filteredRows.map((r) => {
+              const bal = Number(r.balance || 0);
+              const sarEq = bal / sarRate;
+              return (
+                <View key={r.id} style={styles.row}>
+                  <View style={styles.rowActions}>
+                    <Pressable onPress={() => edit(r)} style={styles.editBtn}>
+                      <Text style={{ fontSize: 14 }}>✏️</Text>
+                    </Pressable>
+                    <Pressable onPress={() => remove(r)} style={styles.delBtn}>
+                      <Text style={{ fontSize: 14 }}>🗑️</Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowName}>{r.name}</Text>
+                    <Text style={styles.rowMeta}>
+                      {r.code ?? ""} · {r.phone || "—"}
+                    </Text>
+                    {/* 🚀 عرض الرصيد بالعملتين (الملاحظة 11) */}
+                    <Text style={[styles.rowBalance, { color: balanceColor(bal), fontWeight: "800", fontSize: 16 }]}>
+                      {bal.toFixed(2)} YER
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#64748B', marginTop: 2, textAlign: 'right', fontWeight: '600' }}>
+                      ≈ {sarEq.toFixed(2)} SAR
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.rowInfo}>
-                  <Text style={styles.rowName}>{r.name}</Text>
-                  <Text style={styles.rowMeta}>
-                    {r.code ?? ""} · {r.phone || "—"}
-                  </Text>
-                </View>
-                <Text style={[styles.rowBalance, { color: balanceColor(r.balance), fontWeight: "800", fontSize: 16 }]}>
-                  {Number(r.balance || 0).toFixed(2)} ر.ي
-                </Text>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
 
-        </ScrollView>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
-  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {fontSize: 20,
-    
-    color: "#0F172A",
-    
-    marginBottom: 12,
- textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  sectionTitle: {fontSize: 16,
-    
-    color: "#0F172A",
-    
-    marginTop: 16,
-    marginBottom: 8,
-   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  label: {fontSize: 12,
-    color: "#526078",
-    
-    marginTop: 8,
-    marginBottom: 4,textAlign: "right", writingDirection: "rtl", width: "100%"},
-  input: {backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
+  scrollContainer: { backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40, paddingHorizontal: 4 },
+  back: { paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
+  backText: { color: "#1E40AF", textAlign: "right", fontWeight: "700" },
+  screenTitle: { fontSize: 20, color: "#0F172A", marginBottom: 12, textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold" },
+  sectionTitle: { fontSize: 16, color: "#0F172A", marginTop: 16, marginBottom: 8, textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold" },
+  label: { fontSize: 12, color: "#526078", marginTop: 8, marginBottom: 4, textAlign: "right", writingDirection: "rtl", width: "100%" },
+  input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A", textAlign: "right", writingDirection: "rtl", width: "100%" },
+  phoneRow: { flexDirection: "row-reverse", gap: 8, alignItems: "center" },
+  contactBtn: { backgroundColor: "#EFF6FF", padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "#D6E3F8" },
   list: { gap: 8, marginTop: 4 },
-  empty: {
-    textAlign: "right",
-    color: "#8494B0",
-    fontSize: 12,
-    padding: 10,
-  },
+  empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
   row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
-  rowName: {fontWeight: "700",
-    fontSize: 14,
-    color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
-  rowMeta: {
-    fontSize: 11,
-    color: "#8494B0",
-    marginTop: 3,
-    textAlign: "right",
-  },
+  rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right", writingDirection: "rtl", width: "100%" },
+  rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 3, textAlign: "right" },
   rowBalance: { fontSize: 11, marginTop: 3, textAlign: "right" },
   rowActions: { flexDirection: "row", gap: 6, alignItems: "center" },
   editBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  editText: { color: "#0F172A", fontSize: 12 },
   delBtn: { backgroundColor: "#fee2e2", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  delText: { color: "#0F172A", fontSize: 12 },
-  suggestBox: {
-    marginTop: 4,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  suggestItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  suggestName: {
-    fontWeight: "700",
-    color: "#0F172A",
-    textAlign: "right",
-    fontSize: 13,
-  },
-  suggestMeta: {
-    fontSize: 11,
-    color: "#8494B0",
-    textAlign: "right",
-    marginTop: 2,
-  },
-  suggestEmpty: {
-    padding: 10,
-    color: "#8494B0",
-    textAlign: "right",
-    fontSize: 12,
-  },
+  suggestBox: { marginTop: 4, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, overflow: "hidden" },
+  suggestItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#f1f5f9" },
+  suggestName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 13 },
+  suggestMeta: { fontSize: 11, color: "#8494B0", textAlign: "right", marginTop: 2 },
+  suggestEmpty: { padding: 10, color: "#8494B0", textAlign: "right", fontSize: 12 },
   buttons: { flexDirection: "row-reverse", gap: 8, marginTop: 16 },
-  primary: {
-    backgroundColor: "#F97316",
-    padding: 14,
-    borderRadius: 10,
-    flex: 1,
-  },
+  primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10, flex: 1 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  cancel: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    padding: 13,
-    borderRadius: 10,
-  },
+  cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 13, borderRadius: 10 },
   cancelText: { color: "#0F172A", textAlign: "center" },
 });

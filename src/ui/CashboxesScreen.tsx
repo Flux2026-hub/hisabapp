@@ -17,6 +17,7 @@ import {
   listCashboxes,
   updateCashbox,
 } from "../sync/accounting";
+import { sqlite } from "../db/local";
 
 type Row = any;
 type CashboxType = "main" | "sub" | "analytical";
@@ -37,12 +38,14 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<CashboxType>("main");
+  const [sarRate, setSarRate] = useState(140);
 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState<string | null>(null);
   const [parentLabel, setParentLabel] = useState("");
   const [initialBalance, setInitialBalance] = useState("");
+  const [currencyCode, setCurrencyCode] = useState<"YER" | "SAR">("YER"); // 🚀 العملة
 
   const [search, setSearch] = useState("");
   const [searchFocus, setSearchFocus] = useState(false);
@@ -52,6 +55,9 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
     try {
       const data = await listCashboxes();
       setRows(data || []);
+      
+      const sar: any = await sqlite.getFirstAsync("SELECT exchange_rate FROM currencies WHERE code = 'SAR'");
+      if (sar?.exchange_rate) setSarRate(Number(sar.exchange_rate) || 140);
     } catch (e) {
       Alert.alert("تعذر تحميل الصناديق", String(e));
     }
@@ -112,6 +118,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
     setParentId(null);
     setParentLabel("");
     setInitialBalance("");
+    setCurrencyCode("YER");
     setShowParentPicker(false);
   };
 
@@ -145,6 +152,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
         parentId: activeTab === "main" ? undefined : parentId,
         cashboxType: activeTab,
         balance: bal,
+        currencyCode: currencyCode, // 🚀 حفظ العملة
       };
 
       if (editingId) await updateCashbox(editingId, input);
@@ -166,6 +174,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
     setParentId(r.parentId ?? null);
     setParentLabel(rows.find((x) => x.id === r.parentId)?.name ?? "");
     setInitialBalance(String(r.balance ?? ""));
+    setCurrencyCode(r.currencyCode === "SAR" ? "SAR" : "YER");
     setActiveTab(typeOf(r));
   };
 
@@ -203,12 +212,17 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
     return "#8494B0";
   };
 
+  // 🚀 دالة مساعدة لجلب اسم الصندوق الأب
+  const getParentName = (pid: string) => {
+    return rows.find(r => r.id === pid)?.name || "";
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40,  paddingBottom: 40, paddingHorizontal: 4   }}
+      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40, paddingHorizontal: 4   }}
       >
         <Pressable style={styles.back} onPress={onBack}>
           <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
@@ -217,8 +231,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
         <BrandBanner />
         <Text style={[styles.screenTitle, { marginTop: 15 }]}>الصناديق</Text>
         <Text style={styles.hint}>
-          الصناديق الرئيسية تحتوي الصناديق الفرعية، والتحليلية تُستخدم لتقسيم
-          دقيق. الرصيد المعروض يعكس الحركات المسجلة.
+          الصناديق الرئيسية تحتوي الصناديق الفرعية، والتحليلية تُستخدم لإجراء العمليات المالية. الرصيد المعروض يعكس الحركات المسجلة.
         </Text>
 
         <View style={styles.tabs}>
@@ -347,6 +360,23 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
           </>
         )}
 
+        {/* 🚀 اختيار العملة */}
+        <Text style={styles.label}>العملة</Text>
+        <View style={styles.currencyRow}>
+          <Pressable 
+            style={[styles.currencyBtn, currencyCode === "YER" && styles.currencyBtnActive]} 
+            onPress={() => setCurrencyCode("YER")}
+          >
+            <Text style={[styles.currencyText, currencyCode === "YER" && styles.currencyTextActive]}>ريال يمني (YER)</Text>
+          </Pressable>
+          <Pressable 
+            style={[styles.currencyBtn, currencyCode === "SAR" && styles.currencyBtnActive]} 
+            onPress={() => setCurrencyCode("SAR")}
+          >
+            <Text style={[styles.currencyText, currencyCode === "SAR" && styles.currencyTextActive]}>ريال سعودي (SAR)</Text>
+          </Pressable>
+        </View>
+
         <Text style={styles.label}>الرصيد الافتتاحي (اختياري)</Text>
         <TextInput
           style={styles.input}
@@ -370,7 +400,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
             </Pressable>
           )}
         </View>
-      
+
 
         <Text style={styles.sectionTitle}>
           {TYPES.find((t) => t.key === activeTab)?.label} ({tabRows.length})
@@ -381,30 +411,41 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
               لا توجد صناديق في هذا التصنيف — ابدأ بالإضافة أدناه
             </Text>
           ) : (
-            filteredRows.map((r) => (
-              <View key={r.id} style={styles.row}>
-                <View style={styles.rowActions}>
-                  <Pressable onPress={() => edit(r)} style={styles.editBtn}>
-                    <Text style={styles.editText}>✏️</Text>
-                  </Pressable>
-                  <Pressable onPress={() => remove(r)} style={styles.delBtn}>
-                    <Text style={styles.delText}>🗑️</Text>
-                  </Pressable>
+            filteredRows.map((r) => {
+              const isSAR = r.currencyCode === "SAR";
+              const bal = Number(r.balance || 0);
+              const equivalent = isSAR ? bal * sarRate : bal / sarRate;
+              
+              return (
+                <View key={r.id} style={styles.row}>
+                  <View style={styles.rowActions}>
+                    <Pressable onPress={() => edit(r)} style={styles.editBtn}>
+                      <Text style={styles.editText}>✏️</Text>
+                    </Pressable>
+                    <Pressable onPress={() => remove(r)} style={styles.delBtn}>
+                      <Text style={styles.delText}>🗑️</Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowName}>{r.name}</Text>
+                    <Text style={styles.rowMeta}>
+                      {r.code} {r.parentId ? `• تابع لـ: ${getParentName(r.parentId)}` : ""}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.rowBalance,
+                        { color: balanceColor(r.balance) },
+                      ]}
+                    >
+                      الرصيد: {bal.toFixed(2)} {isSAR ? "SAR" : "YER"}
+                    </Text>
+                    <Text style={styles.rowEquivalent}>
+                      ≈ {equivalent.toFixed(2)} {isSAR ? "YER" : "SAR"}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.rowInfo}>
-                  <Text style={styles.rowName}>{r.name}</Text>
-                  <Text style={styles.rowMeta}>{r.code}</Text>
-                  <Text
-                    style={[
-                      styles.rowBalance,
-                      { color: balanceColor(r.balance) },
-                    ]}
-                  >
-                    الرصيد: {Number(r.balance || 0).toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
 
@@ -433,7 +474,8 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   rowName: {fontWeight: "700", fontSize: 14, color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
   rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 3, textAlign: "right" },
-  rowBalance: { fontSize: 12, marginTop: 3, textAlign: "right", fontWeight: "600" },
+  rowBalance: { fontSize: 13, marginTop: 3, textAlign: "right", fontWeight: "700" },
+  rowEquivalent: { fontSize: 11, color: "#64748B", marginTop: 2, textAlign: "right", fontWeight: "600" },
   rowActions: { flexDirection: "row", gap: 6, alignItems: "center" },
   editBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   editText: { color: "#0F172A", fontSize: 12 },
@@ -449,4 +491,9 @@ const styles = StyleSheet.create({
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
   cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 13, borderRadius: 10 },
   cancelText: { color: "#0F172A", textAlign: "center" },
+  currencyRow: { flexDirection: "row-reverse", gap: 8, marginBottom: 8 },
+  currencyBtn: { flex: 1, padding: 12, borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, alignItems: "center", backgroundColor: "#f8fafc" },
+  currencyBtnActive: { backgroundColor: "#EFF6FF", borderColor: "#3b82f6" },
+  currencyText: { color: "#64748B", fontWeight: "600", fontSize: 13 },
+  currencyTextActive: { color: "#1D4ED8", fontWeight: "800" },
 });
