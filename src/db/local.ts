@@ -25,11 +25,11 @@ export async function initializeLocalDatabase() {
     CREATE TABLE IF NOT EXISTS account_transfers (id TEXT PRIMARY KEY NOT NULL, transfer_no TEXT NOT NULL UNIQUE, from_account TEXT NOT NULL, to_account TEXT NOT NULL, amount REAL NOT NULL, description TEXT, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, account_type TEXT NOT NULL, parent_code TEXT, balance REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS currencies (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, symbol TEXT NOT NULL, exchange_rate REAL NOT NULL DEFAULT 1, is_base INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
-      CREATE TABLE IF NOT EXISTS sales_reps (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT, commission_rate REAL NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);
-      CREATE TABLE IF NOT EXISTS purchase_returns (id TEXT PRIMARY KEY NOT NULL, return_no TEXT NOT NULL UNIQUE, invoice_id TEXT NOT NULL, invoice_no TEXT NOT NULL, supplier_id TEXT, supplier_name TEXT, total REAL NOT NULL, refund_type TEXT NOT NULL, cashbox_id TEXT, created_at INTEGER NOT NULL);
-      CREATE TABLE IF NOT EXISTS purchase_return_lines (id TEXT PRIMARY KEY NOT NULL, return_id TEXT NOT NULL, item_id TEXT NOT NULL, item_name TEXT NOT NULL, quantity REAL NOT NULL, unit_price REAL NOT NULL, line_total REAL NOT NULL);
-      CREATE TABLE IF NOT EXISTS sales_returns (id TEXT PRIMARY KEY NOT NULL, return_no TEXT NOT NULL UNIQUE, invoice_id TEXT NOT NULL, invoice_no TEXT NOT NULL, customer_id TEXT, customer_name TEXT, total REAL NOT NULL, refund_type TEXT NOT NULL, cashbox_id TEXT, created_at INTEGER NOT NULL);
-      CREATE TABLE IF NOT EXISTS sales_return_lines (id TEXT PRIMARY KEY NOT NULL, return_id TEXT NOT NULL, item_id TEXT NOT NULL, item_name TEXT NOT NULL, quantity REAL NOT NULL, unit_price REAL NOT NULL, line_total REAL NOT NULL);
+    CREATE TABLE IF NOT EXISTS sales_reps (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT, commission_rate REAL NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS purchase_returns (id TEXT PRIMARY KEY NOT NULL, return_no TEXT NOT NULL UNIQUE, invoice_id TEXT NOT NULL, invoice_no TEXT NOT NULL, supplier_id TEXT, supplier_name TEXT, total REAL NOT NULL, refund_type TEXT NOT NULL, cashbox_id TEXT, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS purchase_return_lines (id TEXT PRIMARY KEY NOT NULL, return_id TEXT NOT NULL, item_id TEXT NOT NULL, item_name TEXT NOT NULL, quantity REAL NOT NULL, unit_price REAL NOT NULL, line_total REAL NOT NULL);
+    CREATE TABLE IF NOT EXISTS sales_returns (id TEXT PRIMARY KEY NOT NULL, return_no TEXT NOT NULL UNIQUE, invoice_id TEXT NOT NULL, invoice_no TEXT NOT NULL, customer_id TEXT, customer_name TEXT, total REAL NOT NULL, refund_type TEXT NOT NULL, cashbox_id TEXT, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS sales_return_lines (id TEXT PRIMARY KEY NOT NULL, return_id TEXT NOT NULL, item_id TEXT NOT NULL, item_name TEXT NOT NULL, quantity REAL NOT NULL, unit_price REAL NOT NULL, line_total REAL NOT NULL);
     CREATE TABLE IF NOT EXISTS sync_queue (id INTEGER PRIMARY KEY AUTOINCREMENT, operation_id TEXT NOT NULL UNIQUE, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, operation_type TEXT NOT NULL, payload TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, last_error TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
   `);
 
@@ -48,51 +48,84 @@ export async function initializeLocalDatabase() {
     "ALTER TABLE vouchers ADD COLUMN exchange_rate REAL DEFAULT 1",
     "ALTER TABLE journal_lines ADD COLUMN party_type TEXT",
     "ALTER TABLE journal_lines ADD COLUMN party_id TEXT",
-      "ALTER TABLE journal_lines ADD COLUMN party_name TEXT",
-      "ALTER TABLE journal_entries ADD COLUMN currency_code TEXT",
-      "ALTER TABLE journal_entries ADD COLUMN exchange_rate REAL DEFAULT 1",
-      "ALTER TABLE journal_lines ADD COLUMN foreign_debit REAL DEFAULT 0",
-      "ALTER TABLE journal_lines ADD COLUMN foreign_credit REAL DEFAULT 0",
-      "ALTER TABLE journal_entries ADD COLUMN currency_code TEXT",
-      "ALTER TABLE journal_entries ADD COLUMN exchange_rate REAL DEFAULT 1",
-      "ALTER TABLE journal_lines ADD COLUMN foreign_debit REAL DEFAULT 0",
-      "ALTER TABLE journal_lines ADD COLUMN foreign_credit REAL DEFAULT 0",
-      "ALTER TABLE invoices ADD COLUMN sales_rep_id TEXT",
-      "ALTER TABLE invoices ADD COLUMN sales_rep_name TEXT",
-      "ALTER TABLE invoices ADD COLUMN commission_rate REAL DEFAULT 0",
-      "ALTER TABLE invoices ADD COLUMN commission_amount REAL DEFAULT 0",
-      "ALTER TABLE invoices ADD COLUMN discount_type TEXT",
-      "ALTER TABLE invoices ADD COLUMN discount_value REAL DEFAULT 0",
-      "ALTER TABLE invoices ADD COLUMN discount_amount REAL DEFAULT 0",
-      "ALTER TABLE account_transfers ADD COLUMN from_currency TEXT",
-      "ALTER TABLE account_transfers ADD COLUMN to_currency TEXT",
-      "ALTER TABLE account_transfers ADD COLUMN exchange_rate REAL DEFAULT 1",
-      "ALTER TABLE account_transfers ADD COLUMN original_amount REAL",
+    "ALTER TABLE journal_lines ADD COLUMN party_name TEXT",
+    "ALTER TABLE journal_entries ADD COLUMN currency_code TEXT",
+    "ALTER TABLE journal_entries ADD COLUMN exchange_rate REAL DEFAULT 1",
+    "ALTER TABLE journal_lines ADD COLUMN foreign_debit REAL DEFAULT 0",
+    "ALTER TABLE journal_lines ADD COLUMN foreign_credit REAL DEFAULT 0",
+    "ALTER TABLE invoices ADD COLUMN sales_rep_id TEXT",
+    "ALTER TABLE invoices ADD COLUMN sales_rep_name TEXT",
+    "ALTER TABLE invoices ADD COLUMN commission_rate REAL DEFAULT 0",
+    "ALTER TABLE invoices ADD COLUMN commission_amount REAL DEFAULT 0",
+    "ALTER TABLE invoices ADD COLUMN discount_type TEXT",
+    "ALTER TABLE invoices ADD COLUMN discount_value REAL DEFAULT 0",
+    "ALTER TABLE invoices ADD COLUMN discount_amount REAL DEFAULT 0",
+    "ALTER TABLE account_transfers ADD COLUMN from_currency TEXT",
+    "ALTER TABLE account_transfers ADD COLUMN to_currency TEXT",
+    "ALTER TABLE account_transfers ADD COLUMN exchange_rate REAL DEFAULT 1",
+    "ALTER TABLE account_transfers ADD COLUMN original_amount REAL",
+    "ALTER TABLE cashboxes ADD COLUMN currency_code TEXT DEFAULT 'YER'",
   ]) {
     try {
       await sqlite.execAsync(migration);
     } catch {
-      /* العمود موجود في الإصدارات اللاحقة */
+      /* العمود موجود مسبقاً */
     }
   }
 
-  // 🗑️ حذف البيانات التجريبية القديمة (فضة / زركون / خاتم)
   await sqlite.execAsync(`
     DELETE FROM items WHERE sku IN ('RAW-001', 'RAW-002', 'FIN-001');
     DELETE FROM items WHERE id IN ('raw-silver', 'prod-stone', 'finished-ring');
     DELETE FROM warehouses WHERE id IN ('wip-main');
   `);
 
-  // 📦 تهيئة المخازن الأساسية
-  const warehouseRows: any = await sqlite.getAllAsync(
-    "SELECT id FROM warehouses LIMIT 1"
-  );
+  const warehouseRows: any = await sqlite.getAllAsync("SELECT id FROM warehouses LIMIT 1");
   if (!warehouseRows || warehouseRows.length === 0) {
     await sqlite.execAsync(`
       INSERT INTO warehouses (id, name, warehouse_type)
-      VALUES
-        ('wh-wip', 'مخزن تحت الإنتاج', 'work_in_progress'),
-        ('wh-final', 'مخزن المخزون التام', 'finished_goods');
+      VALUES ('wh-wip', 'مخزن تحت الإنتاج', 'work_in_progress'), ('wh-final', 'مخزن المخزون التام', 'finished_goods');
     `);
+  }
+
+  // زرع دليل الحسابات (COA) تلقائياً
+  const accountCount: any = await sqlite.getAllAsync("SELECT count(id) as count FROM accounts");
+  if (accountCount[0].count === 0) {
+    const now = Date.now();
+    const coa = [
+      { id: 'acc-1', code: '1', name: 'الأصول', type: 'asset', parent: null },
+      { id: 'acc-1101', code: '1101', name: 'الصندوق الرئيسي', type: 'asset', parent: '1' },
+      { id: 'acc-1103', code: '1103', name: 'العملاء', type: 'asset', parent: '1' },
+      { id: 'acc-1104', code: '1104', name: 'المخزون', type: 'asset', parent: '1' },
+      { id: 'acc-2', code: '2', name: 'الخصوم', type: 'liability', parent: null },
+      { id: 'acc-2101', code: '2101', name: 'الموردون', type: 'liability', parent: '2' },
+      { id: 'acc-3', code: '3', name: 'حقوق الملكية', type: 'equity', parent: null },
+      { id: 'acc-4', code: '4', name: 'الإيرادات', type: 'revenue', parent: null },
+      { id: 'acc-5', code: '5', name: 'المصروفات', type: 'expense', parent: null },
+    ];
+
+    for (const acc of coa) {
+      await sqlite.runAsync(
+        `INSERT INTO accounts (id, code, name, account_type, parent_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [acc.id, acc.code, acc.name, acc.type, acc.parent, 0, now]
+      );
+    }
+  }
+
+  // زرع الصناديق (رئيسي/تحليلي) بعملات مختلفة
+  const cashboxCount: any = await sqlite.getAllAsync("SELECT count(id) as count FROM cashboxes");
+  if (cashboxCount[0].count === 0) {
+    const now = Date.now();
+    await sqlite.runAsync(
+      `INSERT INTO cashboxes (id, code, name, parent_id, cashbox_type, currency_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ['cb-yer-main', '110101', 'الصندوق الرئيسي (YER)', null, 'main', 'YER', 0, now]
+    );
+    await sqlite.runAsync(
+      `INSERT INTO cashboxes (id, code, name, parent_id, cashbox_type, currency_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ['cb-sar-main', '110102', 'الصندوق الرئيسي (SAR)', null, 'main', 'SAR', 0, now]
+    );
+    await sqlite.runAsync(
+      `INSERT INTO cashboxes (id, code, name, parent_id, cashbox_type, currency_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ['cb-yer-sales', '11010101', 'صندوق المبيعات اليومي (YER)', 'cb-yer-main', 'sub', 'YER', 0, now]
+    );
   }
 }

@@ -86,6 +86,29 @@ export const syncQueue = sqliteTable("sync_queue", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
 
+export const accounts = sqliteTable("accounts", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  accountType: text("account_type").notNull(),
+  parentCode: text("parent_code"),
+  balance: real("balance").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const cashboxes = sqliteTable("cashboxes", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  parentId: text("parent_id"),
+  cashboxType: text("cashbox_type").notNull(),
+  currencyCode: text("currency_code").notNull().default("YER"),
+  balance: real("balance").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
 export type Item = typeof items.$inferSelect;
 export type StockReceipt = typeof stockReceipts.$inferSelect;
 export type ProductBom = typeof productBoms.$inferSelect;
+export type Account = typeof accounts.$inferSelect;
+export type Cashbox = typeof cashboxes.$inferSelect;
