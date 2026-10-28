@@ -15,7 +15,7 @@ export default function HomeScreen() {
   const [tab, setTab] = useState<Tab>("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [sarRate, setSarRate] = useState(140);
-  
+
   const [kpis, setKpis] = useState({
     customers: 0, suppliers: 0, cashboxes: 0, inventory: 0,
   });
@@ -30,7 +30,7 @@ export default function HomeScreen() {
         const cb: any = await sqlite.getFirstAsync("SELECT SUM(balance) as total FROM cashboxes");
         const inv: any = await sqlite.getFirstAsync("SELECT SUM(stock_quantity * IFNULL(average_cost, 0)) as total FROM items");
         const sar: any = await sqlite.getFirstAsync("SELECT exchange_rate FROM currencies WHERE code = 'SAR'");
-        
+
         setKpis({
           customers: Number(c?.total) || 0,
           suppliers: Number(s?.total) || 0,
@@ -77,6 +77,11 @@ export default function HomeScreen() {
           ))}
         </View>
       </View>
+
+      {/* 🚀 إضافة الطبقة الشفافة (Overlay) لإغلاق القائمة */}
+      {menuOpen && (
+        <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />
+      )}
 
       {menuOpen && (
         <View style={styles.dropdown}>
@@ -132,11 +137,23 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>إجراءات سريعة</Text>
-              <Action label="المحاسبة والإدارة" sub="العملاء · الموردون · الفواتير · السندات · التقارير" onPress={() => go("accounting")} />
-              <Action label="إعدادات النظام" sub="ترويسة التقرير واللوجو والتذييل" onPress={() => go("settings")} />
+            {/* 🚀 بطاقتين مربعتين بدلاً من الإجراءات الطويلة */}
+            <View style={styles.quickActionsGrid}>
+              <Pressable style={[styles.quickActionCard, { backgroundColor: "#EFF6FF" }]} onPress={() => go("accounting")}>
+                <View style={[styles.iconCircle, { backgroundColor: "#DBEAFE", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
+                  <MaterialCommunityIcons name="pencil" size={32} color="#2563EB" />
+                </View>
+                <Text style={styles.quickActionText}>المحاسبة</Text>
+              </Pressable>
+
+              <Pressable style={[styles.quickActionCard, { backgroundColor: "#F8FAFC" }]} onPress={() => go("settings")}>
+                <View style={[styles.iconCircle, { backgroundColor: "#E2E8F0", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
+                  <MaterialCommunityIcons name="cog" size={32} color="#475569" />
+                </View>
+                <Text style={styles.quickActionText}>الإعدادات</Text>
+              </Pressable>
             </View>
+
           </>
         )}
 
@@ -155,20 +172,6 @@ export default function HomeScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function Action({ label, sub, onPress }: { label: string; sub: string; onPress: () => void; }) {
-  return (
-    <Pressable onPress={onPress} style={styles.action}>
-      <View style={styles.actionTextWrap}>
-        <Text style={styles.actionLabel}>{label}</Text>
-        <Text style={styles.small}>{sub}</Text>
-      </View>
-      <View style={styles.actionIconWrap}>
-        <MaterialCommunityIcons name="chevron-left" size={24} color="#F97316" />
-      </View>
-    </Pressable>
   );
 }
 
@@ -191,6 +194,12 @@ const styles = StyleSheet.create({
   kpiValue: { fontSize: 18, fontWeight: "800", color: "#0F172A", textAlign: "right", writingDirection: "rtl" },
   kpiCur: { fontSize: 10, color: "#94A3B8", fontWeight: "normal" },
   kpiSub: { fontSize: 11, color: "#64748B", fontWeight: "600", textAlign: "right", marginTop: 4 },
+  
+  // 🚀 تنسيقات البطاقات المربعة الجديدة
+  quickActionsGrid: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 10 },
+  quickActionCard: { width: "48%", borderRadius: 16, padding: 20, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, aspectRatio: 1 },
+  quickActionText: { fontSize: 16, fontFamily: "CodecBold", color: "#0F172A" },
+
   nav: { flexDirection: "row", backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingVertical: 10, alignItems: "center", paddingHorizontal: 10 },
   navTabs: { flex: 1, flexDirection: "row-reverse", justifyContent: "space-around" },
   menuButton: { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.navy, borderRadius: 8 },
@@ -199,15 +208,11 @@ const styles = StyleSheet.create({
   navActive: { borderBottomWidth: 3, borderBottomColor: COLORS.orange },
   navText: { color: COLORS.textMuted, fontSize: 13, fontWeight: "600" },
   navTextActive: { color: COLORS.blue, fontWeight: "800", fontSize: 13 },
-  dropdown: { position: "absolute", top: 130, left: 10, zIndex: 20, elevation: 8, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, width: 200 },
+  
+  // 🚀 تنسيق الطبقة الشفافة
+  overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, elevation: 10, backgroundColor: "transparent" },
+  
+  dropdown: { position: "absolute", top: 130, left: 10, zIndex: 20, elevation: 11, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, width: 200 },
   dropdownItem: { padding: 13, borderBottomWidth: 1, borderBottomColor: COLORS.bg },
   dropdownText: { textAlign: "right", fontWeight: "700", color: COLORS.text },
-  card: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 16, marginTop: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
-  cardTitle: { fontSize: 16, fontFamily: "CodecBold", color: COLORS.text, textAlign: "right", marginBottom: 15, width: "100%" },
-  action: { flexDirection: "row", alignItems: "center", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: "#E2E8F0" },
-  actionTextWrap: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
-  actionIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: "#FFF7ED", justifyContent: "center", alignItems: "center" },
-  actionArrow: { color: "#F97316", fontSize: 18, fontWeight: "bold" },
-  actionLabel: { fontSize: 16, fontFamily: "CodecBold", color: "#0F172A", textAlign: "right" },
-  small: { fontSize: 12, color: "#64748B", textAlign: "right", marginTop: 4 },
 });
