@@ -39,9 +39,9 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
   if (key === "commissions") return <CommissionsReport onBack={goMenu} />;
 
   return (
-    <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
+    <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       <Pressable style={styles.back} onPress={onBack}>
-        <Text style={styles.backText}>{"&gt;"} العودة إلى الوحدات المحاسبية</Text>
+        <Text style={styles.backText}>‹ العودة إلى الوحدات المحاسبية</Text>
       </Pressable>
 
       <Text style={styles.screenTitle}>التقارير</Text>
@@ -62,14 +62,14 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
-  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
-  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 6,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  hint: {fontSize: 12, color: "#8494B0",  marginBottom: 14, lineHeight: 18, textAlign: "right", writingDirection: "rtl", width: "100%"},
+  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
+  back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 8 },
+  backText: { color: "#1E40AF", textAlign: "left", fontWeight: "700" },
+  screenTitle: { fontSize: 22, color: "#0F172A", marginBottom: 6, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  hint: { fontSize: 12, color: "#8494B0", marginBottom: 14, lineHeight: 18, textAlign: "left", width: "100%" },
   grid: { gap: 10 },
   card: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 16 },
-  cardTitle: {fontSize: 16, fontWeight: "800", color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
+  cardTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A", textAlign: "right", width: "100%", fontFamily: "CodecBold" },
   cardDesc: { fontSize: 12, color: "#8494B0", textAlign: "right", marginTop: 6 },
 });
