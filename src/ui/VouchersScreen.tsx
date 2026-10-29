@@ -89,7 +89,6 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
   const partyOptions: Row[] = partyType === "customer" ? customers : partyType === "supplier" ? suppliers : partyType === "account" ? accounts : [];
   
-  // 🚀 فلترة الأطراف بناءً على البحث
   const filteredParties = useMemo(() => {
     if (!partySearch.trim()) return partyOptions;
     const q = partySearch.toLowerCase();
@@ -98,7 +97,6 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
   const availableCashboxes = cashboxes.filter((c: any) => c.cashbox_type === "analytical" || c.id === cashbox?.id);
   
-  // 🚀 فلترة الصناديق بناءً على البحث
   const filteredCashboxes = useMemo(() => {
     if (!cashboxSearch.trim()) return availableCashboxes;
     const q = cashboxSearch.toLowerCase();
@@ -390,11 +388,6 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
         {history.length > 0 && (
           <>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionAccent, { backgroundColor: colors.orange }]} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>سجل السندات</Text>
-            </View>
-
             <View style={styles.filterContainer}>
               <View style={styles.filterRow}>
                 <Pressable onPress={() => setFilterVType("all")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "all" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "all" && { color: "#FFF" }]}>الكل</Text></Pressable>
@@ -438,9 +431,6 @@ const styles = StyleSheet.create({
   backText: { textAlign: "left", fontWeight: "800", fontSize: 13 },
   screenTitle: { fontSize: 22, marginBottom: 4, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
   hint: { fontSize: 12, marginBottom: 16, lineHeight: 18, textAlign: "left", width: "100%" },
-  sectionTitle: { fontSize: 16, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
-  sectionHeader: { flexDirection: "row-reverse", alignItems: "center", marginTop: 18, marginBottom: 10, gap: 8 },
-  sectionAccent: { width: 4, height: 20, borderRadius: 2 },
   toggleRow: { flexDirection: "row-reverse", gap: 10, marginBottom: 16 },
   toggleBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1.2, alignItems: "center" },            
   toggleText: { fontWeight: "700", fontSize: 15 },
@@ -470,7 +460,7 @@ const styles = StyleSheet.create({
   histAmount: { fontWeight: "800", fontSize: 16, textAlign: "left" },
   histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
   iconBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  filterContainer: { marginBottom: 15, gap: 8 },
+  filterContainer: { marginBottom: 15, gap: 8, marginTop: 16 }, // 🚀 تمت إضافة marginTop هنا لتعويض مساحة العنوان المحذوف
   filterRow: { flexDirection: "row-reverse", gap: 8 },
   filterBtn: { flex: 1, borderWidth: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
   filterText: { fontSize: 12, fontWeight: "700" },
