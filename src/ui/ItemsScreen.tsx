@@ -1,570 +1,278 @@
 import { useEffect, useMemo, useState } from "react";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import BrandBanner from "./components/BrandBanner";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import {
-  createItem,
-  deleteItem,
-  listItems,
-  updateItem,
-} from "../sync/accounting";
+import { sqlite } from "../db/local";
+import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 type Row = any;
+type ItemType = "raw_material" | "production_material" | "packaging" | "compound_finished" | "finished_product";
 
-type Category = "raw_material" | "packaging" | "finished_product";
-
-const CATEGORIES: { key: Category; label: string; color: string }[] = [
-  { key: "raw_material", label: "مواد إنتاج", color: "#f59e0b" },
-  { key: "packaging", label: "عبوات وتغليف", color: "#3b82f6" },
-  { key: "finished_product", label: "منتج نهائي", color: "#F97316" },
+const ITEM_TYPES: { key: ItemType; label: string; color: string }[] = [
+  { key: "raw_material", label: "مواد خام", color: "#0b806c" },
+  { key: "production_material", label: "مواد إنتاج", color: "#3b82f6" },
+  { key: "packaging", label: "عبوات", color: "#f59e0b" },
+  { key: "finished_product", label: "منتجات نهائية", color: "#8b5cf6" },
+  { key: "compound_finished", label: "منتجات مركبة", color: "#ec4899" },
 ];
 
-const UNITS = ["جرام", "كيلو", "لتر", "حبة", "عبوة", "علبة", "كرتون"];
+const UNITS = ["حبة", "كرتون", "كيلو", "لتر", "متر", "طن", "عبوة"];
 
-const WAREHOUSE_FOR: Record<Category, string> = {
-  raw_material: "مخزن تحت الإنتاج",
-  packaging: "مخزن تحت الإنتاج",
-  finished_product: "مخزن المخزون التام",
-};
-
-const CATEGORY_MAP: Record<string, Category> = {
-  raw_material: "raw_material",
-  production_material: "raw_material",
-  packaging: "packaging",
-  compound_finished: "finished_product",
-  finished_product: "finished_product",
-};
+const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 export default function ItemsScreen({ onBack }: { onBack: () => void }) {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const [rows, setRows] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Category>("raw_material");
+  const [activeTab, setActiveTab] = useState<ItemType>("raw_material");
 
   const [sku, setSku] = useState("");
   const [name, setName] = useState("");
-  const [unit, setUnit] = useState("جرام");
-  const [quantity, setQuantity] = useState("");
-  const [avgCost, setAvgCost] = useState("");
+  const [unit, setUnit] = useState("حبة");
+  const [stockQty, setStockQty] = useState("0");
+  const [averageCost, setAverageCost] = useState("0");
 
   const [search, setSearch] = useState("");
   const [searchFocus, setSearchFocus] = useState(false);
-  const [showUnitSuggest, setShowUnitSuggest] = useState(false);
+  const [showUnitPicker, setShowUnitPicker] = useState(false);
 
   const load = async () => {
     try {
-      const data = await listItems();
+      const data: any = await sqlite.getAllAsync("SELECT * FROM items ORDER BY name");
       setRows(data || []);
-    } catch (e) {
-      Alert.alert("تعذر تحميل الأصناف", String(e));
-    }
+    } catch (e) { Alert.alert("تعذر تحميل الأصناف", String(e)); }
   };
 
-  useEffect(() => {
-    void load();
-  }, []);
+  useEffect(() => { void load(); }, []);
 
-  const categoryOf = (r: Row): Category =>
-    CATEGORY_MAP[String(r.itemType ?? "")] ?? "raw_material";
-
-  const filterByTab = (r: Row) => categoryOf(r) === activeTab;
-
-  const tabRows = useMemo(() => rows.filter(filterByTab), [rows, activeTab]);
+  const tabRows = useMemo(() => rows.filter((r) => r.item_type === activeTab), [rows, activeTab]);
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return tabRows;
-    return tabRows.filter((r) =>
-      `${r.sku ?? ""} ${r.name ?? ""}`.toLowerCase().includes(q)
-    );
+    return tabRows.filter((r) => `${r.sku ?? ""} ${r.name ?? ""}`.toLowerCase().includes(q));
   }, [tabRows, search]);
 
   const counts = useMemo(() => {
-    const c: Record<Category, number> = {
-      raw_material: 0,
-      packaging: 0,
-      finished_product: 0,
-    };
-    rows.forEach((r) => {
-      c[categoryOf(r)]++;
-    });
+    const c: any = {};
+    ITEM_TYPES.forEach(t => c[t.key] = 0);
+    rows.forEach((r) => { if (c[r.item_type] !== undefined) c[r.item_type]++; });
     return c;
   }, [rows]);
 
   const clearForm = () => {
-    setEditingId(null);
-    setSku("");
-    setName("");
-    setUnit("جرام");
-    setQuantity("");
-    setAvgCost("");
-    setShowUnitSuggest(false);
+    setEditingId(null); setSku(""); setName(""); setUnit("حبة"); setStockQty("0"); setAverageCost("0"); setShowUnitPicker(false);
   };
 
-  const nextSku = useMemo(() => {
-    const prefix =
-      activeTab === "raw_material"
-        ? "RM"
-        : activeTab === "packaging"
-        ? "PK"
-        : "FP";
-    const nums = rows
-      .filter((r) => String(r.sku ?? "").startsWith(prefix))
-      .map((r) => parseInt(String(r.sku ?? "").replace(/\D/g, ""), 10))
-      .filter((n) => !Number.isNaN(n));
+  const generateSku = () => {
+    const prefix = activeTab.substring(0, 3).toUpperCase();
+    const nums = rows.filter(r => r.item_type === activeTab && String(r.sku).startsWith(prefix)).map(r => parseInt(String(r.sku).replace(/\D/g, ""), 10)).filter(n => !Number.isNaN(n));
     const next = nums.length ? Math.max(...nums) + 1 : 1;
-    return `${prefix}-${String(next).padStart(3, "0")}`;
-  }, [rows, activeTab]);
+    setSku(`${prefix}-${String(next).padStart(3, "0")}`);
+  };
 
   const save = async () => {
     try {
       const trimmedSku = sku.trim();
       const trimmedName = name.trim();
-      const qty = Number(quantity) || 0;
-      const cost = Number(avgCost) || 0;
+      if (!trimmedSku) return Alert.alert("تنبيه", "الرمز (SKU) مطلوب");
+      if (!trimmedName) return Alert.alert("تنبيه", "اسم الصنف مطلوب");
+      if (rows.some((r) => String(r.sku ?? "").trim() === trimmedSku && r.id !== editingId)) return Alert.alert("تنبيه", "الرمز مستخدم مسبقاً");
 
-      if (!trimmedSku) return Alert.alert("تنبيه", "الرمز مطلوب");
-      if (!trimmedName) return Alert.alert("تنبيه", "الاسم مطلوب");
+      const now = Date.now();
+      const qty = Number(stockQty) || 0;
+      const cost = Number(averageCost) || 0;
 
-      const dupSku = rows.some(
-        (r) => String(r.sku ?? "").trim() === trimmedSku && r.id !== editingId
-      );
-      if (dupSku) return Alert.alert("تنبيه", "الرمز مستخدم مسبقاً");
-
-      const dupName = rows.some(
-        (r) =>
-          String(r.name ?? "").trim().toLowerCase() ===
-            trimmedName.toLowerCase() && r.id !== editingId
-      );
-      if (dupName) return Alert.alert("تنبيه", "يوجد صنف بهذا الاسم مسبقاً");
-
-      const itemType =
-        activeTab === "raw_material"
-          ? "raw_material"
-          : activeTab === "packaging"
-          ? "packaging"
-          : "compound_finished";
-
-      const input: any = {
-        sku: trimmedSku,
-        code: trimmedSku,
-        name: trimmedName,
-        itemType,
-        unit,
-        stockQuantity: qty,
-        averageCost: cost,
-      };
-
-      if (editingId) await updateItem(editingId, input);
-      else await createItem(input);
+      if (editingId) {
+        await sqlite.runAsync(
+          "UPDATE items SET sku=?, name=?, unit=?, stock_quantity=?, average_cost=?, updated_at=? WHERE id=?",
+          [trimmedSku, trimmedName, unit, qty, cost, now, editingId]
+        );
+      } else {
+        await sqlite.runAsync(
+          "INSERT INTO items (id, sku, name, item_type, unit, stock_quantity, average_cost, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+          [newId(), trimmedSku, trimmedName, activeTab, unit, qty, cost, now]
+        );
+      }
 
       await load();
       const wasEdit = !!editingId;
       clearForm();
       Alert.alert("تم الحفظ", `تم ${wasEdit ? "تعديل" : "إضافة"} الصنف`);
-    } catch (e) {
-      Alert.alert("تعذر الحفظ", String(e));
-    }
+    } catch (e) { Alert.alert("تعذر الحفظ", String(e)); }
   };
 
   const edit = (r: Row) => {
-    setEditingId(r.id);
-    setSku(String(r.sku ?? ""));
-    setName(String(r.name ?? ""));
-    setUnit(String(r.unit ?? "جرام"));
-    setQuantity(String(r.stockQuantity ?? ""));
-    setAvgCost(String(r.averageCost ?? ""));
-    setActiveTab(categoryOf(r));
+    setEditingId(r.id); setSku(String(r.sku ?? "")); setName(String(r.name ?? "")); setUnit(String(r.unit ?? "حبة")); setStockQty(String(r.stock_quantity ?? "0")); setAverageCost(String(r.average_cost ?? "0")); setActiveTab(r.item_type);
   };
 
   const remove = (r: Row) => {
     Alert.alert("تأكيد الحذف", `هل تريد حذف «${r.name}»؟`, [
       { text: "إلغاء", style: "cancel" },
-      {
-        text: "حذف",
-        style: "destructive",
-        onPress: async () => {
+      { text: "حذف", style: "destructive", onPress: async () => {
           try {
-            await deleteItem(r.id);
+            await sqlite.runAsync("DELETE FROM items WHERE id = ?", [r.id]);
             await load();
             if (editingId === r.id) clearForm();
-          } catch (e) {
-            Alert.alert("تعذر الحذف", String(e));
-          }
-        },
-      },
+          } catch (e) { Alert.alert("تعذر الحذف", String(e)); }
+      }},
     ]);
   };
-
-  const stockColor = (qty: any) => {
-    const n = Number(qty) || 0;
-    if (n <= 0) return "#dc2626";
-    if (n < 10) return "#f59e0b";
-    return "#0b806c";
-  };
-
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40, paddingHorizontal: 4   }}
-      >
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+        
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>العودة &gt; إلى الوحدات المحاسبية</Text>
+          <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
-        
         <BrandBanner />
-        <Text style={styles.screenTitle}>الأصناف والمواد</Text>
+        <Text style={[styles.screenTitle, { color: colors.text }]}>إدارة المخزون والأصناف</Text>
+        <Text style={[styles.hint, { color: colors.textMuted }]}>أضف المواد الخام والعبوات والمنتجات النهائية. يتم تحديث المخزون تلقائياً عند إجراء فواتير البيع والشراء.</Text>
 
-        <Text style={styles.hint}>
-          تصنيف الأصناف: مواد إنتاج وعبوات تُخزَّن في "مخزن تحت الإنتاج"،
-          والمنتج النهائي في "مخزن المخزون التام".
-        </Text>
-
-        {/* تبويبات التصنيف */}
-        <View style={styles.tabs}>
-          {CATEGORIES.map((c) => {
-            const active = activeTab === c.key;
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+          {ITEM_TYPES.map((t) => {
+            const active = activeTab === t.key;
             return (
-              <Pressable
-                key={c.key}
-                onPress={() => {
-                  setActiveTab(c.key);
-                  clearForm();
-                }}
-                style={[
-                  styles.tab,
-                  active && { backgroundColor: c.color, borderColor: c.color },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    active && { color: "#fff", fontWeight: "700" },
-                  ]}
-                >
-                  {c.label} ({counts[c.key]})
-                </Text>
+              <Pressable key={t.key} onPress={() => { setActiveTab(t.key); clearForm(); }} style={[styles.tab, { borderColor: colors.border, backgroundColor: colors.surface }, active && { backgroundColor: t.color, borderColor: t.color }]}>
+                <Text style={[styles.tabText, { color: colors.text }, active && { color: "#fff", fontWeight: "700" }]}>{t.label} ({counts[t.key] || 0})</Text>
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
 
-        {/* بيانات المخزن */}
-        <View style={styles.warehouseBar}>
-          <Text style={styles.warehouseText}>
-            📦 يُخزَّن في: {WAREHOUSE_FOR[activeTab]}
-          </Text>
-        </View>
-
-        {/* البحث */}
-        <Text style={styles.label}>بحث</Text>
-        <TextInput
-          style={styles.input}
-          value={search}
-          onChangeText={setSearch}
-          onFocus={() => setSearchFocus(true)}
-          onBlur={() => setTimeout(() => setSearchFocus(false), 200)}
-          placeholder="ابحث بالرمز أو الاسم"
-          placeholderTextColor="#9CA3AF"
-          textAlign="right"
-        />
+        <Text style={[styles.label, { color: colors.textMuted }]}>بحث</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={search} onChangeText={setSearch} onFocus={() => setSearchFocus(true)} onBlur={() => setTimeout(() => setSearchFocus(false), 200)} placeholder="ابحث بالرمز أو الاسم" placeholderTextColor={colors.textMuted} textAlign="right" />
+        
         {searchFocus && search.trim().length > 0 && (
-          <View style={styles.suggestBox}>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
             {filteredRows.length === 0 ? (
-              <Text style={styles.suggestEmpty}>لا نتائج</Text>
+              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text>
             ) : (
               filteredRows.slice(0, 8).map((r) => (
-                <Pressable
-                  key={r.id}
-                  style={styles.suggestItem}
-                  onPress={() => {
-                    edit(r);
-                    setSearch("");
-                    setSearchFocus(false);
-                  }}
-                >
-                  <Text style={styles.suggestName}>{r.name}</Text>
-                  <Text style={styles.suggestMeta}>
-                    {r.sku} · {r.unit}
-                  </Text>
+                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.sku}</Text>
                 </Pressable>
               ))
             )}
-          </View>
+          </ScrollView>
         )}
 
-        {/* نموذج الإضافة/التعديل */}
-        <Text style={styles.sectionTitle}>
-          {editingId ? `تعديل الصنف` : `إضافة صنف جديد`}
-        </Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{editingId ? "تعديل الصنف" : "إضافة صنف جديد"}</Text>
 
-        <Text style={styles.label}>الرمز</Text>
-        <TextInput
-          style={styles.input}
-          value={sku}
-          onChangeText={setSku}
-          placeholder={nextSku}
-          placeholderTextColor="#9CA3AF"
-          textAlign="right"
-          editable={!editingId}
-        />
-
-        <Text style={styles.label}>الاسم</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="مثال: هيدروكسيد الصوديوم"
-          placeholderTextColor="#9CA3AF"
-          textAlign="right"
-        />
-
-        <Text style={styles.label}>وحدة القياس</Text>
-        <TextInput
-          style={styles.input}
-          value={unit}
-          onChangeText={setUnit}
-          onFocus={() => setShowUnitSuggest(true)}
-          onBlur={() => setTimeout(() => setShowUnitSuggest(false), 200)}
-          placeholder="جرام / لتر / حبة..."
-          placeholderTextColor="#9CA3AF"
-          textAlign="right"
-        />
-        {showUnitSuggest && (
-          <View style={styles.suggestBox}>
-            {UNITS.map((u) => (
-              <Pressable
-                key={u}
-                style={styles.suggestItem}
-                onPress={() => {
-                  setUnit(u);
-                  setShowUnitSuggest(false);
-                }}
-              >
-                <Text style={styles.suggestName}>{u}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-
-        <Text style={styles.label}>الرصيد الحالي</Text>
-        <TextInput
-          style={styles.input}
-          value={quantity}
-          onChangeText={setQuantity}
-          placeholder="0"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="decimal-pad"
-          textAlign="right"
-        />
-
-        <Text style={styles.label}>متوسط التكلفة (اختياري)</Text>
-        <TextInput
-          style={styles.input}
-          value={avgCost}
-          onChangeText={setAvgCost}
-          placeholder="0"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="decimal-pad"
-          textAlign="right"
-        />
-
-        <View style={styles.buttons}>
-          <Pressable style={styles.primary} onPress={save}>
-            <Text style={styles.primaryText}>
-              {editingId ? "حفظ التعديل" : "إضافة وحفظ"}
-            </Text>
-          </Pressable>
-          {editingId && (
-            <Pressable style={styles.cancel} onPress={clearForm}>
-              <Text style={styles.cancelText}>إلغاء</Text>
+        <Text style={[styles.label, { color: colors.textMuted }]}>الرمز (SKU)</Text>
+        <View style={{ flexDirection: "row-reverse", gap: 8 }}>
+          <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={sku} onChangeText={setSku} placeholder="SKU-001" placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
+          {!editingId && (
+            <Pressable style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={generateSku}>
+              <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>توليد</Text>
             </Pressable>
           )}
         </View>
-      
-        {/* القائمة */}
-        <Text style={styles.sectionTitle}>
-          {CATEGORIES.find((c) => c.key === activeTab)?.label} ({tabRows.length})
-        </Text>
+
+        <Text style={[styles.label, { color: colors.textMuted }]}>اسم الصنف</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={name} onChangeText={setName} placeholder="اسم المادة أو المنتج" placeholderTextColor={colors.textMuted} textAlign="right" />
+
+        <Text style={[styles.label, { color: colors.textMuted }]}>وحدة القياس</Text>
+        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowUnitPicker((v) => !v)}>
+          <Text style={[styles.pickerText, { color: colors.text }]}>{unit}</Text>
+          <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
+        </Pressable>
+        
+        {showUnitPicker && (
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+            {UNITS.map((u) => (
+              <Pressable key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setUnit(u); setShowUnitPicker(false); }}>
+                <Text style={[styles.suggestName, { color: colors.text }]}>{u}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+
+        <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 10 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.label, { color: colors.textMuted }]}>الكمية بالمخزون</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={stockQty} onChangeText={setStockQty} keyboardType="decimal-pad" textAlign="right" placeholder="0" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.label, { color: colors.textMuted }]}>متوسط التكلفة (YER)</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={averageCost} onChangeText={setAverageCost} keyboardType="decimal-pad" textAlign="right" placeholder="0" />
+          </View>
+        </View>
+
+        <View style={styles.buttons}>
+          <Pressable style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}>
+            <Text style={styles.primaryText}>{editingId ? "حفظ التعديل" : "إضافة وحفظ"}</Text>
+          </Pressable>
+          {editingId && (
+            <Pressable style={[styles.cancel, { borderColor: colors.border }]} onPress={clearForm}>
+              <Text style={[styles.cancelText, { color: colors.text }]}>إلغاء</Text>
+            </Pressable>
+          )}
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{ITEM_TYPES.find((t) => t.key === activeTab)?.label} ({tabRows.length})</Text>
         <View style={styles.list}>
           {filteredRows.length === 0 ? (
-            <Text style={styles.empty}>
-              لا توجد أصناف في هذا التصنيف — ابدأ بإضافة صنف من النموذج أدناه
-            </Text>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد أصناف في هذا التصنيف.</Text>
           ) : (
             filteredRows.map((r) => (
-              <View key={r.id} style={styles.row}>
+              <View key={r.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.rowActions}>
-                  <Pressable onPress={() => edit(r)} style={styles.editBtn}>
-                    <Text style={{ fontSize: 14 }}>✏️</Text>
-                  </Pressable>
-                  <Pressable onPress={() => remove(r)} style={styles.delBtn}>
-                    <Text style={{ fontSize: 14 }}>🗑️</Text>
-                  </Pressable>
+                  <Pressable onPress={() => edit(r)} style={[styles.editBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={styles.editText}>✏️</Text></Pressable>
+                  <Pressable onPress={() => remove(r)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>🗑️</Text></Pressable>
                 </View>
                 <View style={styles.rowInfo}>
-                  <Text style={styles.rowName}>{r.name}</Text>
-                  <Text style={styles.rowMeta}>
-                    {r.sku} · {r.unit}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.rowStock,
-                      { color: stockColor(r.stockQuantity) },
-                    ]}
-                  >
-                    الرصيد: {Number(r.stockQuantity || 0).toFixed(2)} {r.unit}
-                  </Text>
-                  {Number(r.averageCost) > 0 && (
-                    <Text style={styles.rowCost}>
-                      التكلفة: {Number(r.averageCost).toFixed(2)}
-                    </Text>
-                  )}
+                  <Text style={[styles.rowName, { color: colors.text }]}>{r.name}</Text>
+                  <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{r.sku} · {r.unit}</Text>
+                  <Text style={[styles.rowStock, { color: colors.blue }]}>الكمية: {Number(r.stock_quantity || 0)}</Text>
+                  <Text style={[styles.rowCost, { color: colors.textMuted }]}>التكلفة: {Number(r.average_cost || 0).toFixed(2)} YER</Text>
                 </View>
               </View>
             ))
           )}
         </View>
-
-        </ScrollView>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
-  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
-  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {marginTop: 15, fontSize: 20,
-    
-    color: "#0F172A",
-    
-    marginBottom: 6,
- textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  hint: {fontSize: 12,
-    color: "#8494B0",
-    
-    marginBottom: 12,
-    lineHeight: 18,textAlign: "right", writingDirection: "rtl", width: "100%"},
+  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
+  back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 8 },
+  backText: { textAlign: "left", fontWeight: "700" },
+  screenTitle: { fontSize: 20, marginBottom: 6, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  hint: { fontSize: 12, marginBottom: 12, lineHeight: 18, textAlign: "left", width: "100%" },
   tabs: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6, marginBottom: 10 },
-  tab: {
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  tabText: { fontSize: 12, color: "#0F172A" },
-  warehouseBar: {
-    backgroundColor: "#eef6ff",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  warehouseText: {
-    color: "#1E40AF",
-    fontSize: 12,
-    textAlign: "right",
-    fontWeight: "600",
-  },
-  sectionTitle: {fontSize: 16,
-    
-    color: "#0F172A",
-    
-    marginTop: 16,
-    marginBottom: 8,
-   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  label: {fontSize: 12,
-    color: "#526078",
-    
-    marginTop: 8,
-    marginBottom: 4,textAlign: "right", writingDirection: "rtl", width: "100%"},
-  input: {backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
+  tab: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  tabText: { fontSize: 12 },
+  sectionTitle: { fontSize: 16, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  label: { fontSize: 12, marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
+  input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right", width: "100%" },
+  genBtn: { justifyContent: "center", alignItems: "center", paddingHorizontal: 12, borderRadius: 8 },
+  picker: { borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
+  pickerText: { textAlign: "right", flex: 1, fontSize: 14 },
+  pickerArrow: { fontSize: 12, marginLeft: 8 },
   list: { gap: 8, marginTop: 4 },
-  empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
-  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  empty: { textAlign: "right", fontSize: 12, padding: 10 },
+  row: { borderWidth: 1, borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
-  rowName: {fontWeight: "700",
-    fontSize: 14,
-    color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
-  rowMeta: {
-    fontSize: 11,
-    color: "#8494B0",
-    marginTop: 3,
-    textAlign: "right",
-  },
-  rowStock: {
-    fontSize: 12,
-    marginTop: 3,
-    textAlign: "right",
-    fontWeight: "600",
-  },
-  rowCost: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
+  rowName: { fontWeight: "700", fontSize: 14, textAlign: "right", width: "100%" },
+  rowMeta: { fontSize: 11, marginTop: 3, textAlign: "right" },
+  rowStock: { fontSize: 12, marginTop: 3, textAlign: "right", fontWeight: "700" },
+  rowCost: { fontSize: 11, marginTop: 2, textAlign: "right" },
   rowActions: { flexDirection: "row", gap: 6, alignItems: "center" },
-  editBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  editText: { color: "#0F172A", fontSize: 12 },
-  delBtn: { backgroundColor: "#fee2e2", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  delText: { color: "#0F172A", fontSize: 12 },
-  suggestBox: {
-    marginTop: 4,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  suggestItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  suggestName: {
-    fontWeight: "700",
-    color: "#0F172A",
-    textAlign: "right",
-    fontSize: 13,
-  },
-  suggestMeta: {
-    fontSize: 11,
-    color: "#8494B0",
-    textAlign: "right",
-    marginTop: 2,
-  },
-  suggestEmpty: {
-    padding: 10,
-    color: "#8494B0",
-    textAlign: "right",
-    fontSize: 12,
-  },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  editText: { fontSize: 12 },
+  delBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  delText: { fontSize: 12 },
+  suggestBox: { marginTop: 4, borderWidth: 1, borderRadius: 8, overflow: "hidden", maxHeight: 200 },
+  suggestItem: { padding: 10, borderBottomWidth: 1 },
+  suggestName: { fontWeight: "700", textAlign: "right", fontSize: 13 },
+  suggestMeta: { fontSize: 11, textAlign: "right", marginTop: 2 },
+  suggestEmpty: { padding: 10, textAlign: "right", fontSize: 12 },
   buttons: { flexDirection: "row-reverse", gap: 8, marginTop: 16 },
-  primary: {
-    backgroundColor: "#F97316",
-    padding: 14,
-    borderRadius: 10,
-    flex: 1,
-  },
+  primary: { padding: 14, borderRadius: 10, flex: 1 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  cancel: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    padding: 13,
-    borderRadius: 10,
-  },
-  cancelText: { color: "#0F172A", textAlign: "center" },
+  cancel: { borderWidth: 1, padding: 13, borderRadius: 10 },
+  cancelText: { textAlign: "center" },
 });
