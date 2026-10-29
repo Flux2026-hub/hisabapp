@@ -41,7 +41,7 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
   return (
     <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
       <Pressable style={styles.back} onPress={onBack}>
-        <Text style={styles.backText}>{"->"} العودة إلى الوحدات المحاسبية</Text>
+        <Text style={styles.backText}>{"&gt;"} العودة إلى الوحدات المحاسبية</Text>
       </Pressable>
 
       <Text style={styles.screenTitle}>التقارير</Text>

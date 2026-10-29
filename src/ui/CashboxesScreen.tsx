@@ -225,7 +225,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
       <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40, paddingHorizontal: 4   }}
       >
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
+          <Text style={styles.backText}>العودة &gt; إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <BrandBanner />

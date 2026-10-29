@@ -252,8 +252,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40,  paddingBottom: 40, paddingHorizontal: 4   }}>
-        <Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>{"->"} العودة</Text></Pressable>
+      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40, paddingHorizontal: 4   }}>
+        <Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>{"&gt;"} العودة</Text></Pressable>
         <BrandBanner />
         <Text style={styles.screenTitle}>{editingNo ? `تعديل الفاتورة ${editingNo}` : "فاتورة مبيعات جديدة"}</Text>
 

@@ -80,7 +80,7 @@ export default function PurchaseReturnScreen({ invoiceId, onBack }: { invoiceId:
 
   return (
     <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
-      <Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>{"->"} العودة لسجل المشتريات</Text></Pressable>
+      <Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>{"&gt;"} العودة لسجل المشتريات</Text></Pressable>
 
       <Text style={styles.screenTitle}>مرتجع مشتريات</Text>
       <Text style={styles.hint}>الفاتورة: {invoice.invoice_no} · المورد: {invoice.party_name}</Text>

@@ -107,7 +107,7 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
         )
         .join("");
 
-      return "<!DOCTYPE html><html dir='rtl'><head><meta charset='utf-8'/><style>body{font-family:Arial,Tahoma;padding:24px;direction:rtl;color:#0F172A}.head{text-align:center;border-bottom:2px solid #F97316;padding-bottom:12px;margin-bottom:16px}.brand{font-size:22px;font-weight:800;color:#1E40AF}h1{font-size:18px;margin:12px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #D6E3F8;padding:7px;text-align:right;font-size:12px}th{background:#1E40AF;color:#fff}.sum{margin:14px 0;padding:12px;background:#fef3c7;border-radius:8px}.sum div{margin:4px 0;font-weight:700;color:#92400e}</style></head><body><div class='head'><div class='brand'>فلوكس</div><div style='font-size:12px;color:#8494B0'>منتج تسليك المجاري</div></div><h1>كشف حساب المورد: " + selected.name + "</h1><div style='color:#526078;font-size:11px'>الفترة: " + from + " -> " + to + " | العملة: " + baseSymbol + "</div><div class='sum'><div>إجمالي المدين: " + totalDebit.toFixed(2) + " " + baseSymbol + "</div><div>إجمالي الدائن: " + totalCredit.toFixed(2) + " " + baseSymbol + "</div><div>الرصيد الحالي: " + Number(selected.balance || 0).toFixed(2) + " " + baseSymbol + "</div></div><table><thead><tr><th>التاريخ</th><th>البيان</th><th>المرجع</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>" + rows + "</tbody></table></body></html>";
+      return "<!DOCTYPE html><html dir='rtl'><head><meta charset='utf-8'/><style>body{font-family:Arial,Tahoma;padding:24px;direction:rtl;color:#0F172A}.head{text-align:center;border-bottom:2px solid #F97316;padding-bottom:12px;margin-bottom:16px}.brand{font-size:22px;font-weight:800;color:#1E40AF}h1{font-size:18px;margin:12px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #D6E3F8;padding:7px;text-align:right;font-size:12px}th{background:#1E40AF;color:#fff}.sum{margin:14px 0;padding:12px;background:#fef3c7;border-radius:8px}.sum div{margin:4px 0;font-weight:700;color:#92400e}</style></head><body><div class='head'><div class='brand'>فلوكس</div><div style='font-size:12px;color:#8494B0'>منتج تسليك المجاري</div></div><h1>كشف حساب المورد: " + selected.name + "</h1><div style='color:#526078;font-size:11px'>الفترة: " + from + " &gt; " + to + " | العملة: " + baseSymbol + "</div><div class='sum'><div>إجمالي المدين: " + totalDebit.toFixed(2) + " " + baseSymbol + "</div><div>إجمالي الدائن: " + totalCredit.toFixed(2) + " " + baseSymbol + "</div><div>الرصيد الحالي: " + Number(selected.balance || 0).toFixed(2) + " " + baseSymbol + "</div></div><table><thead><tr><th>التاريخ</th><th>البيان</th><th>المرجع</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>" + rows + "</tbody></table></body></html>";
     }
 
     const rows = suppliers
@@ -148,7 +148,7 @@ export default function SuppliersReport({ onBack }: { onBack: () => void }) {
     <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
       <View style={styles.backWrap}>
         <Text style={styles.back} onPress={() => (selected ? setSelected(null) : onBack())}>
-          {"->"} {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}
+          {"&gt;"} {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}
         </Text>
       </View>
 

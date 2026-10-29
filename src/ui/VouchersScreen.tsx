@@ -410,7 +410,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         contentContainerStyle={styles.scrollContent}
       >
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>العودة -> إلى الوحدات المحاسبية</Text>
+          <Text style={styles.backText}>العودة &gt; إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <BrandBanner />
