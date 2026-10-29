@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
 import { sqlite } from "../../db/local";
 import ReportHeader from "./components/ReportHeader";
 import ReportSummary from "./components/ReportSummary";
 import DateRangePicker from "./components/DateRangePicker";
 import ReportActions, { exportCsv, exportPdf } from "./components/ReportActions";
+import { useTheme } from "../ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 export default function PurchaseReport({ onBack }: { onBack: () => void }) {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const today = new Date().toISOString().slice(0, 10);
   const [from, setFrom] = useState(today.slice(0, 8) + "01");
   const [to, setTo] = useState(today);
@@ -124,12 +126,11 @@ export default function PurchaseReport({ onBack }: { onBack: () => void }) {
   }, [invoices]);
 
   return (
-    <ScrollView
-      contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}
-    >
+    <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+      
       <View style={styles.backWrap}>
-        <Text style={styles.back} onPress={onBack}>
-          العودة &gt; إلى التقارير
+        <Text style={[styles.back, { color: colors.blue }]} onPress={onBack}>
+          ‹ العودة إلى التقارير
         </Text>
       </View>
 
@@ -174,24 +175,24 @@ export default function PurchaseReport({ onBack }: { onBack: () => void }) {
         ]}
       />
 
-      <Text style={styles.sectionTitle}>تفاصيل الفواتير</Text>
+      <Text style={[styles.sectionTitle, { color: colors.blue }]}>تفاصيل الفواتير</Text>
       {invoices.length === 0 ? (
-        <Text style={styles.empty}>لا توجد فواتير في هذه الفترة</Text>
+        <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد فواتير في هذه الفترة</Text>
       ) : (
         invoices.map((inv) => (
-          <View key={inv.id} style={styles.row}>
+          <View key={inv.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.rowInfo}>
-              <Text style={styles.rowName}>{inv.party_name || "—"}</Text>
-              <Text style={styles.rowMeta}>{inv.invoice_no}</Text>
-              <Text style={styles.rowDate}>
+              <Text style={[styles.rowName, { color: colors.text }]}>{inv.party_name || "—"}</Text>
+              <Text style={[styles.rowMeta, { color: colors.blue }]}>{inv.invoice_no}</Text>
+              <Text style={[styles.rowDate, { color: colors.textMuted }]}>
                 {new Date(inv.created_at).toLocaleString("ar-EG")}
               </Text>
             </View>
             <View style={styles.rowRight}>
-              <Text style={styles.amount}>
+              <Text style={[styles.amount, { color: colors.danger }]}>
                 {Number(inv.total).toFixed(2)} {inv.currency_code}
               </Text>
-              <Text style={styles.payTag}>
+              <Text style={[styles.payTag, { color: colors.textMuted }]}>
                 {inv.payment_type === "cash" ? "نقدي" : "أجل"}
               </Text>
             </View>
@@ -201,43 +202,18 @@ export default function PurchaseReport({ onBack }: { onBack: () => void }) {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
-  balance: { fontWeight: "800", fontSize: 16, textAlign: "left" },
-  value: { fontWeight: "800", fontSize: 16, textAlign: "left" },
-  rowValues: { alignItems: "flex-start", minWidth: 100 },
+  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   backWrap: { paddingVertical: 8 },
-  back: { alignSelf: "flex-end",  color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  sectionTitle: {fontSize: 15,
-    
-    color: "#92400e",
-    
-    marginTop: 14,
-    marginBottom: 8,
-   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  empty: {
-    textAlign: "right",
-    color: "#8494B0",
-    fontSize: 12,
-    padding: 10,
-  },
-  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  back: { alignSelf: "flex-start", fontWeight: "700", textAlign: "left" },
+  sectionTitle: { fontSize: 15, marginTop: 14, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  empty: { textAlign: "right", fontSize: 12, padding: 10 },
+  row: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   rowRight: { alignItems: "flex-start", minWidth: 100 },
-  rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
-  rowMeta: {
-    fontSize: 11,
-    color: "#1E40AF",
-    marginTop: 2,
-    textAlign: "right",
-    fontWeight: "600",
-  },
-  rowDate: {
-    fontSize: 10,
-    color: "#8494B0",
-    marginTop: 2,
-    textAlign: "right",
-  },
+  rowName: { fontWeight: "700", fontSize: 14, textAlign: "right" },
+  rowMeta: { fontSize: 11, marginTop: 2, textAlign: "right", fontWeight: "600" },
+  rowDate: { fontSize: 10, marginTop: 2, textAlign: "right" },
   amount: { fontWeight: "800", fontSize: 16, textAlign: "left" },
-  payTag: { color: "#8494B0", fontSize: 10, marginTop: 2 },
+  payTag: { fontSize: 10, marginTop: 2, textAlign: "left" },
 });
