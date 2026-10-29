@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { sqlite } from "../db/local";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
+import { useTheme } from "./ThemeContext";
 
 type Row = any;
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 export default function TransfersScreen({ onBack }: { onBack: () => void }) {
-  const { colors } = useTheme(); // 🚀 قراءة الألوان
+  const { colors } = useTheme();
   const [cashboxes, setCashboxes] = useState<Row[]>([]);
   const [currencies, setCurrencies] = useState<Row[]>([]);
 
@@ -22,6 +22,12 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
   const [description, setDescription] = useState("");
   const [dateStr, setDateStr] = useState(new Date().toISOString().slice(0, 10));
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // 🚀 إضافة حالات البحث
+  const [fromSearch, setFromSearch] = useState("");
+  const [toSearch, setToSearch] = useState("");
+  const [fromCurSearch, setFromCurSearch] = useState("");
+  const [toCurSearch, setToCurSearch] = useState("");
 
   const [showFrom, setShowFrom] = useState(false);
   const [showTo, setShowTo] = useState(false);
@@ -61,6 +67,32 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
     );
     setHistory(rows || []);
   };
+
+  // 🚀 دوال الفلترة للبحث
+  const filteredFromBoxes = useMemo(() => {
+    if (!fromSearch.trim()) return cashboxes;
+    const q = fromSearch.toLowerCase();
+    return cashboxes.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
+  }, [cashboxes, fromSearch]);
+
+  const filteredToBoxes = useMemo(() => {
+    const list = cashboxes.filter((c) => c.id !== from?.id);
+    if (!toSearch.trim()) return list;
+    const q = toSearch.toLowerCase();
+    return list.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
+  }, [cashboxes, toSearch, from]);
+
+  const filteredFromCur = useMemo(() => {
+    if (!fromCurSearch.trim()) return currencies;
+    const q = fromCurSearch.toLowerCase();
+    return currencies.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
+  }, [currencies, fromCurSearch]);
+
+  const filteredToCur = useMemo(() => {
+    if (!toCurSearch.trim()) return currencies;
+    const q = toCurSearch.toLowerCase();
+    return currencies.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
+  }, [currencies, toCurSearch]);
 
   const canSave = !!from && !!to && from.id !== to.id && Number(amount) > 0 && !!fromCurrency && !!toCurrency && !saving;
 
@@ -122,7 +154,7 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
         await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [baseAmount, to.id]);
         Alert.alert("تم التحويل بنجاح", `رقم التحويل: ${transferNo}`);
       }                                                                                                                                                         
-      setFrom(null); setTo(null); setAmount(""); setDescription("");                                                                                                  
+      setFrom(null); setTo(null); setAmount(""); setDescription(""); setFromSearch(""); setToSearch("");
       setEditingId(null);
       await loadData();
     } catch (e) {
@@ -136,16 +168,16 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
     setEditingId(h.id);
      const f = cashboxes.find(c => c.name === h.from_account);
      const t = cashboxes.find(c => c.name === h.to_account);
-     setFrom(f || null);
-     setTo(t || null);
+     setFrom(f || null); if (f) setFromSearch(f.name);
+     setTo(t || null); if (t) setToSearch(t.name);
      setAmount(String(h.amount));
      setDescription(h.description || "");
      if (h.created_at) setDateStr(new Date(h.created_at).toISOString().slice(0, 10));
 
      const fc = currencies.find(c => c.code === h.from_currency);
      const tc = currencies.find(c => c.code === h.to_currency);
-     if (fc) setFromCurrency(fc);
-     if (tc) setToCurrency(tc);
+     if (fc) { setFromCurrency(fc); setFromCurSearch(fc.name); }
+     if (tc) { setToCurrency(tc); setToCurSearch(tc.name); }
      if (h.exchange_rate) setExchangeRate(String(h.exchange_rate));                                                                                               
   };
                                                                                                                                                                   
@@ -178,48 +210,70 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
         <Text style={[styles.screenTitle, { color: colors.text }]}>التحويلات بين الصناديق</Text>
 
         <Text style={[styles.label, { color: colors.textMuted }]}>من صندوق</Text>                                                                                                                      
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowFrom((v) => !v)}>
-          <Text style={[styles.pickerText, { color: colors.text }]}>{from ? `${from.name} (${Number(from.balance).toFixed(2)})` : "اختر الصندوق المصدر"}</Text>
-          <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>                                                                                                                     
-        </Pressable>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+          value={fromSearch}
+          onChangeText={(text) => { setFromSearch(text); setShowFrom(true); if (from && text !== from.name) setFrom(null); }}
+          onFocus={() => setShowFrom(true)}
+          onBlur={() => setTimeout(() => setShowFrom(false), 200)}
+          placeholder="ابحث أو اكتب اسم الصندوق..."
+          placeholderTextColor={colors.textMuted}
+          textAlign="right"
+        />
         {showFrom && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
-            {cashboxes.map((c) => (
-              <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setFrom(c); setShowFrom(false); }}>
-                <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
-                <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
-              </Pressable>
-            ))}
+            {filteredFromBoxes.length === 0 ? <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text> : 
+              filteredFromBoxes.map((c) => (
+                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setFrom(c); setFromSearch(c.name); setShowFrom(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
+                </Pressable>
+              ))
+            }
           </ScrollView>
         )}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>إلى صندوق</Text>
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowTo((v) => !v)}>
-          <Text style={[styles.pickerText, { color: colors.text }]}>{to ? `${to.name} (${Number(to.balance).toFixed(2)})` : "اختر الصندوق الهدف"}</Text>                                            
-          <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
-        </Pressable>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+          value={toSearch}
+          onChangeText={(text) => { setToSearch(text); setShowTo(true); if (to && text !== to.name) setTo(null); }}
+          onFocus={() => setShowTo(true)}
+          onBlur={() => setTimeout(() => setShowTo(false), 200)}
+          placeholder="ابحث أو اكتب اسم الصندوق..."
+          placeholderTextColor={colors.textMuted}
+          textAlign="right"
+        />
         {showTo && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
-            {cashboxes.filter((c) => c.id !== from?.id).map((c) => (
-              <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setTo(c); setShowTo(false); }}>
-                <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
-                <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
-              </Pressable>
-            ))}
+            {filteredToBoxes.length === 0 ? <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text> : 
+              filteredToBoxes.map((c) => (
+                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setTo(c); setToSearch(c.name); setShowTo(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
+                </Pressable>
+              ))
+            }
           </ScrollView>
         )}                                                                                                                                                      
         
         <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.label, { color: colors.textMuted }]}>عملة الصندوق المصدر</Text>
-            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowFromCur((v) => !v)}>
-              <Text style={[styles.pickerText, { color: colors.text }]}>{fromCurrency ? fromCurrency.code : "العملة"}</Text>
-              <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
-            </Pressable>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+              value={fromCurSearch}
+              onChangeText={(text) => { setFromCurSearch(text); setShowFromCur(true); }}
+              onFocus={() => setShowFromCur(true)}
+              onBlur={() => setTimeout(() => setShowFromCur(false), 200)}
+              placeholder="العملة..."
+              placeholderTextColor={colors.textMuted}
+              textAlign="right"
+            />
             {showFromCur && (
-              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>                                                                          
-                {currencies.map((c) => (
-                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setFromCurrency(c); setShowFromCur(false); }}>
+              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+                {filteredFromCur.map((c) => (
+                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setFromCurrency(c); setFromCurSearch(c.name); setShowFromCur(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{c.code} - {c.name}</Text>
                   </Pressable>
                 ))}
@@ -228,16 +282,22 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.label, { color: colors.textMuted }]}>عملة الصندوق الهدف</Text>
-            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowToCur((v) => !v)}>
-              <Text style={[styles.pickerText, { color: colors.text }]}>{toCurrency ? toCurrency.code : "العملة"}</Text>                                                                                
-              <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
-            </Pressable>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+              value={toCurSearch}
+              onChangeText={(text) => { setToCurSearch(text); setShowToCur(true); }}
+              onFocus={() => setShowToCur(true)}
+              onBlur={() => setTimeout(() => setShowToCur(false), 200)}
+              placeholder="العملة..."
+              placeholderTextColor={colors.textMuted}
+              textAlign="right"
+            />
             {showToCur && (
               <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
-                {currencies.map((c) => (
-                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setToCurrency(c); setShowToCur(false); }}>
+                {filteredToCur.map((c) => (
+                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setToCurrency(c); setToCurSearch(c.name); setShowToCur(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{c.code} - {c.name}</Text>
-                  </Pressable>                                                                                                                                                  
+                  </Pressable>
                 ))}
               </ScrollView>
             )}
@@ -279,7 +339,7 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
             <Text style={styles.primaryText}>{saving ? "جارٍ..." : (editingId ? "تحديث التحويل" : "تنفيذ التحويل")}</Text>
           </Pressable>
           {editingId && (                                                                                                                                                   
-            <Pressable style={[styles.cancelBtn, { backgroundColor: colors.isDark ? "#334155" : "#f1f5f9" }]} onPress={() => { setEditingId(null); setAmount(""); setDescription(""); setFrom(null); setTo(null); }}>
+            <Pressable style={[styles.cancelBtn, { backgroundColor: colors.isDark ? "#334155" : "#f1f5f9" }]} onPress={() => { setEditingId(null); setAmount(""); setDescription(""); setFrom(null); setTo(null); setFromSearch(""); setToSearch(""); }}>
               <Text style={[styles.cancelBtnText, { color: colors.text }]}>إلغاء</Text>
             </Pressable>
           )}
@@ -328,6 +388,7 @@ const styles = StyleSheet.create({
   suggestItem: { padding: 10, borderBottomWidth: 1 },
   suggestName: { fontWeight: "700", textAlign: "right", fontSize: 13 },
   suggestMeta: { fontSize: 11, textAlign: "right", marginTop: 2 },
+  suggestEmpty: { padding: 10, textAlign: "right", fontSize: 12 },
   primary: { padding: 14, borderRadius: 10 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
   disabled: { opacity: 0.5 },

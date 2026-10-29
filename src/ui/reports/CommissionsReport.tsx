@@ -1,281 +1,246 @@
-import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, View, Pressable, TextInput } from "react-native";
 import { sqlite } from "../../db/local";
-import { printHtml } from "../../utils/printDocument";
-
-type RepSummary = { id: string; name: string; code: string; rate: number; invoiceCount: number; totalSales: number; totalCommission: number; };
+import ReportHeader from "./components/ReportHeader";
+import ReportSummary from "./components/ReportSummary";
+import ReportActions, { exportCsv, exportPdf } from "./components/ReportActions";
+import { useTheme } from "../ThemeContext";
 
 export default function CommissionsReport({ onBack }: { onBack: () => void }) {
-  const [summaries, setSummaries] = useState<RepSummary[]>([]);
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [selectedRep, setSelectedRep] = useState<RepSummary | null>(null);
-  const [details, setDetails] = useState<any[]>([]);
+  const { colors } = useTheme();
+  const today = new Date().toISOString().slice(0, 10);
+  
+  // حقول الفلترة
+  const [from, setFrom] = useState(today.slice(0, 8) + "01");
+  const [to, setTo] = useState(today);
+  const [activeFrom, setActiveFrom] = useState(from);
+  const [activeTo, setActiveTo] = useState(to);
 
-  const parseDate = (s: string, endOfDay = false): number | null => {
-    if (!s.trim()) return null;
-    const parts = s.trim().split("-");
-    if (parts.length !== 3) return null;
-    const [y, m, d] = parts.map(Number);
-    if (!y || !m || !d) return null;
-    return new Date(y, m - 1, d, endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0).getTime();
-  };
+  const [data, setData] = useState<any[]>([]);
+  const [baseSymbol, setBaseSymbol] = useState("ر.ي");
+  
+  // شاشة التفاصيل
+  const [selectedRep, setSelectedRep] = useState<any | null>(null);
+  const [repInvoices, setRepInvoices] = useState<any[]>([]);
 
   const load = async () => {
-    setLoading(true);
     try {
-      const fromTs = parseDate(fromDate);
-      const toTs = parseDate(toDate, true);
-      let where = "WHERE invoice_type = 'sales' AND sales_rep_id IS NOT NULL";
-      const params: any[] = [];
-      if (fromTs) { where += " AND created_at >= ?"; params.push(fromTs); }
-      if (toTs) { where += " AND created_at <= ?"; params.push(toTs); }
-      const rows: any = await sqlite.getAllAsync(`SELECT sales_rep_id AS id, sales_rep_name AS name, SUM(commission_amount) AS totalCommission, SUM(total) AS totalSales, COUNT(*) AS invoiceCount, MAX(commission_rate) AS rate FROM invoices ${where} GROUP BY sales_rep_id ORDER BY totalCommission DESC`, params);
-      const reps: any = await sqlite.getAllAsync("SELECT id, name, code, commission_rate FROM sales_reps");
-      const repMap = new Map<string, any>();
-      (reps || []).forEach((r: any) => repMap.set(r.id, r));
-      setSummaries((rows || []).map((row: any) => {
-        const rep = repMap.get(row.id);
-        return { id: row.id, name: row.name || rep?.name || "—", code: rep?.code || "—", rate: Number(row.rate || rep?.commission_rate || 0), invoiceCount: Number(row.invoiceCount) || 0, totalSales: Number(row.totalSales) || 0, totalCommission: Number(row.totalCommission) || 0 };
-      }));
+      const base: any = await sqlite.getFirstAsync("SELECT symbol FROM currencies WHERE is_base = 1 LIMIT 1");
+      if (base) setBaseSymbol(base.symbol || "ر.ي");
+
+      const fromTs = new Date(activeFrom + "T00:00:00").getTime() || 0;
+      const toTs = new Date(activeTo + "T23:59:59").getTime() || Date.now();
+
+      const rows: any = await sqlite.getAllAsync(`
+        SELECT r.id, r.code, r.name, r.commission_rate,
+               COUNT(i.id) as invoice_count,
+               SUM(i.total) as total_sales,
+               SUM(i.commission_amount) as total_commission
+        FROM sales_reps r
+        LEFT JOIN invoices i ON i.sales_rep_id = r.id AND i.invoice_type = 'sales' AND i.created_at BETWEEN ? AND ?
+        GROUP BY r.id
+        ORDER BY total_sales DESC
+      `, [fromTs, toTs]);
+      setData(rows || []);
     } catch (e) { Alert.alert("تعذر التحميل", String(e)); }
-    finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [activeFrom, activeTo]);
 
-  const loadDetails = async (repId: string) => {
-    setLoading(true);
+  const applyFilter = () => {
+    setActiveFrom(from);
+    setActiveTo(to);
+  };
+
+  const clearFilter = () => {
+    const firstDay = today.slice(0, 8) + "01";
+    setFrom(firstDay); setTo(today);
+    setActiveFrom(firstDay); setActiveTo(today);
+  };
+
+  const loadRepInvoices = async (rep: any) => {
     try {
-      const fromTs = parseDate(fromDate);
-      const toTs = parseDate(toDate, true);
-      let where = "WHERE invoice_type = 'sales' AND sales_rep_id = ?";
-      const params: any[] = [repId];
-      if (fromTs) { where += " AND created_at >= ?"; params.push(fromTs); }
-      if (toTs) { where += " AND created_at <= ?"; params.push(toTs); }
+      const fromTs = new Date(activeFrom + "T00:00:00").getTime() || 0;
+      const toTs = new Date(activeTo + "T23:59:59").getTime() || Date.now();
       
-      const rows: any = await sqlite.getAllAsync(
-        `SELECT invoice_no, party_name, total, commission_amount, commission_rate, created_at FROM invoices ${where} ORDER BY created_at ASC`,
-        params
-      );
-      setDetails(rows || []);
+      const invs: any = await sqlite.getAllAsync(`
+        SELECT invoice_no, party_name, total, created_at, commission_amount
+        FROM invoices
+        WHERE sales_rep_id = ? AND invoice_type = 'sales' AND created_at BETWEEN ? AND ?
+        ORDER BY created_at DESC
+      `, [rep.id, fromTs, toTs]);
+      
+      setRepInvoices(invs || []);
+      setSelectedRep(rep);
     } catch (e) { Alert.alert("تعذر التحميل", String(e)); }
-    finally { setLoading(false); }
   };
 
-  const goBack = () => {
-    setSelectedRep(null);
-    setDetails([]);
-  };
+  const stats = data.reduce((acc, curr) => {
+    acc.sales += Number(curr.total_sales) || 0;
+    acc.commissions += Number(curr.total_commission) || 0;
+    return acc;
+  }, { sales: 0, commissions: 0 });
 
-  const grandTotalSales = summaries.reduce((s, x) => s + x.totalSales, 0);
-  const grandTotalCommission = summaries.reduce((s, x) => s + x.totalCommission, 0);
-  const clearFilter = () => { setFromDate(""); setToDate(""); setTimeout(load, 50); };
+  const printRepStatement = (rep: any) => {
+    const rows = repInvoices.map(inv => `<tr>
+      <td>${inv.invoice_no}</td>
+      <td>${inv.party_name}</td>
+      <td>${new Date(inv.created_at).toLocaleDateString("ar-EG")}</td>
+      <td>${Number(inv.total).toFixed(2)}</td>
+      <td>${Number(inv.commission_amount).toFixed(2)}</td>
+    </tr>`).join("");
 
-  const buildRepHtml = async () => {
-    if (!selectedRep) return "";
-    const rows = details.map(d => `
-      <tr>
-        <td>${new Date(d.created_at).toLocaleDateString("ar-EG")}</td>
-        <td>${d.invoice_no}</td>
-        <td>${d.party_name || "—"}</td>
-        <td>${Number(d.total).toFixed(2)}</td>
-        <td>${d.commission_rate}%</td>
-        <td>${Number(d.commission_amount).toFixed(2)}</td>
-      </tr>
-    `).join("");
-
-    return `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"/><style>
-      @page { size: A4; margin: 12mm; }
-      body { font-family: Arial, Tahoma; direction: rtl; color: #0F172A; font-size: 14px; padding: 0; margin: 0; }
-      .header { text-align: center; border-bottom: 3px solid #F97316; padding-bottom: 12px; margin-bottom: 16px; }
-      .brand { font-size: 24px; font-weight: 800; color: #1E40AF; }
-      .info { margin-bottom: 16px; display: flex; justify-content: space-between; background: #EFF6FF; padding: 12px; border-radius: 8px; border: 1px solid #D6E3F8; }
-      .info div { font-weight: 700; }
-      table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-      th { background: #1E40AF; color: #FFF; padding: 10px; text-align: right; font-size: 13px; }
-      td { padding: 9px; border-bottom: 1px solid #E2E8F0; text-align: right; font-size: 13px; }
-      tr:nth-child(even) td { background: #F8FAFC; }
-      .summary { margin-top: 20px; display: flex; justify-content: space-between; background: #EFF6FF; padding: 15px; border-radius: 8px; font-weight: 800; font-size: 16px; border: 1px solid #D6E3F8; }
-      .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #8494B0; }
-    </style></head><body>
-      <div class="header">
-        <div class="brand">فلوكس</div>
-        <div style="font-size: 14px; color: #64748B;">كشف حساب مندوب مبيعات</div>
-      </div>
-      <div class="info">
-        <div>المندوب: ${selectedRep.name}</div>
-        <div>الكود: ${selectedRep.code}</div>
-        <div>الفترة: ${fromDate || "البداية"} إلى ${toDate || "اليوم"}</div>
-      </div>
-      <table>
-        <thead><tr><th>التاريخ</th><th>الفاتورة</th><th>العميل</th><th>المبلغ</th><th>النسبة</th><th>العمولة</th></tr></thead>
-        <tbody>${rows || "<tr><td colspan='6' style='text-align:center;'>لا توجد فواتير</td></tr>"}</tbody>
-      </table>
-      <div class="summary">
-        <span>إجمالي المبيعات: ${selectedRep.totalSales.toFixed(2)}</span>
-        <span>إجمالي العمولات: ${selectedRep.totalCommission.toFixed(2)}</span>
-      </div>
-      <div class="footer">تم إنشاء هذا الكشف من نظام فلوكس المحاسبي</div>
+    const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"/><style>body{font-family:Arial;padding:24px;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #ccc;padding:8px;text-align:right;}th{background:#1E40AF;color:#fff;}.header{text-align:center;border-bottom:2px solid #F97316;padding-bottom:10px;}</style></head><body>
+      <div class="header"><h2>كشف عمولات المندوب: ${rep.name}</h2><p>الفترة: ${activeFrom} إلى ${activeTo}</p></div>
+      <h3>الرمز: ${rep.code} | النسبة: ${rep.commission_rate}%</h3>
+      <h3>إجمالي المبيعات: ${Number(rep.total_sales).toFixed(2)} ${baseSymbol} | إجمالي العمولة: ${Number(rep.total_commission).toFixed(2)} ${baseSymbol}</h3>
+      <table><thead><tr><th>رقم الفاتورة</th><th>العميل</th><th>التاريخ</th><th>المبلغ</th><th>العمولة</th></tr></thead><tbody>${rows}</tbody></table>
     </body></html>`;
+    
+    exportPdf(html, `عمولات-${rep.name}.pdf`);
   };
-
-  const printStatement = async () => {
-    const html = await buildRepHtml();
-    printHtml(html);
-  };
-
-  if (selectedRep) {
-    return (
-      <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
-        <Pressable style={styles.back} onPress={goBack}>
-          <Text style={styles.backText}>{"&gt;"} العودة للقائمة</Text>
-        </Pressable>
-
-        <View style={styles.repCard}>
-          <View style={styles.repHeader}>
-            <Text style={styles.repName}>{selectedRep.name}</Text>
-            <Text style={styles.repRate}>{selectedRep.rate}%</Text>
-          </View>
-          <Text style={styles.repCode}>الكود: {selectedRep.code}</Text>
-          <View style={styles.repStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>إجمالي المبيعات</Text>
-              <Text style={styles.statValue}>{selectedRep.totalSales.toFixed(2)}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>إجمالي العمولة</Text>
-              <Text style={[styles.statValue, { color: "#F97316" }]}>{selectedRep.totalCommission.toFixed(2)}</Text>
-            </View>
-          </View>
-        </View>
-
-        <Pressable style={[styles.primary, { marginBottom: 16 }]} onPress={printStatement}>
-          <Text style={styles.primaryText}>طباعة الكشف (PDF)</Text>
-        </Pressable>
-
-        <Text style={styles.sectionTitle}>الفواتير ({details.length})</Text>
-
-        {details.length === 0 ? (
-          <Text style={styles.empty}>لا توجد فواتير لهذا المندوب في هذه الفترة</Text>
-        ) : (
-          details.map((d, idx) => (
-            <View key={idx} style={styles.detailRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.detailName}>{d.party_name || "—"}</Text>
-                <Text style={styles.detailMeta}>{d.invoice_no} · {new Date(d.created_at).toLocaleDateString("ar-EG")}</Text>
-              </View>
-              <View style={{ alignItems: "flex-start" }}>
-                <Text style={styles.detailValue}>{Number(d.total).toFixed(2)}</Text>
-                <Text style={styles.detailCommission}>عمولة: {Number(d.commission_amount).toFixed(2)}</Text>
-              </View>
-            </View>
-          ))
-        )}
-      </ScrollView>
-    );
-  }
 
   return (
-    <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
-      <Pressable style={styles.back} onPress={onBack}>
-        <Text style={styles.backText}>{"&gt;"} العودة إلى التقارير</Text>
+    <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+      
+      <Pressable style={styles.backWrap} onPress={() => selectedRep ? setSelectedRep(null) : onBack()}>
+        <Text style={[styles.back, { color: colors.blue }]}>‹ {selectedRep ? "العودة للقائمة" : "العودة إلى التقارير"}</Text>
       </Pressable>
 
-      <Text style={styles.screenTitle}>تقرير العمولات</Text>
-      <Text style={styles.hint}>إجمالي مبيعات وعمولات كل مندوب في الفترة المحددة.</Text>
+      <ReportHeader title="تقرير العمولات" subtitle="مبيعات وعمولات مناديب البيع" from={activeFrom} to={activeTo} currencySymbol={baseSymbol} />
 
-      <View style={styles.filterBox}>
-        <Text style={styles.label}>من تاريخ (YYYY-MM-DD)</Text>
-        <TextInput style={styles.input} value={fromDate} onChangeText={setFromDate} placeholder="2025-01-01" placeholderTextColor="#8494B0" keyboardType="numbers-and-punctuation" />
-        <Text style={styles.label}>إلى تاريخ (YYYY-MM-DD)</Text>
-        <TextInput style={styles.input} value={toDate} onChangeText={setToDate} placeholder="2025-12-31" placeholderTextColor="#8494B0" keyboardType="numbers-and-punctuation" />
-        <View style={styles.buttons}>
-          <Pressable style={styles.primary} onPress={load} disabled={loading}>
-            <Text style={styles.primaryText}>{loading ? "..." : "تطبيق الفلتر"}</Text>
-          </Pressable>
-          <Pressable style={styles.cancel} onPress={clearFilter}>
-            <Text style={styles.cancelText}>مسح</Text>
-          </Pressable>
-        </View>
-      </View>
+      {!selectedRep ? (
+        <>
+          {/* شاشة القائمة الرئيسية */}
+          <View style={[styles.filterBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.label, { color: colors.textMuted }]}>من تاريخ (YYYY-MM-DD)</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]} value={from} onChangeText={setFrom} textAlign="right" />
+            
+            <Text style={[styles.label, { color: colors.textMuted }]}>إلى تاريخ (YYYY-MM-DD)</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]} value={to} onChangeText={setTo} textAlign="right" />
+            
+            <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 12 }}>
+              <Pressable style={[styles.btnPrimary, { backgroundColor: colors.orange }]} onPress={applyFilter}>
+                <Text style={styles.btnPrimaryText}>تطبيق الفلتر</Text>
+              </Pressable>
+              <Pressable style={[styles.btnSecondary, { borderColor: colors.border, backgroundColor: colors.bg }]} onPress={clearFilter}>
+                <Text style={[styles.btnSecondaryText, { color: colors.text }]}>مسح</Text>
+              </Pressable>
+            </View>
+          </View>
 
-      <View style={styles.totalsBox}>
-        <View style={styles.totalItem}>
-          <Text style={styles.totalLabel}>إجمالي المبيعات</Text>
-          <Text style={styles.totalValue}>{grandTotalSales.toFixed(2)}</Text>
-        </View>
-        <View style={styles.totalItem}>
-          <Text style={styles.totalLabel}>إجمالي العمولات</Text>
-          <Text style={[styles.totalValue, { color: "#F97316" }]}>{grandTotalCommission.toFixed(2)}</Text>
-        </View>
-      </View>
+          <View style={{ flexDirection: "row-reverse", gap: 10, marginBottom: 16 }}>
+            <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>إجمالي المبيعات</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.sales.toFixed(2)}</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>إجمالي العمولات</Text>
+              <Text style={[styles.statValue, { color: colors.orange }]}>{stats.commissions.toFixed(2)}</Text>
+            </View>
+          </View>
 
-      <Text style={styles.sectionTitle}>التفاصيل ({summaries.length})</Text>
-
-      {summaries.length === 0 ? (
-        <Text style={styles.empty}>لا توجد فواتير مرتبطة بمناديب في هذه الفترة</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>التفاصيل ({data.length})</Text>
+          {data.map((rep) => (
+            <Pressable key={rep.id} style={[styles.repCard, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadRepInvoices(rep)}>
+              <View style={styles.repHeader}>
+                <View style={[styles.rateBadge, { backgroundColor: colors.isDark ? "#7C2D12" : "#FFF7ED" }]}>
+                  <Text style={[styles.rateText, { color: colors.orange }]}>{rep.commission_rate}%</Text>
+                </View>
+                <View style={{ flex: 1, alignItems: "flex-end" }}>
+                  <Text style={[styles.repName, { color: colors.text }]}>{rep.name}</Text>
+                  <Text style={[styles.repCode, { color: colors.textMuted }]}>الكود: {rep.code}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 12 }}>
+                <View style={[styles.innerStat, { backgroundColor: colors.bg }]}>
+                  <Text style={[styles.innerStatLabel, { color: colors.textMuted }]}>عدد الفواتير</Text>
+                  <Text style={[styles.innerStatValue, { color: colors.text }]}>{rep.invoice_count}</Text>
+                </View>
+                <View style={[styles.innerStat, { backgroundColor: colors.bg }]}>
+                  <Text style={[styles.innerStatLabel, { color: colors.textMuted }]}>إجمالي المبيعات</Text>
+                  <Text style={[styles.innerStatValue, { color: colors.text }]}>{Number(rep.total_sales || 0).toFixed(2)}</Text>
+                </View>
+                <View style={[styles.innerStat, { backgroundColor: colors.bg }]}>
+                  <Text style={[styles.innerStatLabel, { color: colors.textMuted }]}>العمولة</Text>
+                  <Text style={[styles.innerStatValue, { color: colors.orange }]}>{Number(rep.total_commission || 0).toFixed(2)}</Text>
+                </View>
+              </View>
+            </Pressable>
+          ))}
+        </>
       ) : (
-        summaries.map((s) => (
-          <Pressable key={s.id} style={styles.repCard} onPress={() => { setSelectedRep(s); loadDetails(s.id); }}>
+        <>
+          {/* شاشة التفاصيل للمندوب المحدد */}
+          <View style={[styles.repCard, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 16 }]}>
             <View style={styles.repHeader}>
-              <Text style={styles.repName}>{s.name}</Text>
-              <Text style={styles.repRate}>{s.rate}%</Text>
-            </View>
-            <Text style={styles.repCode}>الكود: {s.code}</Text>
-            <View style={styles.repStats}>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>عدد الفواتير</Text>
-                <Text style={styles.statValue}>{s.invoiceCount}</Text>
+              <View style={[styles.rateBadge, { backgroundColor: colors.isDark ? "#7C2D12" : "#FFF7ED" }]}>
+                <Text style={[styles.rateText, { color: colors.orange }]}>{selectedRep.commission_rate}%</Text>
               </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>إجمالي المبيعات</Text>
-                <Text style={styles.statValue}>{s.totalSales.toFixed(2)}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>العمولة</Text>
-                <Text style={[styles.statValue, { color: "#F97316" }]}>{s.totalCommission.toFixed(2)}</Text>
+              <View style={{ flex: 1, alignItems: "flex-end" }}>
+                <Text style={[styles.repName, { color: colors.text }]}>{selectedRep.name}</Text>
+                <Text style={[styles.repCode, { color: colors.textMuted }]}>الكود: {selectedRep.code}</Text>
               </View>
             </View>
+            <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 12 }}>
+              <View style={[styles.innerStat, { backgroundColor: colors.bg }]}>
+                <Text style={[styles.innerStatLabel, { color: colors.textMuted }]}>إجمالي المبيعات</Text>
+                <Text style={[styles.innerStatValue, { color: colors.text }]}>{Number(selectedRep.total_sales || 0).toFixed(2)}</Text>
+              </View>
+              <View style={[styles.innerStat, { backgroundColor: colors.bg }]}>
+                <Text style={[styles.innerStatLabel, { color: colors.textMuted }]}>إجمالي العمولة</Text>
+                <Text style={[styles.innerStatValue, { color: colors.orange }]}>{Number(selectedRep.total_commission || 0).toFixed(2)}</Text>
+              </View>
+            </View>
+          </View>
+
+          <Pressable style={[styles.btnPrimary, { backgroundColor: colors.orange, marginBottom: 20 }]} onPress={() => printRepStatement(selectedRep)}>
+            <Text style={styles.btnPrimaryText}>طباعة الكشف (PDF)</Text>
           </Pressable>
-        ))
+
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>الفواتير ({repInvoices.length})</Text>
+          {repInvoices.map((inv, i) => (
+            <View key={i} style={[styles.invoiceRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.invAmount, { color: colors.text }]}>{Number(inv.total).toFixed(2)}</Text>
+              <View style={{ flex: 1, alignItems: "flex-end" }}>
+                <Text style={[styles.invParty, { color: colors.text }]}>{inv.party_name}</Text>
+                <Text style={[styles.invMeta, { color: colors.textMuted }]}>
+                  {inv.invoice_no} · {new Date(inv.created_at).toLocaleDateString("ar-EG")} · عمولة: <Text style={{ color: colors.orange, fontWeight: "700" }}>{Number(inv.commission_amount).toFixed(2)}</Text>
+                </Text>
+              </View>
+            </View>
+          ))}
+        </>
       )}
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
-  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
-  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 6,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  hint: {fontSize: 12, color: "#8494B0",  marginBottom: 14, lineHeight: 18, textAlign: "right", writingDirection: "rtl", width: "100%"},
-  filterBox: { backgroundColor: "#EFF6FF", padding: 14, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: "#D6E3F8" },
-  label: {fontSize: 13, color: "#0F172A", marginTop: 8, marginBottom: 4, fontWeight: "700",textAlign: "right", writingDirection: "rtl", width: "100%"},
-  input: {backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 9, fontSize: 15, color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
-  buttons: { flexDirection: "row-reverse", gap: 8, marginTop: 16 },
-  primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10, flex: 1 },
-  primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 13, borderRadius: 10, flex: 1 },
-  cancelText: { color: "#0F172A", textAlign: "center", fontWeight: "700" },
-  totalsBox: { flexDirection: "row-reverse", gap: 8, marginBottom: 16 },
-  totalItem: { flex: 1, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12 },
-  totalLabel: { fontSize: 12, color: "#8494B0", marginBottom: 4, textAlign: "right" },
-  totalValue: { fontSize: 18, fontWeight: "800", color: "#0F172A", textAlign: "right" },
-  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 8, marginBottom: 8 ,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  empty: { textAlign: "center", color: "#8494B0", padding: 20 },
-  repCard: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 14, marginBottom: 10 },
-  repHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
-  repName: { fontSize: 16, fontWeight: "800", color: "#0F172A", textAlign: "right", flex: 1 },
-  repRate: { fontSize: 13, fontWeight: "800", color: "#F97316", backgroundColor: "#FFF7ED", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  repCode: { fontSize: 12, color: "#8494B0", marginTop: 4, marginBottom: 10, textAlign: "right" },
-  repStats: { flexDirection: "row-reverse", gap: 8 },
-  statItem: { flex: 1, backgroundColor: "#EFF6FF", padding: 10, borderRadius: 8 },
-  statLabel: { fontSize: 11, color: "#8494B0", marginBottom: 3, textAlign: "right" },
-  statValue: { fontSize: 14, fontWeight: "700", color: "#0F172A", textAlign: "right" },
-  detailRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  detailName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
-  detailMeta: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
-  detailValue: { fontWeight: "800", fontSize: 15, color: "#0F172A", textAlign: "left" },
-  detailCommission: { fontSize: 11, color: "#F97316", marginTop: 2, textAlign: "left", fontWeight: "700" },
+  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
+  backWrap: { paddingVertical: 8 },
+  back: { alignSelf: "flex-start", fontWeight: "700", textAlign: "left" },
+  filterBox: { borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 16 },
+  label: { fontSize: 12, marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%", fontWeight: "700" },
+  input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right", width: "100%" },
+  btnPrimary: { padding: 12, borderRadius: 8, flex: 1, alignItems: "center", justifyContent: "center" },
+  btnPrimaryText: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  btnSecondary: { padding: 12, borderRadius: 8, borderWidth: 1, flex: 1, alignItems: "center", justifyContent: "center" },
+  btnSecondaryText: { fontWeight: "800", fontSize: 14 },
+  statCard: { flex: 1, borderWidth: 1, borderRadius: 12, padding: 16, alignItems: "flex-end" },
+  statLabel: { fontSize: 12, fontWeight: "700", marginBottom: 4 },
+  statValue: { fontSize: 20, fontWeight: "800" },
+  sectionTitle: { fontSize: 15, marginTop: 8, marginBottom: 12, textAlign: "left", width: "100%", fontFamily: "CodecBold", fontWeight: "700" },
+  repCard: { borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 12 },
+  repHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
+  rateBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  rateText: { fontSize: 14, fontWeight: "800" },
+  repName: { fontSize: 18, fontWeight: "800", textAlign: "right" },
+  repCode: { fontSize: 12, marginTop: 2, textAlign: "right" },
+  innerStat: { flex: 1, padding: 10, borderRadius: 8, alignItems: "flex-end" },
+  innerStatLabel: { fontSize: 10, marginBottom: 4 },
+  innerStatValue: { fontSize: 14, fontWeight: "800" },
+  invoiceRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 8 },
+  invAmount: { fontSize: 16, fontWeight: "800" },
+  invParty: { fontSize: 14, fontWeight: "700", textAlign: "right" },
+  invMeta: { fontSize: 11, marginTop: 2, textAlign: "right" },
 });

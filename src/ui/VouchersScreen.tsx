@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { buildVoucherHtml, printHtml } from "../utils/printDocument";
-import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
+import { useTheme } from "./ThemeContext";
 
 type Row = any;
 type VType = "receipt" | "payment";
@@ -14,13 +14,14 @@ type PartyType = "none" | "customer" | "supplier" | "account";
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 export default function VouchersScreen({ onBack }: { onBack: () => void }) {
-  const { colors } = useTheme(); // 🚀 قراءة الألوان
+  const { colors } = useTheme();
   const [vType, setVType] = useState<VType>("receipt");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dateStr, setDateStr] = useState(new Date().toISOString().slice(0, 10));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [partyType, setPartyType] = useState<PartyType>("none");
   const [partyRecord, setPartyRecord] = useState<Row | null>(null);
+  const [partySearch, setPartySearch] = useState(""); // 🚀 للبحث بالكتابة
 
   const [cashboxes, setCashboxes] = useState<Row[]>([]);                                                                                                          
   const [currencies, setCurrencies] = useState<Row[]>([]);
@@ -29,6 +30,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
   const [accounts, setAccounts] = useState<Row[]>([]);
 
   const [cashbox, setCashbox] = useState<Row | null>(null);
+  const [cashboxSearch, setCashboxSearch] = useState(""); // 🚀 للبحث بالكتابة
   const [currency, setCurrency] = useState<Row | null>(null);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -62,47 +64,50 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           isBase: !!(x.is_base ?? x.isBase),
         }));
         setCurrencies(normalized);
-
         const baseCur = normalized.find((x: any) => x.isBase);                                                                                                          
         if (baseCur) setCurrency(baseCur);
-      } catch (e) {
-        Alert.alert("تعذر التحميل", String(e));
-      }
+      } catch (e) { Alert.alert("تعذر التحميل", String(e)); }
     })();
   }, []);
 
-  useEffect(() => {
-    loadHistory();
-  }, [filterVType, filterParty]);
+  useEffect(() => { loadHistory(); }, [filterVType, filterParty]);
 
   const loadHistory = async () => {
     try {
       let query = "SELECT id, voucher_no, voucher_type, party_name, amount, currency_code, created_at, party_type, cashbox_id, description, exchange_rate FROM vouchers WHERE 1=1";
       const params: any[] = [];
-
       if (filterVType !== "all") { query += " AND voucher_type = ?"; params.push(filterVType); }
       if (filterParty !== "all") { query += " AND party_type = ?"; params.push(filterParty); }
-
       query += " ORDER BY created_at DESC LIMIT 30";
       const rows: any = await sqlite.getAllAsync(query, params);
       setHistory(rows || []);                                                                                                                                       
-    } catch (e) {
-      console.log("History error", e);
-    }
+    } catch (e) { console.log("History error", e); }
   };
 
   const symbol = currency?.symbol || currency?.code || "";
   const sarRate = currencies.find((c: any) => c.code === "SAR")?.exchangeRate || 140;
 
   const partyOptions: Row[] = partyType === "customer" ? customers : partyType === "supplier" ? suppliers : partyType === "account" ? accounts : [];
+  
+  // 🚀 فلترة الأطراف بناءً على البحث
+  const filteredParties = useMemo(() => {
+    if (!partySearch.trim()) return partyOptions;
+    const q = partySearch.toLowerCase();
+    return partyOptions.filter(p => String(p.name).toLowerCase().includes(q) || String(p.code).toLowerCase().includes(q));
+  }, [partyOptions, partySearch]);
+
   const availableCashboxes = cashboxes.filter((c: any) => c.cashbox_type === "analytical" || c.id === cashbox?.id);
+  
+  // 🚀 فلترة الصناديق بناءً على البحث
+  const filteredCashboxes = useMemo(() => {
+    if (!cashboxSearch.trim()) return availableCashboxes;
+    const q = cashboxSearch.toLowerCase();
+    return availableCashboxes.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
+  }, [availableCashboxes, cashboxSearch]);
+
   const canSave = !!cashbox && !!currency && Number(amount) > 0 && (partyType === "none" || !!partyRecord) && !saving;
 
-  const changePartyType = (t: PartyType) => {                                                                                                                       
-    setPartyType(t);
-    setPartyRecord(null);
-    setShowParty(false);
-  };
+  const changePartyType = (t: PartyType) => { setPartyType(t); setPartyRecord(null); setPartySearch(""); setShowParty(false); };
 
   const save = () => {
     if (!canSave || !cashbox || !currency) return;
@@ -129,34 +134,28 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           const oldBaseAmount = Number(oldV.amount) * oldRate;
           const oldDelta = oldV.voucher_type === "receipt" ? -oldBaseAmount : oldBaseAmount;
           await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [oldDelta, oldV.cashbox_id]);
-
           if (oldV.party_id && oldV.party_type !== "none") {
             let oldPDelta = 0;
             if (oldV.party_type === "customer") oldPDelta = oldV.voucher_type === "receipt" ? oldBaseAmount : -oldBaseAmount;
             else if (oldV.party_type === "supplier") oldPDelta = oldV.voucher_type === "payment" ? oldBaseAmount : -oldBaseAmount;
             else if (oldV.party_type === "account") oldPDelta = oldV.voucher_type === "receipt" ? -oldBaseAmount : oldBaseAmount;
-
             if (oldV.party_type === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
             else if (oldV.party_type === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
             else if (oldV.party_type === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
           }
         }                                                                                                                                                       
         await sqlite.runAsync("UPDATE vouchers SET voucher_type=?, cashbox_id=?, party_name=?, amount=?, description=?, created_at=?, party_type=?, party_id=?, currency_code=?, exchange_rate=? WHERE id=?", [vType, cashbox.id, partyRecord?.name || "", amt, description.trim(), now, partyType, partyRecord?.id || null, currency.code, rate, editingId]);
-
         const newDelta = vType === "receipt" ? baseAmount : -baseAmount;
         await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [newDelta, cashbox.id]);
-
         if (partyRecord && partyType !== "none") {                                                                                                                         
            let newPDelta = 0;
            if (partyType === "customer") newPDelta = vType === "receipt" ? -baseAmount : baseAmount;
            else if (partyType === "supplier") newPDelta = vType === "payment" ? -baseAmount : baseAmount;
            else if (partyType === "account") newPDelta = vType === "receipt" ? baseAmount : -baseAmount;
-
            if (partyType === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
            else if (partyType === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
            else if (partyType === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
         }
-
         Alert.alert("تم التعديل", "تم تحديث السند وتعديل الأرصدة بنجاح");                                                                                               cancelEdit();
       } else {
         const prefix = vType === "receipt" ? "RCP" : "PAY";
@@ -164,23 +163,14 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         let nextNum = 1;
         if (last && last.length > 0) nextNum = parseInt(String(last[0].voucher_no).replace(/\D/g, ""), 10) + 1;
         const voucherNo = `${prefix}-${String(nextNum).padStart(3, "0")}`;
-
         await sqlite.runAsync(`INSERT INTO vouchers (id, voucher_no, voucher_type, cashbox_id, party_name, amount, description, created_at, party_type, party_id, currency_code, exchange_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [newId(), voucherNo, vType, cashbox.id, partyRecord?.name || "", amt, description.trim(), now, partyType, partyRecord?.id || null, currency.code, rate]);
-
         const delta = vType === "receipt" ? baseAmount : -baseAmount;
         await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [delta, cashbox.id]);
-
         if (partyRecord && partyType !== "none") {
           let partyDelta = 0;                                                                                                                                             
-          if (partyType === "customer") {
-            partyDelta = vType === "receipt" ? -baseAmount : baseAmount;
-            await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
-          } else if (partyType === "supplier") {
-            partyDelta = vType === "payment" ? -baseAmount : baseAmount;                                                                                                    
-            await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
-          } else if (partyType === "account") {
-            partyDelta = vType === "receipt" ? baseAmount : -baseAmount;
-            await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          if (partyType === "customer") { partyDelta = vType === "receipt" ? -baseAmount : baseAmount; await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          } else if (partyType === "supplier") { partyDelta = vType === "payment" ? -baseAmount : baseAmount; await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          } else if (partyType === "account") { partyDelta = vType === "receipt" ? baseAmount : -baseAmount; await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
           }
         }                                                                                                                                                       
         Alert.alert("تم الحفظ بنجاح", "رقم السند: " + voucherNo + "\n\nهل تريد طباعة السند؟",
@@ -191,7 +181,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         );
       }
 
-      setAmount(""); setDescription(""); setCashbox(null); setPartyRecord(null); setPartyType("none"); setEditingId(null);
+      setAmount(""); setDescription(""); setCashbox(null); setCashboxSearch(""); setPartyRecord(null); setPartyType("none"); setPartySearch(""); setEditingId(null);
       const refreshed: any = await sqlite.getAllAsync("SELECT id, code, name, balance, cashbox_type FROM cashboxes ORDER BY name");
       setCashboxes(refreshed || []);
       await loadHistory();
@@ -203,29 +193,28 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
   };
 
   const printVoucher = async (h: any) => {
-    try {                                                                                                                                                             const html = await buildVoucherHtml({ voucherNo: h.voucher_no, voucherType: h.voucher_type, createdAt: h.created_at, partyName: h.party_name || "—", cashboxName: cashboxes.find(c=>c.id === h.cashbox_id)?.name || "—", amount: Number(h.amount), currencySymbol: h.currency_code || "YER", description: h.description });
+    try {                                                                                                                                                             
+      const html = await buildVoucherHtml({ voucherNo: h.voucher_no, voucherType: h.voucher_type, createdAt: h.created_at, partyName: h.party_name || "—", cashboxName: cashboxes.find(c=>c.id === h.cashbox_id)?.name || "—", amount: Number(h.amount), currencySymbol: h.currency_code || "YER", description: h.description });
       printHtml(html);
     } catch (e) { Alert.alert("تعذر الطباعة", String(e)); }
   };
 
   const editVoucher = async (h: any) => {
     setEditingId(h.id); setVType(h.voucher_type); setAmount(String(h.amount)); setDescription(h.description || ""); setDateStr(h.created_at ? new Date(h.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
-
     setPartyType(h.party_type || "none");
     if (h.party_id && h.party_type !== "none") {
       let p = null;
       if (h.party_type === "customer") p = customers.find((c:any) => c.id === h.party_id);
       else if (h.party_type === "supplier") p = suppliers.find((s:any) => s.id === h.party_id);
       else if (h.party_type === "account") p = accounts.find((a:any) => a.id === h.party_id);
-      setPartyRecord(p || null);                                                                                                                                    
-    } else { setPartyRecord(null); }
-
-    if (h.cashbox_id) { const cb = cashboxes.find((c:any) => c.id === h.cashbox_id); setCashbox(cb || null); }
+      setPartyRecord(p || null); setPartySearch(p ? p.name : "");                                                                                                                                    
+    } else { setPartyRecord(null); setPartySearch(""); }
+    if (h.cashbox_id) { const cb = cashboxes.find((c:any) => c.id === h.cashbox_id); setCashbox(cb || null); setCashboxSearch(cb ? cb.name : ""); }
     if (h.currency_code) { const cur = currencies.find((c:any) => c.code === h.currency_code); if (cur) setCurrency(cur); }
   };
 
   const cancelEdit = () => {
-    setEditingId(null); setVType("receipt"); setAmount(""); setDescription(""); setDateStr(new Date().toISOString().slice(0, 10)); setPartyType("none"); setPartyRecord(null); setCashbox(null);
+    setEditingId(null); setVType("receipt"); setAmount(""); setDescription(""); setDateStr(new Date().toISOString().slice(0, 10)); setPartyType("none"); setPartyRecord(null); setPartySearch(""); setCashbox(null); setCashboxSearch("");
   };
 
   const deleteVoucher = (id: string) => {
@@ -292,20 +281,30 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         {partyType !== "none" && (
           <>
             <Text style={[styles.label, { color: colors.textMuted }]}>{partyType === "customer" ? "اختر العميل" : partyType === "supplier" ? "اختر المورد" : "اختر الحساب"}</Text>                                                                                                                                                         
-            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowParty((v) => !v)}>
-              <Text style={[styles.pickerText, { color: colors.text }]}>{partyRecord ? partyRecord.name + " (" + Number(partyRecord.balance || 0).toFixed(2) + " YER)" : "اختر..."}</Text>
-              <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>                                                                                                                     
-            </Pressable>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+              value={partySearch}
+              onChangeText={(text) => {
+                setPartySearch(text);
+                setShowParty(true);
+                if (partyRecord && text !== partyRecord.name) setPartyRecord(null);
+              }}
+              onFocus={() => setShowParty(true)}
+              onBlur={() => setTimeout(() => setShowParty(false), 200)}
+              placeholder="ابحث أو اكتب الاسم..."
+              placeholderTextColor={colors.textMuted}
+              textAlign="right"
+            />
             {showParty && (
               <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
-                {partyOptions.length === 0 ? (
-                  <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد عناصر</Text>
+                {filteredParties.length === 0 ? (
+                  <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد نتائج مطابقة</Text>
                 ) : (
-                  partyOptions.map((p) => {
+                  filteredParties.map((p) => {
                     const bal = Number(p.balance || 0);
                     const sarEq = bal / sarRate;
                     return (
-                      <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPartyRecord(p); setShowParty(false); }}>
+                      <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPartyRecord(p); setPartySearch(p.name); setShowParty(false); }}>
                         <Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text>
                         <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code} · الرصيد: {bal.toFixed(2)} YER (≈ {sarEq.toFixed(2)} SAR)</Text>
                       </Pressable>
@@ -318,17 +317,27 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         )}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>الصندوق (تحليلي فقط)</Text>                                                                                                          
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCashbox((v) => !v)}>
-          <Text style={[styles.pickerText, { color: colors.text }]}>{cashbox ? cashbox.name + " (" + Number(cashbox.balance).toFixed(2) + ")" : "اختر الصندوق التحليلي"}</Text>
-          <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
-        </Pressable>                                                                                                                                                    
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+          value={cashboxSearch}
+          onChangeText={(text) => {
+            setCashboxSearch(text);
+            setShowCashbox(true);
+            if (cashbox && text !== cashbox.name) setCashbox(null);
+          }}
+          onFocus={() => setShowCashbox(true)}
+          onBlur={() => setTimeout(() => setShowCashbox(false), 200)}
+          placeholder="ابحث أو اكتب اسم الصندوق..."
+          placeholderTextColor={colors.textMuted}
+          textAlign="right"
+        />
         {showCashbox && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
-            {availableCashboxes.length === 0 ? (
-              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد صناديق تحليلية (أضف واحداً من شاشة الصناديق)</Text>
+            {filteredCashboxes.length === 0 ? (
+              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد صناديق تحليلية مطابقة</Text>
             ) : (
-              availableCashboxes.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setShowCashbox(false); }}>                                                                                                                                                                 
+              filteredCashboxes.map((c) => (
+                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setCashboxSearch(c.name); setShowCashbox(false); }}>                                                                                                                                                                 
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                 </Pressable>
@@ -422,6 +431,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
     </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
   scrollContent: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 4 },

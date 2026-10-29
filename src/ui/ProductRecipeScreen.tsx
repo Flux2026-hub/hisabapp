@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
+import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 type Item = {
   id: string;
@@ -37,6 +38,7 @@ const newId = () =>
   `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const [finishedItems, setFinishedItems] = useState<Item[]>([]);
   const [components, setComponents] = useState<Item[]>([]);
   const [selectedFinished, setSelectedFinished] = useState<Item | null>(null);
@@ -239,127 +241,75 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40, paddingHorizontal: 4   }}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+        
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>العودة &gt; إلى الوحدات المحاسبية</Text>
+          <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <BrandBanner />
-        <Text style={[styles.screenTitle, { marginTop: 15 }]}>التركيبة (وصفة الإنتاج)</Text>
-        <Text style={styles.hint}>
-          حدّد مكونات كل منتج نهائي. هذه التركيبة تُستخدم لاحقاً في أمر الإنتاج
-          لحساب المواد المطلوبة وخصمها من المخزون.
+        <Text style={[styles.screenTitle, { color: colors.text }]}>التركيبة (وصفة الإنتاج)</Text>
+        <Text style={[styles.hint, { color: colors.textMuted }]}>
+          حدّد مكونات كل منتج نهائي. هذه التركيبة تُستخدم لاحقاً في أمر الإنتاج لحساب المواد المطلوبة وخصمها من المخزون.
         </Text>
 
         {/* اختيار المنتج النهائي */}
-        <Text style={styles.sectionTitle}>المنتج النهائي</Text>
-        <Pressable
-          style={styles.picker}
-          onPress={() => setShowFinishedPicker((v) => !v)}
-        >
-          <Text style={styles.pickerText}>
-            {selectedFinished ? selectedFinished.name : "اختر منتجاً نهائياً"}
-          </Text>
-          <Text style={styles.pickerArrow}>▼</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>المنتج النهائي</Text>
+        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowFinishedPicker((v) => !v)}>
+          <Text style={[styles.pickerText, { color: colors.text }]}>{selectedFinished ? selectedFinished.name : "اختر منتجاً نهائياً"}</Text>
+          <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
         </Pressable>
 
         {showFinishedPicker && (
-          <View style={styles.suggestBox}>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
             {filteredFinished.length === 0 ? (
-              <Text style={styles.suggestEmpty}>
-                لا توجد منتجات نهائية — أضفها من شاشة الأصناف
-              </Text>
+              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد منتجات نهائية — أضفها من شاشة الأصناف</Text>
             ) : (
               filteredFinished.map((it) => (
-                <Pressable
-                  key={it.id}
-                  style={styles.suggestItem}
-                  onPress={() => {
-                    setSelectedFinished(it);
-                    setShowFinishedPicker(false);
-                  }}
-                >
-                  <Text style={styles.suggestName}>{it.name}</Text>
-                  <Text style={styles.suggestMeta}>
-                    {it.sku} · {it.unit}
-                  </Text>
+                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSelectedFinished(it); setShowFinishedPicker(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · {it.unit}</Text>
                 </Pressable>
               ))
             )}
-          </View>
+          </ScrollView>
         )}
 
         {selectedFinished && (
           <>
             {/* رأس التركيبة */}
-            <Text style={styles.sectionTitle}>مخرجات التركيبة</Text>
-            <Text style={styles.label}>
-              الكمية الناتجة من هذه التركيبة
-            </Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>مخرجات التركيبة</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>الكمية الناتجة من هذه التركيبة</Text>
             <View style={styles.inlineRow}>
               <View style={{ flex: 1 }}>
-                <TextInput
-                  style={styles.input}
-                  value={outputQty}
-                  onChangeText={setOutputQty}
-                  keyboardType="decimal-pad"
-                  textAlign="right"
-                  placeholder="1"
-                  placeholderTextColor="#9CA3AF"
-                />
+                <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={outputQty} onChangeText={setOutputQty} keyboardType="decimal-pad" textAlign="right" placeholder="1" placeholderTextColor={colors.textMuted} />
               </View>
               <View style={{ flex: 1 }}>
-                <TextInput
-                  style={styles.input}
-                  value={outputUnit}
-                  onChangeText={setOutputUnit}
-                  textAlign="right"
-                  placeholder="علبة"
-                  placeholderTextColor="#9CA3AF"
-                />
+                <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={outputUnit} onChangeText={setOutputUnit} textAlign="right" placeholder="علبة" placeholderTextColor={colors.textMuted} />
               </View>
             </View>
-            <Pressable style={styles.secondary} onPress={saveBomHead}>
-              <Text style={styles.secondaryText}>
-                {bomId ? "تحديث رأس التركيبة" : "إنشاء رأس التركيبة"}
-              </Text>
+            <Pressable style={[styles.secondary, { backgroundColor: colors.blue }]} onPress={saveBomHead}>
+              <Text style={styles.secondaryText}>{bomId ? "تحديث رأس التركيبة" : "إنشاء رأس التركيبة"}</Text>
             </Pressable>
 
             {/* المكونات */}
-            <Text style={styles.sectionTitle}>
-              المكونات ({totalComponents})
-            </Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>المكونات ({totalComponents})</Text>
 
             {lines.length === 0 ? (
-              <Text style={styles.empty}>
-                لا توجد مكونات بعد — أضف من الأسفل
-              </Text>
+              <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد مكونات بعد — أضف من الأسفل</Text>
             ) : (
               <View style={styles.list}>
                 {lines.map((l) => (
-                  <View key={l.id} style={styles.row}>
+                  <View key={l.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={styles.rowActions}>
-                      <Pressable
-                        onPress={() => removeLine(l)}
-                        style={styles.delBtn}
-                      >
-                        <Text style={styles.delText}>حذف</Text>
+                      <Pressable onPress={() => removeLine(l)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}>
+                        <Text style={[styles.delText, { color: colors.isDark ? "#FCA5A5" : "#0F172A" }]}>حذف</Text>
                       </Pressable>
                     </View>
                     <View style={styles.rowInfo}>
-                      <Text style={styles.rowName}>
-                        {l.component_name ?? "—"}
-                      </Text>
-                      <Text style={styles.rowMeta}>
-                        {l.component_sku ?? ""}
-                      </Text>
-                      <Text style={styles.rowQty}>
-                        {Number(l.quantity_per_output).toFixed(2)} {l.unit}
-                        {Number(l.waste_percent) > 0
-                          ? `  (+${l.waste_percent}% هدر)`
-                          : ""}
-                      </Text>
+                      <Text style={[styles.rowName, { color: colors.text }]}>{l.component_name ?? "—"}</Text>
+                      <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{l.component_sku ?? ""}</Text>
+                      <Text style={[styles.rowQty, { color: colors.blue }]}>{Number(l.quantity_per_output).toFixed(2)} {l.unit}{Number(l.waste_percent) > 0 ? `  (+${l.waste_percent}% هدر)` : ""}</Text>
                     </View>
                   </View>
                 ))}
@@ -367,98 +317,51 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
             )}
 
             {/* إضافة مكوّن */}
-            <Text style={styles.sectionTitle}>إضافة مكوّن</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>إضافة مكوّن</Text>
 
-            <Text style={styles.label}>المكوّن</Text>
-            <Pressable
-              style={styles.picker}
-              onPress={() => setShowComponentPicker((v) => !v)}
-            >
-              <Text style={styles.pickerText}>
-                {newComponent ? newComponent.name : "اختر من الأصناف"}
-              </Text>
-              <Text style={styles.pickerArrow}>▼</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>المكوّن</Text>
+            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowComponentPicker((v) => !v)}>
+              <Text style={[styles.pickerText, { color: colors.text }]}>{newComponent ? newComponent.name : "اختر من الأصناف"}</Text>
+              <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
             </Pressable>
 
             {showComponentPicker && (
-              <View style={styles.suggestBox}>
+              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
                 {components.length === 0 ? (
-                  <Text style={styles.suggestEmpty}>
-                    لا توجد مواد أو عبوات — أضفها من شاشة الأصناف
-                  </Text>
+                  <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد مواد أو عبوات — أضفها من شاشة الأصناف</Text>
                 ) : (
                   components.map((it) => (
-                    <Pressable
-                      key={it.id}
-                      style={styles.suggestItem}
-                      onPress={() => {
-                        setNewComponent(it);
-                        setNewUnit(it.unit);
-                        setShowComponentPicker(false);
-                      }}
-                    >
-                      <Text style={styles.suggestName}>{it.name}</Text>
-                      <Text style={styles.suggestMeta}>
-                        {it.sku} · {it.unit}
-                      </Text>
+                    <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setNewComponent(it); setNewUnit(it.unit); setShowComponentPicker(false); }}>
+                      <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
+                      <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · {it.unit}</Text>
                     </Pressable>
                   ))
                 )}
-              </View>
+              </ScrollView>
             )}
 
-            <Text style={styles.label}>الكمية اللازمة لكل وحدة إنتاج</Text>
-            <TextInput
-              style={styles.input}
-              value={newQty}
-              onChangeText={setNewQty}
-              keyboardType="decimal-pad"
-              textAlign="right"
-              placeholder="مثال: 150"
-              placeholderTextColor="#9CA3AF"
-            />
+            <Text style={[styles.label, { color: colors.textMuted }]}>الكمية اللازمة لكل وحدة إنتاج</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={newQty} onChangeText={setNewQty} keyboardType="decimal-pad" textAlign="right" placeholder="مثال: 150" placeholderTextColor={colors.textMuted} />
 
-            <Text style={styles.label}>الوحدة</Text>
-            <Pressable
-              style={styles.picker}
-              onPress={() => setShowUnitPicker((v) => !v)}
-            >
-              <Text style={styles.pickerText}>
-                {newUnit || "اختر الوحدة"}
-              </Text>
-              <Text style={styles.pickerArrow}>▼</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>الوحدة</Text>
+            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowUnitPicker((v) => !v)}>
+              <Text style={[styles.pickerText, { color: colors.text }]}>{newUnit || "اختر الوحدة"}</Text>
+              <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
             </Pressable>
             {showUnitPicker && (
-              <View style={styles.suggestBox}>
-                {["جرام", "كيلو", "لتر", "حبة", "عبوة", "علبة", "كرتون"].map(
-                  (u) => (
-                    <Pressable
-                      key={u}
-                      style={styles.suggestItem}
-                      onPress={() => {
-                        setNewUnit(u);
-                        setShowUnitPicker(false);
-                      }}
-                    >
-                      <Text style={styles.suggestName}>{u}</Text>
-                    </Pressable>
-                  )
-                )}
-              </View>
+              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+                {["جرام", "كيلو", "لتر", "حبة", "عبوة", "علبة", "كرتون"].map((u) => (
+                  <Pressable key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setNewUnit(u); setShowUnitPicker(false); }}>
+                    <Text style={[styles.suggestName, { color: colors.text }]}>{u}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
             )}
 
-            <Text style={styles.label}>نسبة الهدر % (اختياري)</Text>
-            <TextInput
-              style={styles.input}
-              value={newWaste}
-              onChangeText={setNewWaste}
-              keyboardType="decimal-pad"
-              textAlign="right"
-              placeholder="0"
-              placeholderTextColor="#9CA3AF"
-            />
+            <Text style={[styles.label, { color: colors.textMuted }]}>نسبة الهدر % (اختياري)</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={newWaste} onChangeText={setNewWaste} keyboardType="decimal-pad" textAlign="right" placeholder="0" placeholderTextColor={colors.textMuted} />
 
-            <Pressable style={styles.primary} onPress={addLine}>
+            <Pressable style={[styles.primary, { backgroundColor: colors.orange }]} onPress={addLine}>
               <Text style={styles.primaryText}>+ إضافة المكوّن</Text>
             </Pressable>
           </>
@@ -467,128 +370,36 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
-  back: {  paddingVertical: 10, alignSelf: "flex-end", marginBottom: 8 },
-  backText: {  color: "#1E40AF", textAlign: "right", fontWeight: "700" },
-  screenTitle: {fontSize: 20,
-    
-    color: "#0F172A",
-    
-    marginBottom: 6,
- textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  hint: {fontSize: 12,
-    color: "#8494B0",
-    
-    marginBottom: 12,
-    lineHeight: 18,textAlign: "right", writingDirection: "rtl", width: "100%"},
-  sectionTitle: {fontSize: 16,
-    
-    color: "#0F172A",
-    
-    marginTop: 16,
-    marginBottom: 8,
-   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  label: {fontSize: 12,
-    color: "#526078",
-    
-    marginTop: 8,
-    marginBottom: 4,textAlign: "right", writingDirection: "rtl", width: "100%"},
-  input: {backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
+  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
+  back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 8 },
+  backText: { textAlign: "left", fontWeight: "700" },
+  screenTitle: { fontSize: 20, marginBottom: 6, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  hint: { fontSize: 12, marginBottom: 12, lineHeight: 18, textAlign: "left", width: "100%" },
+  sectionTitle: { fontSize: 16, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  label: { fontSize: 12, marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
+  input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right", width: "100%" },
   inlineRow: { flexDirection: "row-reverse", gap: 8 },
-  picker: {
-    backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 8,
-    padding: 12,
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  pickerText: { color: "#0F172A", textAlign: "right", flex: 1, fontSize: 14 },
-  pickerArrow: { color: "#8494B0", fontSize: 12, marginLeft: 8 },
-  suggestBox: {
-    marginTop: 4,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  suggestItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  suggestName: {
-    fontWeight: "700",
-    color: "#0F172A",
-    textAlign: "right",
-    fontSize: 13,
-  },
-  suggestMeta: {
-    fontSize: 11,
-    color: "#8494B0",
-    textAlign: "right",
-    marginTop: 2,
-  },
-  suggestEmpty: {
-    padding: 10,
-    color: "#8494B0",
-    textAlign: "right",
-    fontSize: 12,
-  },
+  picker: { borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
+  pickerText: { textAlign: "right", flex: 1, fontSize: 14 },
+  pickerArrow: { fontSize: 12, marginLeft: 8 },
+  suggestBox: { marginTop: 4, borderWidth: 1, borderRadius: 8, overflow: "hidden" },
+  suggestItem: { padding: 10, borderBottomWidth: 1 },
+  suggestName: { fontWeight: "700", textAlign: "right", fontSize: 13 },
+  suggestMeta: { fontSize: 11, textAlign: "right", marginTop: 2 },
+  suggestEmpty: { padding: 10, textAlign: "right", fontSize: 12 },
   list: { gap: 8, marginTop: 4 },
-  empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
-  row: {
-    backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 10,
-    padding: 10,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+  empty: { textAlign: "right", fontSize: 12, padding: 10 },
+  row: { borderWidth: 1, borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowName: {fontWeight: "700",
-    fontSize: 14,
-    color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
-  rowMeta: {
-    fontSize: 11,
-    color: "#8494B0",
-    marginTop: 3,
-    textAlign: "right",
-  },
-  rowQty: {
-    fontSize: 12,
-    color: "#1E40AF",
-    marginTop: 3,
-    textAlign: "right",
-    fontWeight: "600",
-  },
+  rowName: { fontWeight: "700", fontSize: 14, textAlign: "right", width: "100%" },
+  rowMeta: { fontSize: 11, marginTop: 3, textAlign: "right" },
+  rowQty: { fontSize: 12, marginTop: 3, textAlign: "right", fontWeight: "600" },
   rowActions: { flexDirection: "row-reverse", gap: 6 },
-  delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
-  delText: { color: "#0F172A", fontSize: 12 },
-  secondary: {
-    backgroundColor: "#1E40AF",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-  },
+  delBtn: { padding: 8, borderRadius: 7 },
+  delText: { fontSize: 12, fontWeight: "700" },
+  secondary: { padding: 12, borderRadius: 8, marginTop: 8 },
   secondaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  primary: {
-    backgroundColor: "#F97316",
-    padding: 14,
-    borderRadius: 10,
-    marginTop: 16,
-  },
+  primary: { padding: 14, borderRadius: 10, marginTop: 16 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
 });

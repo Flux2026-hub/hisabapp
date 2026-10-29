@@ -5,7 +5,7 @@ import ReportHeader from "./components/ReportHeader";
 import ReportSummary from "./components/ReportSummary";
 import DateRangePicker from "./components/DateRangePicker";
 import ReportActions, { exportCsv, exportPdf } from "./components/ReportActions";
-import { COLORS } from "../theme";
+import { useTheme } from "../ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 type Row = any;
 type BalanceFilter = "all" | "positive" | "negative";
@@ -13,6 +13,7 @@ type CurrencyFilter = "all" | string;
 type ViewCurrency = "original" | string;
 
 export default function CustomersReport({ onBack }: { onBack: () => void }) {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const today = new Date().toISOString().slice(0, 10);
   const [from, setFrom] = useState(today.slice(0, 8) + "01");
   const [to, setTo] = useState(today);
@@ -47,26 +48,21 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
         Alert.alert("تعذر التحميل", String(e));
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const baseSymbol = baseCurrency?.symbol || "ر.ي";
 
   const loadCustomers = async () => {
-    const rows: any = await sqlite.getAllAsync(
-      "SELECT id, code, name, phone, balance FROM customers ORDER BY name"
-    );
+    const rows: any = await sqlite.getAllAsync("SELECT id, code, name, phone, balance FROM customers ORDER BY name");
     setCustomers(rows || []);
   };
 
-  // تحويل مبلغ من عملته إلى العملة الأساسية
   const toBase = (amount: number, currencyCode: string, exchangeRate: number) => {
     if (!baseCurrency) return amount;
     if (currencyCode === baseCurrency.code) return amount;
     return amount * (Number(exchangeRate) || 1);
   };
 
-  // تحويل مبلغ من العملة الأساسية إلى عملة العرض المختارة
   const fromBase = (baseAmount: number, targetCode: string) => {
     if (targetCode === baseCurrency?.code) return baseAmount;
     const target = currencies.find((c: any) => c.code === targetCode);
@@ -74,14 +70,12 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
     return baseAmount / (Number(target.exchangeRate) || 1);
   };
 
-  // الحصول على رمز عملة العرض
   const viewSymbol = useMemo(() => {
     if (viewCurrency === "original") return "";
     const c = currencies.find((x: any) => x.code === viewCurrency);
     return c?.symbol || viewCurrency;
   }, [viewCurrency, currencies]);
 
-  // الفلترة حسب رصيد العميل
   const filteredCustomers = useMemo(() => {
     return customers.filter((c) => {
       const bal = Number(c.balance) || 0;
@@ -106,139 +100,77 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
         [customer.id, fromTs, toTs, customer.id, fromTs, toTs]
       );
 
-      const all = [...(invoices || []), ...(vouchers || [])].sort(
-        (a: any, b: any) => a.created_at - b.created_at
-      );
+      const all = [...(invoices || []), ...(vouchers || [])].sort((a: any, b: any) => a.created_at - b.created_at);
 
       let running = 0;
       const withBalance = all.map((m: any) => {
         const rate = Number(m.exchange_rate) || 1;
         const amount = Number(m.amount) || 0;
-        const baseAmount =
-          m.currency_code === baseCurrency?.code ? amount : amount * rate;
+        const baseAmount = m.currency_code === baseCurrency?.code ? amount : amount * rate;
 
-        let debit = 0;
-        let credit = 0;
-        let desc = "";
+        let debit = 0; let credit = 0; let desc = "";
 
         if (m.kind === "invoice") {
           debit = baseAmount;
           desc = m.invoice_type === "sales" ? "فاتورة مبيعات" : "فاتورة مشتريات";
         } else if (m.kind === "voucher") {
-          if (m.payment_type === "receipt") {
-            credit = baseAmount;
-            desc = "سند قبض";
-          } else {
-            debit = baseAmount;
-            desc = "سند دفع";
-          }
+          if (m.payment_type === "receipt") { credit = baseAmount; desc = "سند قبض"; }
+          else { debit = baseAmount; desc = "سند دفع"; }
         }
 
         running += debit - credit;
-        return {
-          ...m,
-          debit,
-          credit,
-          desc,
-          balance: running,
-          originalAmount: amount,
-          originalCurrency: m.currency_code,
-        };
+        return { ...m, debit, credit, desc, balance: running, originalAmount: amount, originalCurrency: m.currency_code };
       });
 
       setStatement(withBalance);
       setSelected(customer);
-    } catch (e) {
-      Alert.alert("تعذر تحميل كشف الحساب", String(e));
-    }
+    } catch (e) { Alert.alert("تعذر تحميل كشف الحساب", String(e)); }
   };
 
-  // فلترة السطور حسب العملة
   const visibleStatement = useMemo(() => {
     if (currencyFilter === "all") return statement;
     return statement.filter((m: any) => m.originalCurrency === currencyFilter);
   }, [statement, currencyFilter]);
 
-  // تنسيق المبلغ حسب viewCurrency
   const formatAmount = (baseAmount: number, originalAmount: number, originalCurrency: string) => {
-    const symbolOf = (code: string) => {
-      const c = currencies.find((x: any) => x.code === code);
-      return c?.symbol || code;
-    };
-
-    if (viewCurrency === "original") {
-      return `${originalAmount.toFixed(2)} ${symbolOf(originalCurrency)}`;
-    }
+    const symbolOf = (code: string) => { const c = currencies.find((x: any) => x.code === code); return c?.symbol || code; };
+    if (viewCurrency === "original") return `${originalAmount.toFixed(2)} ${symbolOf(originalCurrency)}`;
     const converted = fromBase(baseAmount, viewCurrency);
     return `${converted.toFixed(2)} ${viewSymbol}`;
   };
 
-  // عرض المبلغ الأصلي (للتفاصيل)
   const formatOriginal = (originalAmount: number, originalCurrency: string) => {
     const c = currencies.find((x: any) => x.code === originalCurrency);
     return `${originalAmount.toFixed(2)} ${c?.symbol || originalCurrency}`;
   };
 
-  const totalDebit = useMemo(
-    () => visibleStatement.reduce((s, r) => s + (r.debit || 0), 0),
-    [visibleStatement]
-  );
-  const totalCredit = useMemo(
-    () => visibleStatement.reduce((s, r) => s + (r.credit || 0), 0),
-    [visibleStatement]
-  );
-
-  const totalBalance = useMemo(() => {
-    return filteredCustomers.reduce((s, c) => s + Number(c.balance || 0), 0);
-  }, [filteredCustomers]);
-
-  const positiveCount = useMemo(
-    () => customers.filter((c) => Number(c.balance) > 0).length,
-    [customers]
-  );
-  const negativeCount = useMemo(
-    () => customers.filter((c) => Number(c.balance) < 0).length,
-    [customers]
-  );
+  const totalDebit = useMemo(() => visibleStatement.reduce((s, r) => s + (r.debit || 0), 0), [visibleStatement]);
+  const totalCredit = useMemo(() => visibleStatement.reduce((s, r) => s + (r.credit || 0), 0), [visibleStatement]);
+  const totalBalance = useMemo(() => filteredCustomers.reduce((s, c) => s + Number(c.balance || 0), 0), [filteredCustomers]);
+  const positiveCount = useMemo(() => customers.filter((c) => Number(c.balance) > 0).length, [customers]);
+  const negativeCount = useMemo(() => customers.filter((c) => Number(c.balance) < 0).length, [customers]);
 
   const goBack = () => {
-    if (selected) {
-      setSelected(null);
-      setStatement([]);
-      setCurrencyFilter("all");
-      setViewCurrency("original");
-    } else {
-      onBack();
-    }
+    if (selected) { setSelected(null); setStatement([]); setCurrencyFilter("all"); setViewCurrency("original"); }
+    else { onBack(); }
   };
 
-  // خيارات العملات للفلترة والتبديل
   const currencyTabs = useMemo(() => {
-    const arr: Array<{ key: string; label: string }> = [
-      { key: "all", label: "الكل" },
-    ];
-    for (const c of currencies) {
-      arr.push({ key: c.code, label: c.symbol || c.code });
-    }
+    const arr: Array<{ key: string; label: string }> = [{ key: "all", label: "الكل" }];
+    for (const c of currencies) { arr.push({ key: c.code, label: c.symbol || c.code }); }
     return arr;
   }, [currencies]);
 
   const viewTabs = useMemo(() => {
-    const arr: Array<{ key: string; label: string }> = [
-      { key: "original", label: "كما هي" },
-    ];
-    for (const c of currencies) {
-      arr.push({ key: c.code, label: `بـ ${c.symbol || c.code}` });
-    }
+    const arr: Array<{ key: string; label: string }> = [{ key: "original", label: "كما هي" }];
+    for (const c of currencies) { arr.push({ key: c.code, label: `بـ ${c.symbol || c.code}` }); }
     return arr;
   }, [currencies]);
 
   const buildPdfHtml = () => {
     const rowsData = visibleStatement.map((m: any) => {
       const baseAmount = m.debit > 0 ? m.debit : m.credit;
-      const displayAmount = viewCurrency === "original"
-        ? formatOriginal(m.originalAmount, m.originalCurrency)
-        : fromBase(baseAmount, viewCurrency).toFixed(2) + " " + viewSymbol;
+      const displayAmount = viewCurrency === "original" ? formatOriginal(m.originalAmount, m.originalCurrency) : fromBase(baseAmount, viewCurrency).toFixed(2) + " " + viewSymbol;
       const type = m.debit > 0 ? "مدين" : "دائن";
       const color = m.debit > 0 ? "#DC2626" : "#059669";
       return "<tr><td>" + new Date(m.created_at).toLocaleDateString("ar-EG") + "</td><td>" + m.desc + "</td><td>" + m.ref + "</td><td style='color:" + color + ";font-weight:700;'>" + type + "</td><td style='font-weight:700;color:" + color + ";'>" + displayAmount + "</td></tr>";
@@ -253,63 +185,30 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
+    <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+      
       <View style={styles.backWrap}>
-        <Text style={styles.back} onPress={goBack}>
-          &gt; {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}
-        </Text>
+        <Text style={[styles.back, { color: colors.blue }]} onPress={goBack}>‹ {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}</Text>
       </View>
 
-      <ReportHeader
-        title={selected ? `كشف حساب: ${selected.name}` : "تقرير العملاء"}
-        subtitle={
-          selected ? "الحركات والأرصدة" : "قائمة العملاء وأرصدتهم"
-        }
-        from={from}
-        to={to}
-        currencySymbol={baseSymbol}
-      />
-
+      <ReportHeader title={selected ? `كشف حساب: ${selected.name}` : "تقرير العملاء"} subtitle={selected ? "الحركات والأرصدة" : "قائمة العملاء وأرصدتهم"} from={from} to={to} currencySymbol={baseSymbol} />
       <DateRangePicker from={from} to={to} onFromChange={setFrom} onToChange={setTo} />
 
       {selected && (
         <>
-          <Text style={styles.filterLabel}>فلترة العملة</Text>
+          <Text style={[styles.filterLabel, { color: colors.textMuted }]}>فلترة العملة</Text>
           <View style={styles.filterRow}>
             {currencyTabs.map((o) => (
-              <Pressable
-                key={o.key}
-                onPress={() => setCurrencyFilter(o.key)}
-                style={[styles.chip, currencyFilter === o.key && styles.chipActive]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    currencyFilter === o.key && styles.chipTextActive,
-                  ]}
-                >
-                  {o.label}
-                </Text>
+              <Pressable key={o.key} onPress={() => setCurrencyFilter(o.key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, currencyFilter === o.key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+                <Text style={[styles.chipText, { color: colors.text }, currencyFilter === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
           </View>
-
-          <Text style={styles.filterLabel}>عرض المبالغ</Text>
+          <Text style={[styles.filterLabel, { color: colors.textMuted }]}>عرض المبالغ</Text>
           <View style={styles.filterRow}>
             {viewTabs.map((o) => (
-              <Pressable
-                key={o.key}
-                onPress={() => setViewCurrency(o.key)}
-                style={[styles.chipView, viewCurrency === o.key && styles.chipViewActive]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    viewCurrency === o.key && styles.chipTextActive,
-                  ]}
-                >
-                  {o.label}
-                </Text>
+              <Pressable key={o.key} onPress={() => setViewCurrency(o.key)} style={[styles.chipView, { backgroundColor: colors.surface, borderColor: colors.border }, viewCurrency === o.key && { backgroundColor: colors.orange, borderColor: colors.orange }]}>
+                <Text style={[styles.chipText, { color: colors.text }, viewCurrency === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -318,26 +217,11 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
 
       {!selected && (
         <>
-          <Text style={styles.filterLabel}>الفلتر</Text>
+          <Text style={[styles.filterLabel, { color: colors.textMuted }]}>الفلتر</Text>
           <View style={styles.filterRow}>
-            {[
-              { key: "all", label: `الكل (${customers.length})` },
-              { key: "positive", label: `لهم رصيد (${positiveCount})` },
-              { key: "negative", label: `عليهم رصيد (${negativeCount})` },
-            ].map((o) => (
-              <Pressable
-                key={o.key}
-                onPress={() => setBalanceFilter(o.key as BalanceFilter)}
-                style={[styles.chip, balanceFilter === o.key && styles.chipActive]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    balanceFilter === o.key && styles.chipTextActive,
-                  ]}
-                >
-                  {o.label}
-                </Text>
+            {[ { key: "all", label: `الكل (${customers.length})` }, { key: "positive", label: `لهم رصيد (${positiveCount})` }, { key: "negative", label: `عليهم رصيد (${negativeCount})` } ].map((o) => (
+              <Pressable key={o.key} onPress={() => setBalanceFilter(o.key as BalanceFilter)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, balanceFilter === o.key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+                <Text style={[styles.chipText, { color: colors.text }, balanceFilter === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -346,17 +230,9 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
 
       <ReportActions
         onRefresh={() => (selected ? loadStatement(selected) : loadCustomers())}
-        onExportPdf={() => {
-          const html = buildPdfHtml();
-          exportPdf(html, "كشف-" + (selected?.name || "العملاء") + "-" + from + "-" + to + ".pdf");
-        }}
+        onExportPdf={() => { const html = buildPdfHtml(); exportPdf(html, "كشف-" + (selected?.name || "العملاء") + "-" + from + "-" + to + ".pdf"); }}
         onExportCsv={() => {
-          const rows = visibleStatement.map((m: any) => ({
-            date: new Date(m.created_at).toLocaleDateString("ar-EG"),
-            desc: m.desc,
-            ref: m.ref,
-            amount: formatAmount(m.debit || m.credit, m.originalAmount, m.originalCurrency),
-          }));
+          const rows = visibleStatement.map((m: any) => ({ date: new Date(m.created_at).toLocaleDateString("ar-EG"), desc: m.desc, ref: m.ref, amount: formatAmount(m.debit || m.credit, m.originalAmount, m.originalCurrency) }));
           const header = "التاريخ,البيان,المرجع,المبلغ\n";
           const body = rows.map((r) => `${r.date},${r.desc},${r.ref},${r.amount}`).join("\n");
           exportCsv(header + body, `كشف-${selected?.name || "العملاء"}.csv`);
@@ -365,32 +241,21 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
 
       {!selected ? (
         <>
-          <Text style={styles.sectionTitle}>
-            قائمة العملاء ({filteredCustomers.length})
-          </Text>
+          <Text style={[styles.sectionTitle, { color: colors.blue }]}>قائمة العملاء ({filteredCustomers.length})</Text>
           {filteredCustomers.length === 0 ? (
-            <Text style={styles.empty}>لا يوجد عملاء بهذا الفلتر</Text>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>لا يوجد عملاء بهذا الفلتر</Text>
           ) : (
             filteredCustomers.map((c) => {
               const bal = Number(c.balance || 0);
-              const balColor =
-                bal > 0 ? COLORS.success : bal < 0 ? COLORS.danger : COLORS.textMuted;
+              const balColor = bal > 0 ? colors.success : bal < 0 ? colors.danger : colors.textMuted;
               return (
-                <Pressable
-                  key={c.id}
-                  style={styles.row}
-                  onPress={() => loadStatement(c)}
-                >
+                <Pressable key={c.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadStatement(c)}>
                   <View style={styles.rowRight}>
-                    <Text style={[styles.amount, { color: balColor }]}>
-                      {bal.toFixed(2)} {baseSymbol}
-                    </Text>
+                    <Text style={[styles.amount, { color: balColor }]}>{bal.toFixed(2)} {baseSymbol}</Text>
                   </View>
                   <View style={styles.rowInfo}>
-                    <Text style={styles.rowName}>{c.name}</Text>
-                    <Text style={styles.rowMeta}>
-                      {c.code} · {c.phone || "—"}
-                    </Text>
+                    <Text style={[styles.rowName, { color: colors.text }]}>{c.name}</Text>
+                    <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{c.code} · {c.phone || "—"}</Text>
                   </View>
                 </Pressable>
               );
@@ -399,81 +264,24 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
         </>
       ) : (
         <>
-          <ReportSummary
-            items={[
-              { label: "عدد الحركات", value: String(visibleStatement.length) },
-              {
-                label: `إجمالي المدين (${viewCurrency === "original" ? baseSymbol : viewSymbol})`,
-                value:
-                  viewCurrency === "original"
-                    ? totalDebit.toFixed(2)
-                    : fromBase(totalDebit, viewCurrency).toFixed(2),
-                color: COLORS.danger,
-              },
-              {
-                label: `إجمالي الدائن (${viewCurrency === "original" ? baseSymbol : viewSymbol})`,
-                value:
-                  viewCurrency === "original"
-                    ? totalCredit.toFixed(2)
-                    : fromBase(totalCredit, viewCurrency).toFixed(2),
-                color: COLORS.success,
-              },
-              {
-                label: `الرصيد (${viewCurrency === "original" ? baseSymbol : viewSymbol})`,
-                value:
-                  viewCurrency === "original"
-                    ? Number(selected.balance || 0).toFixed(2)
-                    : fromBase(Number(selected.balance || 0), viewCurrency).toFixed(2),
-                color:
-                  Number(selected.balance || 0) > 0
-                    ? COLORS.success
-                    : Number(selected.balance || 0) < 0
-                    ? COLORS.danger
-                    : COLORS.textMuted,
-              },
-            ]}
-          />
-
-          <Text style={styles.sectionTitle}>
-            حركات الحساب ({visibleStatement.length})
-          </Text>
+          <ReportSummary items={[ { label: "عدد الحركات", value: String(visibleStatement.length) }, { label: `إجمالي المدين (${viewCurrency === "original" ? baseSymbol : viewSymbol})`, value: viewCurrency === "original" ? totalDebit.toFixed(2) : fromBase(totalDebit, viewCurrency).toFixed(2), color: colors.danger }, { label: `إجمالي الدائن (${viewCurrency === "original" ? baseSymbol : viewSymbol})`, value: viewCurrency === "original" ? totalCredit.toFixed(2) : fromBase(totalCredit, viewCurrency).toFixed(2), color: colors.success }, { label: `الرصيد (${viewCurrency === "original" ? baseSymbol : viewSymbol})`, value: viewCurrency === "original" ? Number(selected.balance || 0).toFixed(2) : fromBase(Number(selected.balance || 0), viewCurrency).toFixed(2), color: Number(selected.balance || 0) > 0 ? colors.success : Number(selected.balance || 0) < 0 ? colors.danger : colors.textMuted } ]} />
+          <Text style={[styles.sectionTitle, { color: colors.blue }]}>حركات الحساب ({visibleStatement.length})</Text>
           {visibleStatement.length === 0 ? (
-            <Text style={styles.empty}>لا توجد حركات</Text>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد حركات</Text>
           ) : (
             visibleStatement.map((m: any, i: number) => {
               const baseAmount = m.debit > 0 ? m.debit : m.credit;
-              const displayAmount =
-                viewCurrency === "original"
-                  ? formatOriginal(m.originalAmount, m.originalCurrency)
-                  : `${fromBase(baseAmount, viewCurrency).toFixed(2)} ${viewSymbol}`;
-
-              const showConversion =
-                viewCurrency === "original" &&
-                m.originalCurrency !== baseCurrency?.code;
-
+              const displayAmount = viewCurrency === "original" ? formatOriginal(m.originalAmount, m.originalCurrency) : `${fromBase(baseAmount, viewCurrency).toFixed(2)} ${viewSymbol}`;
+              const showConversion = viewCurrency === "original" && m.originalCurrency !== baseCurrency?.code;
               return (
-                <View key={i} style={styles.row}>
+                <View key={i} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.rowRight}>
-                    <Text
-                      style={[
-                        styles.amountSmall,
-                        { color: m.debit > 0 ? COLORS.danger : COLORS.success },
-                      ]}
-                    >
-                      {m.debit > 0 ? "−" : "+"}
-                      {displayAmount}
-                    </Text>
-                    {showConversion && (
-                      <Text style={styles.conversionHint}>
-                        ≈ {baseAmount.toFixed(2)} {baseSymbol}
-                      </Text>
-                    )}
+                    <Text style={[styles.amountSmall, { color: m.debit > 0 ? colors.danger : colors.success }]}>{m.debit > 0 ? "−" : "+"}{displayAmount}</Text>
+                    {showConversion && ( <Text style={[styles.conversionHint, { color: colors.textMuted }]}>≈ {baseAmount.toFixed(2)} {baseSymbol}</Text> )}
                   </View>
                   <View style={styles.rowInfo}>
-                    <Text style={styles.rowName}>{m.desc}</Text>
-                    <Text style={styles.rowMeta}>
-                      {m.ref} · {new Date(m.created_at).toLocaleDateString("ar-EG")}
-                    </Text>
+                    <Text style={[styles.rowName, { color: colors.text }]}>{m.desc}</Text>
+                    <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{m.ref} · {new Date(m.created_at).toLocaleDateString("ar-EG")}</Text>
                   </View>
                 </View>
               );
@@ -484,81 +292,23 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
+  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   backWrap: { paddingVertical: 8 },
-  back: { alignSelf: "flex-end",  color: COLORS.blue, fontWeight: "700", textAlign: "right" },
-  filterLabel: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    textAlign: "right",
-    marginTop: 10,
-    marginBottom: 6,
-    fontWeight: "700",
-  },
-  filterRow: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6 },
-  chip: {
-    borderWidth: 1.2,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: COLORS.surface,
-  },
-  chipActive: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
-  chipView: {
-    borderWidth: 1.2,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: COLORS.surface,
-  },
-  chipViewActive: { backgroundColor: COLORS.orange, borderColor: COLORS.orange },
-  chipText: { fontSize: 12, color: COLORS.text, fontWeight: "700" },
-  chipTextActive: { color: "#FFF", fontWeight: "800" },
-  sectionTitle: {fontSize: 15,
-    
-    color: COLORS.blue,
-    
-    marginTop: 16,
-    marginBottom: 8,
-   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  empty: {
-    textAlign: "right",
-    color: COLORS.textMuted,
-    fontSize: 12,
-    padding: 10,
-  },
-  row: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1.2,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    padding: 12,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
+  back: { alignSelf: "flex-start", fontWeight: "700", textAlign: "left" },
+  filterLabel: { fontSize: 12, textAlign: "left", marginTop: 10, marginBottom: 6, fontWeight: "700" },
+  filterRow: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6, marginBottom: 8 },
+  chip: { borderWidth: 1.2, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  chipView: { borderWidth: 1.2, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  chipText: { fontSize: 12, fontWeight: "700" },
+  sectionTitle: { fontSize: 15, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  empty: { textAlign: "right", fontSize: 12, padding: 10 },
+  row: { borderWidth: 1.2, borderRadius: 10, padding: 12, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
   rowInfo: { flex: 1, alignItems: "flex-end" },
   rowRight: { alignItems: "flex-end" },
-  rowName: {fontWeight: "700",
-    color: COLORS.text,
-    
-    fontSize: 14,textAlign: "right", writingDirection: "rtl", width: "100%"},
-  rowMeta: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginTop: 2,
-    textAlign: "right",
-  },
+  rowName: { fontWeight: "700", fontSize: 14, textAlign: "right", width: "100%" },
+  rowMeta: { fontSize: 11, marginTop: 2, textAlign: "right" },
   amount: { fontWeight: "800", fontSize: 15 },
   amountSmall: { fontWeight: "800", fontSize: 14 },
-  conversionHint: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    marginTop: 3,
-    fontWeight: "600",
-  },
+  conversionHint: { fontSize: 10, marginTop: 2, fontWeight: "600" },
 });
