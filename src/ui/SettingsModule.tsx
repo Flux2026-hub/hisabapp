@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "./theme";
 import { clearSettingsCache } from "../utils/getSettings";
 import { exportBackup, pickBackupFile, restoreBackup } from "../utils/backup";
+import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 const STORAGE_KEY = "flux_settings_v1";
 type Tab = "company" | "invoices" | "reports" | "appearance";
@@ -34,6 +35,7 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
   const [activeTab, setActiveTab] = useState<Tab>("company");
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { reloadTheme } = useTheme(); // 🚀 جلب دالة تحديث الألوان
 
   useEffect(() => {
     (async () => {
@@ -54,6 +56,7 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       clearSettingsCache();
+      if (reloadTheme) reloadTheme(); // 🚀 تحديث ألوان التطبيق فوراً
       Alert.alert("تم الحفظ", "تم حفظ الإعدادات بنجاح");
     } catch (e) { Alert.alert("خطأ", "تعذر الحفظ: " + String(e)); } finally { setSaving(false); }
   };
@@ -91,6 +94,7 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
           setSettings(DEFAULT_SETTINGS);
           await AsyncStorage.removeItem(STORAGE_KEY);
           clearSettingsCache();
+          if (reloadTheme) reloadTheme();
           Alert.alert("تم", "تم إرجاع الإعدادات الافتراضية");
       }},
     ]);
@@ -102,7 +106,7 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
         
-        {onBack && (<Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>العودة -&gt;</Text></Pressable>)}
+        {onBack && (<Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>‹ العودة</Text></Pressable>)}
 
         <BrandBanner />
         <Text style={[styles.screenTitle, { marginTop: 15 }]}>إعدادات النظام</Text>
@@ -228,16 +232,16 @@ const styles = StyleSheet.create({
   loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40 },
   loadingText: { color: COLORS.textMuted, fontSize: 14 },
   scrollContent: { paddingBottom: 40, paddingHorizontal: 8 },
-  back: { alignSelf: "flex-end", paddingVertical: 10 }, 
-  backText: { color: COLORS.blue, fontWeight: "800", textAlign: "right", fontSize: 13 },
-  screenTitle: { fontSize: 22, color: COLORS.text, marginBottom: 4, textAlign: "right", width: "100%", fontFamily: "CodecBold" },
-  hint: { fontSize: 12, color: COLORS.textMuted, marginBottom: 14, lineHeight: 18, textAlign: "right", width: "100%" },
+  back: { alignSelf: "flex-start", paddingVertical: 10 }, 
+  backText: { color: COLORS.blue, fontWeight: "800", textAlign: "left", fontSize: 13 },
+  screenTitle: { fontSize: 22, color: COLORS.text, marginBottom: 4, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  hint: { fontSize: 12, color: COLORS.textMuted, marginBottom: 14, lineHeight: 18, textAlign: "left", width: "100%" },
   tabs: { flexDirection: "row-reverse", gap: 6, marginBottom: 16, flexWrap: "wrap" },
   tab: { flex: 1, minWidth: 80, paddingVertical: 10, paddingHorizontal: 6, borderRadius: 10, borderWidth: 1.2, borderColor: COLORS.border, backgroundColor: COLORS.surface, alignItems: "center" },
   tabActive: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
   tabText: { fontSize: 12, color: COLORS.text, fontWeight: "700", textAlign: "center" },
   tabTextActive: { color: "#FFF", fontWeight: "800" },
-  sectionLabel: { fontSize: 14, fontWeight: "800", color: COLORS.blue, textAlign: "right", marginTop: 18, marginBottom: 8 },
+  sectionLabel: { fontSize: 14, fontWeight: "800", color: COLORS.blue, textAlign: "left", marginTop: 18, marginBottom: 8 },
   label: { fontSize: 12, color: COLORS.textMuted, marginTop: 10, marginBottom: 5, fontWeight: "700", textAlign: "right", width: "100%" },
   input: { backgroundColor: COLORS.surface, borderWidth: 1.2, borderColor: COLORS.border, borderRadius: 12, padding: 12, fontSize: 14, color: COLORS.text, textAlign: "right", width: "100%" },
   inputMultiline: { minHeight: 70, textAlignVertical: "top" },

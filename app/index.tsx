@@ -7,11 +7,13 @@ import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
 import { COLORS, FONTS } from "../src/ui/theme";
 import { sqlite } from "../src/db/local";
+import { useTheme } from "../src/ui/ThemeContext";
 
 type Tab = "home" | "accounting" | "settings";
 const sections: Array<[Tab, string]> = [["home", "الرئيسية"], ["accounting", "المحاسبة"], ["settings", "الإعدادات"]];
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
   const [tab, setTab] = useState<Tab>("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [sarRate, setSarRate] = useState(140);
@@ -54,8 +56,8 @@ export default function HomeScreen() {
   }, [tab, menuOpen]);
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
+      <View style={[styles.header, { backgroundColor: colors.navy }]}>
         <View style={styles.brandRow}>
           <Image source={require("../assets/images/flux-logo.png")} style={styles.logo} resizeMode="contain" />
           <View style={styles.brandTextWrap}>
@@ -65,107 +67,104 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={styles.nav}>
+      <View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <Pressable style={styles.menuButton} onPress={() => setMenuOpen((v) => !v)}>
           <Text style={styles.menuText}>☰</Text>
         </Pressable>
         <View style={styles.navTabs}>
           {sections.map(([key, label]) => (
             <Pressable key={key} onPress={() => go(key)} style={[styles.navItem, tab === key && styles.navActive]}>
-              <Text style={tab === key ? styles.navTextActive : styles.navText}>{label}</Text>
+              <Text style={tab === key ? styles.navTextActive : [styles.navText, { color: colors.textMuted }]}>{label}</Text>
             </Pressable>
           ))}
         </View>
       </View>
 
-      {/* طبقة الإغلاق للقائمة */}
       {menuOpen && <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />}
 
       {menuOpen && (
-        <View style={styles.dropdown}>
+        <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {sections.map(([key, label]) => (
-            <Pressable key={key} onPress={() => go(key)} style={styles.dropdownItem}>
-              <Text style={styles.dropdownText}>{label}</Text>
+            <Pressable key={key} onPress={() => go(key)} style={[styles.dropdownItem, { borderBottomColor: colors.bg }]}>
+              <Text style={[styles.dropdownText, { color: colors.text }]}>{label}</Text>
             </Pressable>
           ))}
         </View>
       )}
 
-      {/* 🚀 الحاوية الرئيسية للتمرير (شفافة) */}
       <ScrollView contentContainerStyle={styles.scrollBackground} keyboardShouldPersistTaps="handled">
         
-        {/* 🚀 لوحة التحكم: هي الوحيدة التي تحتوي على البطاقة البيضاء */}
         {tab === "home" && (
-          <View style={styles.whiteCard}>
-            <Text style={styles.title}>لوحة التحكم</Text>
-            <Text style={styles.hint}>نظرة سريعة على أرصدة المصنع</Text>
+          <View style={[styles.whiteCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.title, { color: colors.text }]}>لوحة التحكم</Text>
+            <Text style={[styles.hint, { color: colors.textMuted }]}>نظرة سريعة على أرصدة المصنع</Text>
 
             <View style={styles.kpiGrid}>
-              <View style={[styles.kpiCard, { backgroundColor: "#F0FDF4" }]}>
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#064E3B" : "#F0FDF4" }]}>
                 <View style={styles.kpiHeader}>
-                  <View style={[styles.iconCircle, { backgroundColor: "#DCFCE7" }]}><MaterialCommunityIcons name="account-group" size={22} color="#059669" /></View>
-                  <Text style={styles.kpiTitle}>العملاء (مدينون)</Text>
+                  <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#065F46" : "#DCFCE7" }]}><MaterialCommunityIcons name="account-group" size={22} color="#059669" /></View>
+                  <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>العملاء (مدينون)</Text>
                 </View>
-                <Text style={styles.kpiValue}>{kpis.customers.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
+                <Text style={[styles.kpiValue, { color: colors.text }]}>{kpis.customers.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
                 <Text style={styles.kpiSub}>≈ {(kpis.customers / sarRate).toFixed(2)} SAR</Text>
               </View>
 
-              <View style={[styles.kpiCard, { backgroundColor: "#FEF2F2" }]}>
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEF2F2" }]}>
                 <View style={styles.kpiHeader}>
-                  <View style={[styles.iconCircle, { backgroundColor: "#FEE2E2" }]}><MaterialCommunityIcons name="truck-delivery" size={22} color="#DC2626" /></View>
-                  <Text style={styles.kpiTitle}>الموردون (دائنون)</Text>
+                  <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#991B1B" : "#FEE2E2" }]}><MaterialCommunityIcons name="truck-delivery" size={22} color="#DC2626" /></View>
+                  <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>الموردون (دائنون)</Text>
                 </View>
-                <Text style={styles.kpiValue}>{kpis.suppliers.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
+                <Text style={[styles.kpiValue, { color: colors.text }]}>{kpis.suppliers.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
                 <Text style={styles.kpiSub}>≈ {(kpis.suppliers / sarRate).toFixed(2)} SAR</Text>
               </View>
 
-              <View style={[styles.kpiCard, { backgroundColor: "#EFF6FF" }]}>
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}>
                 <View style={styles.kpiHeader}>
-                  <View style={[styles.iconCircle, { backgroundColor: "#DBEAFE" }]}><MaterialCommunityIcons name="wallet" size={22} color="#2563EB" /></View>
-                  <Text style={styles.kpiTitle}>إجمالي الصناديق</Text>
+                  <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#1D4ED8" : "#DBEAFE" }]}><MaterialCommunityIcons name="wallet" size={22} color="#2563EB" /></View>
+                  <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>إجمالي الصناديق</Text>
                 </View>
-                <Text style={styles.kpiValue}>{kpis.cashboxes.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
+                <Text style={[styles.kpiValue, { color: colors.text }]}>{kpis.cashboxes.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
                 <Text style={styles.kpiSub}>≈ {(kpis.cashboxes / sarRate).toFixed(2)} SAR</Text>
               </View>
 
-              <View style={[styles.kpiCard, { backgroundColor: "#FFF7ED" }]}>
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#7C2D12" : "#FFF7ED" }]}>
                 <View style={styles.kpiHeader}>
-                  <View style={[styles.iconCircle, { backgroundColor: "#FFEDD5" }]}><MaterialCommunityIcons name="package-variant" size={22} color="#F97316" /></View>
-                  <Text style={styles.kpiTitle}>قيمة المخزون</Text>
+                  <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#9A3412" : "#FFEDD5" }]}><MaterialCommunityIcons name="package-variant" size={22} color="#F97316" /></View>
+                  <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>قيمة المخزون</Text>
                 </View>
-                <Text style={styles.kpiValue}>{kpis.inventory.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
+                <Text style={[styles.kpiValue, { color: colors.text }]}>{kpis.inventory.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
                 <Text style={styles.kpiSub}>≈ {(kpis.inventory / sarRate).toFixed(2)} SAR</Text>
               </View>
             </View>
 
             <View style={styles.quickActionsGrid}>
-              <Pressable style={[styles.quickActionCard, { backgroundColor: "#EFF6FF" }]} onPress={() => go("accounting")}>
-                <View style={[styles.iconCircle, { backgroundColor: "#DBEAFE", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
+              <Pressable style={[styles.quickActionCard, { backgroundColor: colors.isDark ? "#1E293B" : "#EFF6FF" }]} onPress={() => go("accounting")}>
+                <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#DBEAFE", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
                   <MaterialCommunityIcons name="pencil" size={32} color="#2563EB" />
                 </View>
-                <Text style={styles.quickActionText}>المحاسبة</Text>
+                <Text style={[styles.quickActionText, { color: colors.text }]}>المحاسبة</Text>
               </Pressable>
 
-              <Pressable style={[styles.quickActionCard, { backgroundColor: "#F8FAFC" }]} onPress={() => go("settings")}>
-                <View style={[styles.iconCircle, { backgroundColor: "#E2E8F0", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
+              <Pressable style={[styles.quickActionCard, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }]} onPress={() => go("settings")}>
+                <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#E2E8F0", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
                   <MaterialCommunityIcons name="cog" size={32} color="#475569" />
                 </View>
-                <Text style={styles.quickActionText}>الإعدادات</Text>
+                <Text style={[styles.quickActionText, { color: colors.text }]}>الإعدادات</Text>
               </Pressable>
             </View>
           </View>
         )}
 
-        {/* 🚀 شاشة المحاسبة: شفافة بدون بطاقة بيضاء */}
         {tab === "accounting" && (
           <View style={styles.transparentScreen}>
+            <Text style={[styles.title, { color: colors.text, paddingHorizontal: 8 }]}>المحاسبة والإدارة</Text>
             <AccountingModule />
           </View>
         )}
 
-        {/* 🚀 شاشة الإعدادات: شفافة بدون بطاقة بيضاء */}
         {tab === "settings" && (
           <View style={styles.transparentScreen}>
+            <Text style={[styles.title, { color: colors.text, paddingHorizontal: 8 }]}>الإعدادات</Text>
             <SettingsModule onBack={() => go("home")} />
           </View>
         )}
@@ -176,45 +175,39 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.bg },
-  header: { backgroundColor: COLORS.navy, paddingHorizontal: 18, paddingVertical: 20, paddingTop: 26 },
+  root: { flex: 1 },
+  header: { paddingHorizontal: 18, paddingVertical: 20, paddingTop: 26 },
   brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   brandTextWrap: { alignItems: "flex-end" },
   brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 22, textAlign: "right" },
   brandSub: { fontFamily: "Alexandria-Regular", color: "#94A3B8", fontSize: 11, textAlign: "right", marginTop: -2 },
   logo: { width: 90, height: 70 },
-  
-  // 🚀 إعدادات البطاقة البيضاء (للوحة التحكم فقط)
   scrollBackground: { paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 40 },
-  whiteCard: { backgroundColor: "#ffffff", borderRadius: 16, padding: 20 },
-  transparentScreen: { backgroundColor: "transparent", paddingHorizontal: 4 }, // مسافة بسيطة للشاشات الفرعية
-
-  title: { color: COLORS.text, fontSize: 24, textAlign: "left", marginTop: 7, fontFamily: "CodecBold", width: "100%" },
-  hint: { color: COLORS.textMuted, fontSize: 12, textAlign: "left", marginVertical: 8, width: "100%" },
+  whiteCard: { borderRadius: 16, padding: 20 },
+  transparentScreen: { backgroundColor: "transparent", paddingHorizontal: 4 },
+  title: { fontSize: 24, textAlign: "left", marginTop: 7, fontFamily: "CodecBold", width: "100%" },
+  hint: { fontSize: 12, textAlign: "left", marginVertical: 8, width: "100%" },
   kpiGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between", marginTop: 10, marginBottom: 20 },
   kpiCard: { width: "48%", borderRadius: 16, padding: 14, marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
   kpiHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginBottom: 10 },
   iconCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center" },
-  kpiTitle: { fontSize: 12, color: "#475569", fontWeight: "700", textAlign: "right", flex: 1 },
-  kpiValue: { fontSize: 18, fontWeight: "800", color: "#0F172A", textAlign: "right", writingDirection: "rtl" },
+  kpiTitle: { fontSize: 12, fontWeight: "700", textAlign: "right", flex: 1 },
+  kpiValue: { fontSize: 18, fontWeight: "800", textAlign: "right", writingDirection: "rtl" },
   kpiCur: { fontSize: 10, color: "#94A3B8", fontWeight: "normal" },
   kpiSub: { fontSize: 11, color: "#64748B", fontWeight: "600", textAlign: "right", marginTop: 4 },
-  
   quickActionsGrid: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 10 },
   quickActionCard: { width: "48%", borderRadius: 16, padding: 20, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, aspectRatio: 1 },
-  quickActionText: { fontSize: 16, fontFamily: "CodecBold", color: "#0F172A" },
-
-  nav: { flexDirection: "row", backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingVertical: 10, alignItems: "center", paddingHorizontal: 10 },
+  quickActionText: { fontSize: 16, fontFamily: "CodecBold" },
+  nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 10, alignItems: "center", paddingHorizontal: 10 },
   navTabs: { flex: 1, flexDirection: "row-reverse", justifyContent: "space-around" },
   menuButton: { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.navy, borderRadius: 8 },
   menuText: { color: "#FFF", fontSize: 20, fontWeight: "700" },
   navItem: { alignItems: "center", paddingVertical: 6, paddingHorizontal: 12 },
   navActive: { borderBottomWidth: 3, borderBottomColor: COLORS.orange },
-  navText: { color: COLORS.textMuted, fontSize: 13, fontWeight: "600" },
+  navText: { fontSize: 13, fontWeight: "600" },
   navTextActive: { color: COLORS.blue, fontWeight: "800", fontSize: 13 },
-  
   overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, elevation: 10, backgroundColor: "transparent" },
-  dropdown: { position: "absolute", top: 130, left: 10, zIndex: 20, elevation: 11, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, width: 200 },
-  dropdownItem: { padding: 13, borderBottomWidth: 1, borderBottomColor: COLORS.bg },
-  dropdownText: { textAlign: "right", fontWeight: "700", color: COLORS.text },
+  dropdown: { position: "absolute", top: 130, left: 10, zIndex: 20, elevation: 11, borderWidth: 1, borderRadius: 12, width: 200 },
+  dropdownItem: { padding: 13, borderBottomWidth: 1 },
+  dropdownText: { textAlign: "right", fontWeight: "700" },
 });

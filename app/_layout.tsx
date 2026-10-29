@@ -5,6 +5,7 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from 'expo-splash-screen';
 import { initializeLocalDatabase } from "../src/db/local";
 import LockScreen, { isSessionActive } from "../src/ui/LockScreen";
+import { ThemeProvider } from "../src/ui/ThemeContext";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 I18nManager.allowRTL(true);
@@ -24,19 +25,13 @@ export default function RootLayout() {
   useEffect(() => {
     (async () => {
       try {
-        console.log("1️⃣ بدء تهيئة قاعدة البيانات...");
         await initializeLocalDatabase();
-        
-        console.log("2️⃣ تمت تهيئة قاعدة البيانات بنجاح. جاري فحص الجلسة...");
         const session = await isSessionActive();
         setUnlocked(session);
-        
-        console.log("3️⃣ اكتمل فحص الجلسة.");
       } catch (e: any) {
-        console.error("❌ خطأ في قاعدة البيانات:", e);
-        setDbError(e.message || "حدث خطأ غير معروف");
+        console.error("DB Error:", e);
+        setDbError(e.message || "حدث خطأ");
       } finally {
-        console.log("4️⃣ تم إنهاء التحميل، جاري إخفاء شاشة البداية.");
         setReady(true);
         await SplashScreen.hideAsync();
       }
@@ -47,7 +42,6 @@ export default function RootLayout() {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0B2545" }}>
         <ActivityIndicator size="large" color="#F97316" />
-        <Text style={{ color: 'white', marginTop: 15 }}>جاري التهيئة...</Text>
       </View>
     );
   }
@@ -55,8 +49,7 @@ export default function RootLayout() {
   if (dbError) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#7f1d1d", padding: 20 }}>
-        <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>خطأ في قاعدة البيانات:</Text>
-        <Text style={{ color: 'white', fontSize: 14, textAlign: 'center' }}>{dbError}</Text>
+        <Text style={{ color: 'white', fontSize: 16, textAlign: 'center' }}>{dbError}</Text>
       </View>
     );
   }
@@ -65,5 +58,9 @@ export default function RootLayout() {
     return <LockScreen onUnlock={() => setUnlocked(true)} />;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <ThemeProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </ThemeProvider>
+  );
 }
