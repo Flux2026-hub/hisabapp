@@ -8,12 +8,14 @@ import ReportActions, { exportCsv } from "./components/ReportActions";
 import { COLORS } from "../theme";
 import { printHtml } from "../../utils/printDocument";
 import { getLogoBase64 } from "../../utils/logoBase64";
+import { useTheme } from "../ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 type Row = any;
 type CurrencyFilter = "all" | string;
 type ViewCurrency = "original" | string;
 
 export default function CashboxesReport({ onBack }: { onBack: () => void }) {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const today = new Date().toISOString().slice(0, 10);
   const [from, setFrom] = useState(today.slice(0, 8) + "01");
   const [to, setTo] = useState(today);
@@ -157,7 +159,7 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
     <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       
       <View style={styles.backWrap}>
-        <Text style={styles.back} onPress={goBack}>‹ {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}</Text>
+        <Text style={[styles.back, { color: colors.blue }]} onPress={goBack}>‹ {selected ? "العودة إلى القائمة" : "العودة إلى التقارير"}</Text>
       </View>
 
       <ReportHeader title={selected ? `حركة: ${selected.name}` : "تقرير الصناديق"} subtitle={selected ? "الحركات والأرصدة" : "أرصدة الصناديق"} from={from} to={to} currencySymbol={baseSymbol} />
@@ -165,20 +167,20 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
 
       {selected && (
         <>
-          <Text style={styles.filterLabel}>فلترة العملة</Text>
+          <Text style={[styles.filterLabel, { color: colors.textMuted }]}>فلترة العملة</Text>
           <View style={styles.filterRow}>
             {currencyTabs.map((o) => (
-              <Pressable key={o.key} onPress={() => setCurrencyFilter(o.key)} style={[styles.chip, currencyFilter === o.key && styles.chipActive]}>
-                <Text style={[styles.chipText, currencyFilter === o.key && styles.chipTextActive]}>{o.label}</Text>
+              <Pressable key={o.key} onPress={() => setCurrencyFilter(o.key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, currencyFilter === o.key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+                <Text style={[styles.chipText, { color: colors.text }, currencyFilter === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
           </View>
 
-          <Text style={styles.filterLabel}>عرض المبالغ</Text>
+          <Text style={[styles.filterLabel, { color: colors.textMuted }]}>عرض المبالغ</Text>
           <View style={styles.filterRow}>
             {viewTabs.map((o) => (
-              <Pressable key={o.key} onPress={() => setViewCurrency(o.key)} style={[styles.chipView, viewCurrency === o.key && styles.chipViewActive]}>
-                <Text style={[styles.chipText, viewCurrency === o.key && styles.chipTextActive]}>{o.label}</Text>
+              <Pressable key={o.key} onPress={() => setViewCurrency(o.key)} style={[styles.chipView, { backgroundColor: colors.surface, borderColor: colors.border }, viewCurrency === o.key && { backgroundColor: colors.orange, borderColor: colors.orange }]}>
+                <Text style={[styles.chipText, { color: colors.text }, viewCurrency === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -200,21 +202,21 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
       {!selected ? (
         <>
           <ReportSummary items={[ { label: "عدد الصناديق", value: String(cashboxes.length) }, { label: `إجمالي السيولة (YER)`, value: totalBalanceYER.toFixed(2) }, { label: `إجمالي السيولة (SAR)`, value: totalBalanceSAR.toFixed(2) } ]} />
-          <Text style={styles.sectionTitle}>قائمة الصناديق (شجري)</Text>
+          <Text style={[styles.sectionTitle, { color: colors.blue }]}>قائمة الصناديق (شجري)</Text>
           {cashboxes.length === 0 ? (
-            <Text style={styles.empty}>لا توجد صناديق</Text>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد صناديق</Text>
           ) : (
             cashboxes.map((c) => {
               const paddingRight = c.cashbox_type === 'analytical' ? 30 : (c.cashbox_type === 'sub' ? 15 : 0);
               const icon = c.cashbox_type === 'main' ? "🏦" : (c.cashbox_type === 'sub' ? "📁" : "💵");
               return (
-                <Pressable key={c.id} style={[styles.row, { paddingRight: 12 + paddingRight }]} onPress={() => loadMovements(c)}>
+                <Pressable key={c.id} style={[styles.row, { paddingRight: 12 + paddingRight, backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadMovements(c)}>
                   <View style={styles.rowInfo}>
-                    <Text style={styles.rowName}>{icon} {c.name}</Text>
-                    <Text style={styles.rowMeta}>{c.code}</Text>
+                    <Text style={[styles.rowName, { color: colors.text }]}>{icon} {c.name}</Text>
+                    <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{c.code}</Text>
                   </View>
                   <View style={styles.rowRight}>
-                    <Text style={[styles.amount, { color: COLORS.blue }]}>{Number(c.balance || 0).toFixed(2)} {baseSymbol}</Text>
+                    <Text style={[styles.amount, { color: colors.blue }]}>{Number(c.balance || 0).toFixed(2)} {baseSymbol}</Text>
                   </View>
                 </Pressable>
               );
@@ -223,24 +225,24 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
         </>
       ) : (
         <>
-          <ReportSummary items={[ { label: "عدد الحركات", value: String(visibleMovements.length) }, { label: `إجمالي الوارد (${viewCurrency === "original" ? baseSymbol : viewSymbol})`, value: viewCurrency === "original" ? totalDebit.toFixed(2) : fromBase(totalDebit, viewCurrency).toFixed(2), color: COLORS.success }, { label: `إجمالي الصادر (${viewCurrency === "original" ? baseSymbol : viewSymbol})`, value: viewCurrency === "original" ? totalCredit.toFixed(2) : fromBase(totalCredit, viewCurrency).toFixed(2), color: COLORS.danger }, { label: `الرصيد (${viewCurrency === "original" ? baseSymbol : viewSymbol})`, value: viewCurrency === "original" ? Number(selected.balance || 0).toFixed(2) : fromBase(Number(selected.balance || 0), viewCurrency).toFixed(2), color: COLORS.blue } ]} />
-          <Text style={styles.sectionTitle}>حركات الصندوق ({visibleMovements.length})</Text>
+          <ReportSummary items={[ { label: "عدد الحركات", value: String(visibleMovements.length) }, { label: `إجمالي الوارد (${viewCurrency === "original" ? baseSymbol : viewSymbol})`, value: viewCurrency === "original" ? totalDebit.toFixed(2) : fromBase(totalDebit, viewCurrency).toFixed(2), color: colors.success }, { label: `إجمالي الصادر (${viewCurrency === "original" ? baseSymbol : viewSymbol})`, value: viewCurrency === "original" ? totalCredit.toFixed(2) : fromBase(totalCredit, viewCurrency).toFixed(2), color: colors.danger }, { label: `الرصيد (${viewCurrency === "original" ? baseSymbol : viewSymbol})`, value: viewCurrency === "original" ? Number(selected.balance || 0).toFixed(2) : fromBase(Number(selected.balance || 0), viewCurrency).toFixed(2), color: colors.blue } ]} />
+          <Text style={[styles.sectionTitle, { color: colors.blue }]}>حركات الصندوق ({visibleMovements.length})</Text>
           {visibleMovements.length === 0 ? (
-            <Text style={styles.empty}>لا توجد حركات</Text>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد حركات</Text>
           ) : (
             visibleMovements.map((m: any, i: number) => {
               const baseAmount = m.debit > 0 ? m.debit : m.credit;
               const displayAmount = viewCurrency === "original" ? formatOriginal(m.originalAmount, m.originalCurrency) : `${fromBase(baseAmount, viewCurrency).toFixed(2)} ${viewSymbol}`;
               const showConversion = viewCurrency === "original" && m.originalCurrency !== baseCurrency?.code;
               return (
-                <View key={i} style={styles.row}>
+                <View key={i} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.rowInfo}>
-                    <Text style={styles.rowName}>{m.desc}</Text>
-                    <Text style={styles.rowMeta}>{m.ref} · {new Date(m.created_at).toLocaleDateString("ar-EG")}</Text>
+                    <Text style={[styles.rowName, { color: colors.text }]}>{m.desc}</Text>
+                    <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{m.ref} · {new Date(m.created_at).toLocaleDateString("ar-EG")}</Text>
                   </View>
                   <View style={styles.rowRight}>
-                    <Text style={[styles.amountSmall, { color: m.debit > 0 ? COLORS.success : COLORS.danger }]}>{m.debit > 0 ? "+" : "−"}{displayAmount}</Text>
-                    {showConversion && ( <Text style={styles.conversionHint}>≈ {baseAmount.toFixed(2)} {baseSymbol}</Text> )}
+                    <Text style={[styles.amountSmall, { color: m.debit > 0 ? colors.success : colors.danger }]}>{m.debit > 0 ? "+" : "−"}{displayAmount}</Text>
+                    {showConversion && ( <Text style={[styles.conversionHint, { color: colors.textMuted }]}>≈ {baseAmount.toFixed(2)} {baseSymbol}</Text> )}
                   </View>
                 </View>
               );
@@ -251,26 +253,24 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   backWrap: { paddingVertical: 8 },
-  back: { alignSelf: "flex-start", color: COLORS.blue, fontWeight: "700", textAlign: "left" },
-  filterLabel: { fontSize: 12, color: COLORS.textMuted, textAlign: "right", marginTop: 10, marginBottom: 6, fontWeight: "700" },
+  back: { alignSelf: "flex-start", fontWeight: "700", textAlign: "left" },
+  filterLabel: { fontSize: 12, textAlign: "left", marginTop: 10, marginBottom: 6, fontWeight: "700" },
   filterRow: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6 },
-  chip: { borderWidth: 1.2, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.surface },
-  chipActive: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
-  chipView: { borderWidth: 1.2, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.surface },
-  chipViewActive: { backgroundColor: COLORS.orange, borderColor: COLORS.orange },
-  chipText: { fontSize: 12, color: COLORS.text, fontWeight: "700" },
-  chipTextActive: { color: "#FFF", fontWeight: "800" },
-  sectionTitle: { fontSize: 15, color: COLORS.blue, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
-  empty: { textAlign: "right", color: COLORS.textMuted, fontSize: 12, padding: 10 },
-  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  chip: { borderWidth: 1.2, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  chipView: { borderWidth: 1.2, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  chipText: { fontSize: 12, fontWeight: "700" },
+  sectionTitle: { fontSize: 15, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  empty: { textAlign: "right", fontSize: 12, padding: 10 },
+  row: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   rowRight: { alignItems: "flex-start", minWidth: 100 },
-  rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
-  rowMeta: { fontSize: 11, color: COLORS.textMuted, marginTop: 2, textAlign: "right" },
+  rowName: { fontWeight: "700", fontSize: 14, textAlign: "right" },
+  rowMeta: { fontSize: 11, marginTop: 2, textAlign: "right" },
   amount: { fontWeight: "800", fontSize: 16, textAlign: "left" },
   amountSmall: { fontWeight: "800", fontSize: 14 },
-  conversionHint: { fontSize: 10, color: COLORS.textMuted, marginTop: 3, fontWeight: "600" },
+  conversionHint: { fontSize: 10, marginTop: 3, fontWeight: "600" },
 });
