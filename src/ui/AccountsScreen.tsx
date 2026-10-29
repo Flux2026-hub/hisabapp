@@ -1,16 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView, Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import BrandBanner from "./components/BrandBanner";
 import { createAccount, deleteAccount, listAccounts, updateAccount } from "../sync/accounting";
+import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 type Row = any;
 type AccountType = "asset" | "liability" | "income" | "expense";
@@ -27,6 +19,7 @@ const TYPE_MAP: Record<string, AccountType> = {
 };
 
 export default function AccountsScreen({ onBack }: { onBack: () => void }) {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const [rows, setRows] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AccountType>("asset");
@@ -45,17 +38,12 @@ export default function AccountsScreen({ onBack }: { onBack: () => void }) {
     try {
       const data = await listAccounts();
       setRows(data || []);
-    } catch (e) {
-      Alert.alert("تعذر تحميل الحسابات", String(e));
-    }
+    } catch (e) { Alert.alert("تعذر تحميل الحسابات", String(e)); }
   };
 
-  useEffect(() => {
-    void load();
-  }, []);
+  useEffect(() => { void load(); }, []);
 
   const typeOf = (r: Row): AccountType => TYPE_MAP[String(r.accountType ?? "")] ?? "asset";
-
   const tabRows = useMemo(() => rows.filter((r) => typeOf(r) === activeTab), [rows, activeTab]);
 
   const filteredRows = useMemo(() => {
@@ -123,108 +111,108 @@ export default function AccountsScreen({ onBack }: { onBack: () => void }) {
     ]);
   };
 
-  const balanceColor = (bal: any) => { const n = Number(bal) || 0; return n > 0 ? "#0b806c" : n < 0 ? "#dc2626" : "#8494B0"; };
+  const balanceColor = (bal: any) => { const n = Number(bal) || 0; return n > 0 ? colors.success : n < 0 ? colors.danger : colors.textMuted; };
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>‹ العودة إلى الوحدات المحاسبية</Text>
+          <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <BrandBanner />
-        <Text style={[styles.screenTitle, { marginTop: 15 }]}>الحسابات الرئيسة</Text>
-        <Text style={styles.hint}>شجرة الحسابات المحاسبية: أصول (1)، خصوم (2)، إيرادات (4)، مصروفات (5). كل حساب يمكن أن يكون أباً لحسابات فرعية.</Text>
+        <Text style={[styles.screenTitle, { color: colors.text }]}>الحسابات الرئيسة</Text>
+        <Text style={[styles.hint, { color: colors.textMuted }]}>شجرة الحسابات المحاسبية: أصول (1)، خصوم (2)، إيرادات (4)، مصروفات (5). كل حساب يمكن أن يكون أباً لحسابات فرعية.</Text>
 
         <View style={styles.tabs}>
           {TYPES.map((t) => {
             const active = activeTab === t.key;
             return (
-              <Pressable key={t.key} onPress={() => { setActiveTab(t.key); clearForm(); }} style={[styles.tab, active && { backgroundColor: t.color, borderColor: t.color }]}>
-                <Text style={[styles.tabText, active && { color: "#fff", fontWeight: "700" }]}>{t.label} ({counts[t.key]})</Text>
+              <Pressable key={t.key} onPress={() => { setActiveTab(t.key); clearForm(); }} style={[styles.tab, { borderColor: colors.border, backgroundColor: colors.surface }, active && { backgroundColor: t.color, borderColor: t.color }]}>
+                <Text style={[styles.tabText, { color: colors.text }, active && { color: "#fff", fontWeight: "700" }]}>{t.label} ({counts[t.key]})</Text>
               </Pressable>
             );
           })}
         </View>
 
-        <Text style={styles.label}>بحث</Text>
-        <TextInput style={styles.input} value={search} onChangeText={setSearch} onFocus={() => setSearchFocus(true)} onBlur={() => setTimeout(() => setSearchFocus(false), 200)} placeholder="ابحث بالرمز أو الاسم" placeholderTextColor="#9CA3AF" textAlign="right" />
+        <Text style={[styles.label, { color: colors.textMuted }]}>بحث</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={search} onChangeText={setSearch} onFocus={() => setSearchFocus(true)} onBlur={() => setTimeout(() => setSearchFocus(false), 200)} placeholder="ابحث بالرمز أو الاسم" placeholderTextColor={colors.textMuted} textAlign="right" />
         
         {searchFocus && search.trim().length > 0 && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
             {filteredRows.length === 0 ? (
-              <Text style={styles.suggestEmpty}>لا نتائج</Text>
+              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text>
             ) : (
               filteredRows.slice(0, 8).map((r) => (
-                <Pressable key={r.id} style={styles.suggestItem} onPress={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
-                  <Text style={styles.suggestName}>{r.name}</Text>
-                  <Text style={styles.suggestMeta}>{r.code}</Text>
+                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.code}</Text>
                 </Pressable>
               ))
             )}
           </ScrollView>
         )}
 
-        <Text style={styles.sectionTitle}>{editingId ? "تعديل الحساب" : "إضافة حساب جديد"}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{editingId ? "تعديل الحساب" : "إضافة حساب جديد"}</Text>
 
-        <Text style={styles.label}>رمز الحساب</Text>
-        <TextInput style={styles.input} value={code} onChangeText={setCode} placeholder={nextCode} placeholderTextColor="#9CA3AF" textAlign="right" editable={!editingId} />
+        <Text style={[styles.label, { color: colors.textMuted }]}>رمز الحساب</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
 
-        <Text style={styles.label}>اسم الحساب</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="مثال: الصندوق - النقدية" placeholderTextColor="#9CA3AF" textAlign="right" />
+        <Text style={[styles.label, { color: colors.textMuted }]}>اسم الحساب</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={name} onChangeText={setName} placeholder="مثال: الصندوق - النقدية" placeholderTextColor={colors.textMuted} textAlign="right" />
 
-        <Text style={styles.label}>الحساب الأب (اختياري)</Text>
-        <Pressable style={styles.picker} onPress={() => setShowParentPicker((v) => !v)}>
-          <Text style={styles.pickerText}>{parentLabel || "بدون أب (حساب رئيسي)"}</Text>
-          <Text style={styles.pickerArrow}>▼</Text>
+        <Text style={[styles.label, { color: colors.textMuted }]}>الحساب الأب (اختياري)</Text>
+        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowParentPicker((v) => !v)}>
+          <Text style={[styles.pickerText, { color: colors.text }]}>{parentLabel || "بدون أب (حساب رئيسي)"}</Text>
+          <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
         </Pressable>
         
         {showParentPicker && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>
-            <Pressable style={styles.suggestItem} onPress={() => { setParentCode(""); setParentLabel(""); setShowParentPicker(false); }}>
-              <Text style={styles.suggestName}>بدون أب (حساب رئيسي)</Text>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+            <Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setParentCode(""); setParentLabel(""); setShowParentPicker(false); }}>
+              <Text style={[styles.suggestName, { color: colors.text }]}>بدون أب (حساب رئيسي)</Text>
             </Pressable>
             {possibleParents.length === 0 ? (
-              <Text style={styles.suggestEmpty}>لا توجد حسابات مناسبة</Text>
+              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد حسابات مناسبة</Text>
             ) : (
               possibleParents.map((p) => (
-                <Pressable key={p.id} style={styles.suggestItem} onPress={() => { setParentCode(p.code); setParentLabel(`${p.code} - ${p.name}`); setShowParentPicker(false); }}>
-                  <Text style={styles.suggestName}>{p.name}</Text>
-                  <Text style={styles.suggestMeta}>{p.code}</Text>
+                <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setParentCode(p.code); setParentLabel(`${p.code} - ${p.name}`); setShowParentPicker(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code}</Text>
                 </Pressable>
               ))
             )}
           </ScrollView>
         )}
 
-        <Text style={styles.label}>الرصيد الافتتاحي (اختياري)</Text>
-        <TextInput style={styles.input} value={initialBalance} onChangeText={setInitialBalance} placeholder="0" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" textAlign="right" />
+        <Text style={[styles.label, { color: colors.textMuted }]}>الرصيد الافتتاحي (اختياري)</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={initialBalance} onChangeText={setInitialBalance} placeholder="0" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" textAlign="right" />
 
         <View style={styles.buttons}>
-          <Pressable style={styles.primary} onPress={save}>
+          <Pressable style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}>
             <Text style={styles.primaryText}>{editingId ? "حفظ التعديل" : "إضافة وحفظ"}</Text>
           </Pressable>
           {editingId && (
-            <Pressable style={styles.cancel} onPress={clearForm}>
-              <Text style={styles.cancelText}>إلغاء</Text>
+            <Pressable style={[styles.cancel, { borderColor: colors.border }]} onPress={clearForm}>
+              <Text style={[styles.cancelText, { color: colors.text }]}>إلغاء</Text>
             </Pressable>
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>{TYPES.find((t) => t.key === activeTab)?.label} ({tabRows.length})</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{TYPES.find((t) => t.key === activeTab)?.label} ({tabRows.length})</Text>
         <View style={styles.list}>
           {filteredRows.length === 0 ? (
-            <Text style={styles.empty}>لا توجد حسابات في هذا التصنيف — ابدأ بالإضافة أدناه</Text>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد حسابات في هذا التصنيف — ابدأ بالإضافة أدناه</Text>
           ) : (
             filteredRows.map((r) => (
-              <View key={r.id} style={styles.row}>
+              <View key={r.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.rowActions}>
-                  <Pressable onPress={() => edit(r)} style={styles.editBtn}><Text style={styles.editText}>✏️</Text></Pressable>
-                  <Pressable onPress={() => remove(r)} style={styles.delBtn}><Text style={styles.delText}>🗑️</Text></Pressable>
+                  <Pressable onPress={() => edit(r)} style={[styles.editBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={styles.editText}>✏️</Text></Pressable>
+                  <Pressable onPress={() => remove(r)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>🗑️</Text></Pressable>
                 </View>
                 <View style={styles.rowInfo}>
-                  <Text style={styles.rowName}>{r.name}</Text>
-                  <Text style={styles.rowMeta}>{r.code}{r.parentCode ? ` · تحت ${r.parentCode}` : ""}</Text>
+                  <Text style={[styles.rowName, { color: colors.text }]}>{r.name}</Text>
+                  <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{r.code}{r.parentCode ? ` · تحت ${r.parentCode}` : ""}</Text>
                   <Text style={[styles.rowBalance, { color: balanceColor(r.balance) }]}>الرصيد: {Number(r.balance || 0).toFixed(2)}</Text>
                 </View>
               </View>
@@ -236,40 +224,40 @@ export default function AccountsScreen({ onBack }: { onBack: () => void }) {
   );
 }
 const styles = StyleSheet.create({
-  scrollContent: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
+  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 8 },
-  backText: { color: "#1E40AF", textAlign: "left", fontWeight: "700" },
-  screenTitle: { fontSize: 20, color: "#0F172A", marginBottom: 6, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
-  hint: { fontSize: 12, color: "#8494B0", marginBottom: 12, lineHeight: 18, textAlign: "left", width: "100%" },
+  backText: { textAlign: "left", fontWeight: "700" },
+  screenTitle: { fontSize: 20, marginBottom: 6, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  hint: { fontSize: 12, marginBottom: 12, lineHeight: 18, textAlign: "left", width: "100%" },
   tabs: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6, marginBottom: 10 },
-  tab: { borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
-  tabText: { fontSize: 12, color: "#0F172A" },
-  sectionTitle: { fontSize: 16, color: "#0F172A", marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
-  label: { fontSize: 12, color: "#526078", marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
-  input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A", textAlign: "right", width: "100%" },
-  picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
-  pickerText: { color: "#0F172A", textAlign: "right", flex: 1, fontSize: 14 },
-  pickerArrow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  tab: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  tabText: { fontSize: 12 },
+  sectionTitle: { fontSize: 16, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  label: { fontSize: 12, marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
+  input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right", width: "100%" },
+  picker: { borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
+  pickerText: { textAlign: "right", flex: 1, fontSize: 14 },
+  pickerArrow: { fontSize: 12, marginLeft: 8 },
   list: { gap: 8, marginTop: 4 },
-  empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
-  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  empty: { textAlign: "right", fontSize: 12, padding: 10 },
+  row: { borderWidth: 1, borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
-  rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right", width: "100%" },
-  rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 3, textAlign: "right" },
+  rowName: { fontWeight: "700", fontSize: 14, textAlign: "right", width: "100%" },
+  rowMeta: { fontSize: 11, marginTop: 3, textAlign: "right" },
   rowBalance: { fontSize: 12, marginTop: 3, textAlign: "right", fontWeight: "600" },
   rowActions: { flexDirection: "row", gap: 6, alignItems: "center" },
-  editBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  editText: { color: "#0F172A", fontSize: 12 },
-  delBtn: { backgroundColor: "#fee2e2", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  delText: { color: "#0F172A", fontSize: 12 },
-  suggestBox: { marginTop: 4, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, overflow: "hidden", maxHeight: 200 },
-  suggestItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#f1f5f9" },
-  suggestName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 13 },
-  suggestMeta: { fontSize: 11, color: "#8494B0", textAlign: "right", marginTop: 2 },
-  suggestEmpty: { padding: 10, color: "#8494B0", textAlign: "right", fontSize: 12 },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  editText: { fontSize: 12 },
+  delBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  delText: { fontSize: 12 },
+  suggestBox: { marginTop: 4, borderWidth: 1, borderRadius: 8, overflow: "hidden", maxHeight: 200 },
+  suggestItem: { padding: 10, borderBottomWidth: 1 },
+  suggestName: { fontWeight: "700", textAlign: "right", fontSize: 13 },
+  suggestMeta: { fontSize: 11, textAlign: "right", marginTop: 2 },
+  suggestEmpty: { padding: 10, textAlign: "right", fontSize: 12 },
   buttons: { flexDirection: "row-reverse", gap: 8, marginTop: 16 },
-  primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10, flex: 1 },
+  primary: { padding: 14, borderRadius: 10, flex: 1 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 13, borderRadius: 10 },
-  cancelText: { color: "#0F172A", textAlign: "center" },
+  cancel: { borderWidth: 1, padding: 13, borderRadius: 10 },
+  cancelText: { textAlign: "center" },
 });
