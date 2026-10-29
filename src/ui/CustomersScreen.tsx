@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+  Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from "react-native";
 import * as Contacts from 'expo-contacts';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -18,6 +10,7 @@ import {
   listCustomers, listSuppliers, updateCustomer, updateSupplier,
 } from "../sync/accounting";
 import { sqlite } from "../db/local";
+import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 type Kind = "customers" | "suppliers";
 type Row = any;
@@ -28,6 +21,7 @@ const CONFIG: Record<Kind, any> = {
 };
 
 export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: () => void }) {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const cfg = CONFIG[kind];
   const [rows, setRows] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -101,15 +95,10 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
           onPhoneChange(contact.phoneNumbers[0].number || "");
         }
       }
-    } catch (e) {
-      // 🚀 إخفاء الخطأ المزعج، سيطبع في الكونسول فقط
-      console.log("Contacts module error:", e);
-    }
+    } catch (e) { console.log("Contacts error:", e); }
   };
 
-  const applySuggestedCode = () => {
-    setCode(nextCode); setShowCodeSuggest(false);
-  };
+  const applySuggestedCode = () => { setCode(nextCode); setShowCodeSuggest(false); };
 
   const save = async () => {
     try {
@@ -151,98 +140,99 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
   };
 
   const balanceColor = (bal: any) => { const n = Number(bal) || 0; return n > 0 ? "#0b806c" : n < 0 ? "#dc2626" : "#8494B0"; };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContainer}>
         
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>‹ العودة إلى الوحدات المحاسبية</Text>
+          <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
         <BrandBanner />
-        <Text style={[styles.screenTitle, { marginTop: 15 }]}>{cfg.plural}</Text>
+        <Text style={[styles.screenTitle, { marginTop: 15, color: colors.text }]}>{cfg.plural}</Text>
 
-        <Text style={styles.label}>بحث</Text>
-        <TextInput style={styles.input} value={search} onChangeText={setSearch} onFocus={() => setSearchFocus(true)} onBlur={() => setTimeout(() => setSearchFocus(false), 200)} placeholder="ابحث بالرمز أو الاسم أو الهاتف" placeholderTextColor="#9CA3AF" textAlign="right" />
+        <Text style={[styles.label, { color: colors.textMuted }]}>بحث</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={search} onChangeText={setSearch} onFocus={() => setSearchFocus(true)} onBlur={() => setTimeout(() => setSearchFocus(false), 200)} placeholder="ابحث بالرمز أو الاسم أو الهاتف" placeholderTextColor={colors.textMuted} textAlign="right" />
         
         {searchFocus && search.trim().length > 0 && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
             {filteredRows.length === 0 ? (
-              <Text style={styles.suggestEmpty}>لا نتائج</Text>
+              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text>
             ) : (
               filteredRows.slice(0, 8).map((r) => (
-                <Pressable key={r.id} style={styles.suggestItem} onPress={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
-                  <Text style={styles.suggestName}>{r.name}</Text>
-                  <Text style={styles.suggestMeta}>{r.code ?? ""} · {r.phone ?? ""}</Text>
+                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.code ?? ""} · {r.phone ?? ""}</Text>
                 </Pressable>
               ))
             )}
           </ScrollView>
         )}
 
-        <Text style={styles.sectionTitle}>{editingId ? `تعديل ${cfg.singular}` : `إضافة ${cfg.singular}`}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{editingId ? `تعديل ${cfg.singular}` : `إضافة ${cfg.singular}`}</Text>
 
-        <Text style={styles.label}>الرمز</Text>
-        <TextInput style={styles.input} value={code} onChangeText={setCode} onFocus={() => !editingId && setShowCodeSuggest(true)} onBlur={() => setTimeout(() => setShowCodeSuggest(false), 200)} placeholder={nextCode} placeholderTextColor="#9CA3AF" textAlign="right" editable={!editingId} />
+        <Text style={[styles.label, { color: colors.textMuted }]}>الرمز</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} onFocus={() => !editingId && setShowCodeSuggest(true)} onBlur={() => setTimeout(() => setShowCodeSuggest(false), 200)} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
         
         {showCodeSuggest && !editingId && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>
-            <Pressable style={styles.suggestItem} onPress={applySuggestedCode}>
-              <Text style={styles.suggestName}>{nextCode}</Text>
-              <Text style={styles.suggestMeta}>اضغط لاعتماد الرمز التالي</Text>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+            <Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={applySuggestedCode}>
+              <Text style={[styles.suggestName, { color: colors.text }]}>{nextCode}</Text>
+              <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>اضغط لاعتماد الرمز التالي</Text>
             </Pressable>
           </ScrollView>
         )}
 
-        <Text style={styles.label}>الاسم</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} onFocus={() => setShowNameSuggest(true)} onBlur={() => setTimeout(() => setShowNameSuggest(false), 200)} placeholder={`اسم ${cfg.singular}`} placeholderTextColor="#9CA3AF" textAlign="right" />
+        <Text style={[styles.label, { color: colors.textMuted }]}>الاسم</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={name} onChangeText={setName} onFocus={() => setShowNameSuggest(true)} onBlur={() => setTimeout(() => setShowNameSuggest(false), 200)} placeholder={`اسم ${cfg.singular}`} placeholderTextColor={colors.textMuted} textAlign="right" />
         
         {showNameSuggest && nameSuggestions.length > 0 && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
             {nameSuggestions.map((r) => (
-              <Pressable key={r.id} style={styles.suggestItem} onPress={() => { setName(r.name); setShowNameSuggest(false); }}>
-                <Text style={styles.suggestName}>{r.name}</Text>
-                <Text style={styles.suggestMeta}>{r.code ?? ""}</Text>
+              <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setName(r.name); setShowNameSuggest(false); }}>
+                <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
+                <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.code ?? ""}</Text>
               </Pressable>
             ))}
           </ScrollView>
         )}
 
-        <Text style={styles.label}>الهاتف</Text>
+        <Text style={[styles.label, { color: colors.textMuted }]}>الهاتف</Text>
         <View style={styles.phoneRow}>
-          <TextInput style={[styles.input, { flex: 1 }]} value={phone} onChangeText={onPhoneChange} placeholder="+9677XXXXXXXX" placeholderTextColor="#9CA3AF" keyboardType="phone-pad" textAlign="right" />
-          <Pressable style={styles.contactBtn} onPress={pickContact}>
-            <MaterialCommunityIcons name="contacts" size={24} color="#1E40AF" />
+          <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={phone} onChangeText={onPhoneChange} placeholder="+9677XXXXXXXX" placeholderTextColor={colors.textMuted} keyboardType="phone-pad" textAlign="right" />
+          <Pressable style={[styles.contactBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickContact}>
+            <MaterialCommunityIcons name="contacts" size={24} color={colors.blue} />
           </Pressable>
         </View>
 
         <View style={styles.buttons}>
-          <Pressable style={styles.primary} onPress={save}>
+          <Pressable style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}>
             <Text style={styles.primaryText}>{editingId ? "حفظ التعديل" : "إضافة وحفظ"}</Text>
           </Pressable>
           {editingId && (
-            <Pressable style={styles.cancel} onPress={clearForm}><Text style={styles.cancelText}>إلغاء</Text></Pressable>
+            <Pressable style={[styles.cancel, { borderColor: colors.border }]} onPress={clearForm}><Text style={[styles.cancelText, { color: colors.text }]}>إلغاء</Text></Pressable>
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>استعراض {cfg.plural} ({rows.length})</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>استعراض {cfg.plural} ({rows.length})</Text>
         <View style={styles.list}>
           {filteredRows.length === 0 ? (
-            <Text style={styles.empty}>لا توجد سجلات</Text>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد سجلات</Text>
           ) : (
             filteredRows.map((r) => {
               const bal = Number(r.balance || 0);
               return (
-                <View key={r.id} style={styles.row}>
+                <View key={r.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.rowActions}>
-                    <Pressable onPress={() => edit(r)} style={styles.editBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
-                    <Pressable onPress={() => remove(r)} style={styles.delBtn}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                    <Pressable onPress={() => edit(r)} style={[styles.editBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                    <Pressable onPress={() => remove(r)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
                   <View style={styles.rowInfo}>
-                    <Text style={styles.rowName}>{r.name}</Text>
-                    <Text style={styles.rowMeta}>{r.code ?? ""} · {r.phone || "—"}</Text>
+                    <Text style={[styles.rowName, { color: colors.text }]}>{r.name}</Text>
+                    <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{r.code ?? ""} · {r.phone || "—"}</Text>
                     <Text style={[styles.rowBalance, { color: balanceColor(bal), fontWeight: "800", fontSize: 16 }]}>{bal.toFixed(2)} YER</Text>
-                    <Text style={{ fontSize: 11, color: '#64748B', marginTop: 2, textAlign: 'right', fontWeight: '600' }}>≈ {(bal / sarRate).toFixed(2)} SAR</Text>
+                    <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2, textAlign: 'right', fontWeight: '600' }}>≈ {(bal / sarRate).toFixed(2)} SAR</Text>
                   </View>
                 </View>
               );
@@ -253,34 +243,35 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
     </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
   scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 8 },
-  backText: { color: "#1E40AF", textAlign: "left", fontWeight: "700" },
-  screenTitle: { fontSize: 20, color: "#0F172A", marginBottom: 12, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
-  sectionTitle: { fontSize: 16, color: "#0F172A", marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
-  label: { fontSize: 12, color: "#526078", marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
-  input: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A", textAlign: "right", width: "100%" },
+  backText: { textAlign: "left", fontWeight: "700" },
+  screenTitle: { fontSize: 20, marginBottom: 12, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  sectionTitle: { fontSize: 16, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  label: { fontSize: 12, marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
+  input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right", width: "100%" },
   phoneRow: { flexDirection: "row-reverse", gap: 8, alignItems: "center" },
-  contactBtn: { backgroundColor: "#EFF6FF", padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "#D6E3F8" },
+  contactBtn: { padding: 10, borderRadius: 8, borderWidth: 1 },
   list: { gap: 8, marginTop: 4 },
-  empty: { textAlign: "right", color: "#8494B0", fontSize: 12, padding: 10 },
-  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  empty: { textAlign: "right", fontSize: 12, padding: 10 },
+  row: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
-  rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right", width: "100%" },
-  rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 3, textAlign: "right" },
+  rowName: { fontWeight: "700", fontSize: 14, textAlign: "right", width: "100%" },
+  rowMeta: { fontSize: 11, marginTop: 3, textAlign: "right" },
   rowBalance: { fontSize: 11, marginTop: 3, textAlign: "right" },
   rowActions: { flexDirection: "row", gap: 6, alignItems: "center" },
-  editBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  delBtn: { backgroundColor: "#fee2e2", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  suggestBox: { marginTop: 4, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, overflow: "hidden", maxHeight: 200 },
-  suggestItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#f1f5f9" },
-  suggestName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 13 },
-  suggestMeta: { fontSize: 11, color: "#8494B0", textAlign: "right", marginTop: 2 },
-  suggestEmpty: { padding: 10, color: "#8494B0", textAlign: "right", fontSize: 12 },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  delBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  suggestBox: { marginTop: 4, borderWidth: 1, borderRadius: 8, overflow: "hidden", maxHeight: 200 },
+  suggestItem: { padding: 10, borderBottomWidth: 1 },
+  suggestName: { fontWeight: "700", textAlign: "right", fontSize: 13 },
+  suggestMeta: { fontSize: 11, textAlign: "right", marginTop: 2 },
+  suggestEmpty: { padding: 10, textAlign: "right", fontSize: 12 },
   buttons: { flexDirection: "row-reverse", gap: 8, marginTop: 16 },
-  primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10, flex: 1 },
+  primary: { padding: 14, borderRadius: 10, flex: 1 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 13, borderRadius: 10 },
-  cancelText: { color: "#0F172A", textAlign: "center" },
+  cancel: { borderWidth: 1, padding: 13, borderRadius: 10 },
+  cancelText: { textAlign: "center" },
 });

@@ -5,6 +5,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { sqlite } from "../db/local";
 import { buildInvoiceHtml, printHtml, shareHtmlAsPdf, type InvoicePrintData } from "../utils/printDocument";
 import SalesReturnScreen from "./SalesReturnScreen";
+import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
@@ -13,6 +14,7 @@ type PaymentType = "cash" | "credit";
 type InvoiceLine = { key: string; itemId: string; itemName: string; itemSku: string; available: number; unit: string; quantity: number; unitPrice: number; };
 
 export default function SalesInv({ onBack }: { onBack: () => void }) {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const [customers, setCustomers] = useState<Row[]>([]);
   const [currencies, setCurrencies] = useState<Row[]>([]);
   const [cashboxes, setCashboxes] = useState<Row[]>([]);
@@ -116,7 +118,6 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     if (!customer || !currency) return null;
     return { type: "sales", invoiceNo, createdAt: dateStr ? new Date(dateStr).getTime() : Date.now(), partyLabel: "العميل", partyName: customer.name, partyPhone: customer.phone || undefined, currencyCode: currency.code, currencySymbol: currency.symbol || currency.code, exchangeRate: Number(currency.exchangeRate) || 1, isBase: !!currency.isBase, paymentType, cashboxName: cashbox?.name, lines: lines.map((l) => ({ itemName: l.itemName, itemSku: l.itemSku, unit: l.unit, quantity: l.quantity, unitPrice: l.unitPrice })), subtotal, discountType, discountValue: Number(discountValue) || 0, discountAmount, total, notes: notes.trim() || undefined };
   };
-
   const printInvoiceById = async (invoiceId: string) => {
     try {
       const inv: any = await sqlite.getFirstAsync("SELECT * FROM invoices WHERE id = ?", [invoiceId]);
@@ -245,25 +246,24 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const symbol = currency?.symbol || currency?.code || "";
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={{ backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
         <Pressable style={styles.back} onPress={onBack}>
-          <Text style={styles.backText}>‹ العودة</Text>
+          <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
-        
-        <BrandBanner />
-        
-        <Text style={styles.screenTitle}>{editingNo ? `تعديل الفاتورة ${editingNo}` : "فاتورة مبيعات جديدة"}</Text>
 
-        <Text style={styles.label}>التاريخ</Text>
-        <Pressable style={[styles.input, { justifyContent: "center", height: 42 }]} onPress={() => setShowDatePicker(true)}>
-          <Text style={{ textAlign: "right", color: "#0F172A", fontSize: 14 }}>{dateStr}</Text>
+        <BrandBanner />
+        <Text style={[styles.screenTitle, { color: colors.text }]}>{editingNo ? `تعديل الفاتورة ${editingNo}` : "فاتورة مبيعات جديدة"}</Text>
+
+        <Text style={[styles.label, { color: colors.textMuted }]}>التاريخ</Text>
+        <Pressable style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: "center", height: 42 }]} onPress={() => setShowDatePicker(true)}>
+          <Text style={{ textAlign: "right", color: colors.text, fontSize: 14 }}>{dateStr}</Text>
         </Pressable>
         {showDatePicker && <DateTimePicker value={dateStr ? new Date(dateStr) : new Date()} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(Platform.OS === 'ios'); if (d) setDateStr(d.toISOString().slice(0, 10)); }} />}
 
-        <Text style={styles.label}>العميل</Text>
+        <Text style={[styles.label, { color: colors.textMuted }]}>العميل</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
           value={customerSearch}
           onChangeText={(text) => {
             setCustomerSearch(text);
@@ -273,106 +273,106 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           onFocus={() => setShowCustomerPicker(true)}
           onBlur={() => setTimeout(() => setShowCustomerPicker(false), 200)}
           placeholder="ابحث أو اكتب اسم العميل..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.textMuted}
           textAlign="right"
         />
         {showCustomerPicker && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
             {filteredCustomers.length === 0 ? (
-              <Text style={{ padding: 10, textAlign: "right", color: "#8494B0" }}>لا توجد نتائج مطابقة</Text>
+              <Text style={{ padding: 10, textAlign: "right", color: colors.textMuted }}>لا توجد نتائج مطابقة</Text>
             ) : (
               filteredCustomers.map((c) => (
-                <Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCustomer(c); setCustomerSearch(c.name); setShowCustomerPicker(false); }}>
-                  <Text style={styles.suggestName}>{c.name}</Text>
-                  <Text style={styles.suggestMeta}>{c.code} {c.phone ? `· ${c.phone}` : ""}</Text>
+                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCustomer(c); setCustomerSearch(c.name); setShowCustomerPicker(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} {c.phone ? `· ${c.phone}` : ""}</Text>
                 </Pressable>
               ))
             )}
           </ScrollView>
         )}
 
-        <Text style={styles.label}>العملة</Text>
-        <Pressable style={styles.picker} onPress={() => setShowCurrencyPicker((v) => !v)}><Text style={styles.pickerText}>{currency ? `${currency.name} (${currency.code})` : "اختر العملة"}</Text><Text style={styles.pickerArrow}>▼</Text></Pressable>
-        {showCurrencyPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>{currencies.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</ScrollView>)}
+        <Text style={[styles.label, { color: colors.textMuted }]}>العملة</Text>
+        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCurrencyPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{currency ? `${currency.name} (${currency.code})` : "اختر العملة"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
+        {showCurrencyPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>{currencies.map((c) => (<Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
 
-        <Text style={styles.label}>نوع الدفع</Text>
+        <Text style={[styles.label, { color: colors.textMuted }]}>نوع الدفع</Text>
         <View style={{ flexDirection: "row-reverse", gap: 8 }}>
-          <Pressable style={[styles.typeBtn, paymentType === "cash" && styles.typeBtnActive]} onPress={() => setPaymentType("cash")}><Text style={[styles.typeText, paymentType === "cash" && styles.typeTextActive]}>نقدي</Text></Pressable>
-          <Pressable style={[styles.typeBtn, paymentType === "credit" && styles.typeBtnActive]} onPress={() => setPaymentType("credit")}><Text style={[styles.typeText, paymentType === "credit" && styles.typeTextActive]}>أجل</Text></Pressable>
+          <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "cash" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setPaymentType("cash")}><Text style={[styles.typeText, { color: colors.text }, paymentType === "cash" && { color: "#fff" }]}>نقدي</Text></Pressable>
+          <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "credit" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setPaymentType("credit")}><Text style={[styles.typeText, { color: colors.text }, paymentType === "credit" && { color: "#fff" }]}>أجل</Text></Pressable>
         </View>
 
         {paymentType === "cash" && (
           <>
-            <Text style={styles.label}>الصندوق المستلم</Text>
-            <Pressable style={styles.picker} onPress={() => setShowCashboxPicker((v) => !v)}><Text style={styles.pickerText}>{cashbox ? cashbox.name : "اختر الصندوق"}</Text><Text style={styles.pickerArrow}>▼</Text></Pressable>
-            {showCashboxPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>{cashboxes.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</ScrollView>)}
+            <Text style={[styles.label, { color: colors.textMuted }]}>الصندوق المستلم</Text>
+            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCashboxPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{cashbox ? cashbox.name : "اختر الصندوق"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
+            {showCashboxPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>{cashboxes.map((c) => (<Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
           </>
         )}
 
-        <Text style={styles.sectionTitle}>المنتجات ({lines.length})</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>المنتجات ({lines.length})</Text>
         <View style={styles.list}>
           {lines.map((l) => (
-            <View key={l.key} style={styles.row}>
-              <View style={styles.rowActions}><Pressable onPress={() => removeLine(l.key)} style={styles.delBtn}><Text style={styles.delText}>حذف</Text></Pressable></View>
-              <View style={styles.rowInfo}><Text style={styles.rowName}>{l.itemName}</Text><Text style={styles.rowMeta}>{l.quantity} × {l.unitPrice} = {(l.quantity * l.unitPrice).toFixed(2)}</Text></View>
+            <View key={l.key} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={styles.rowActions}><Pressable onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>حذف</Text></Pressable></View>
+              <View style={styles.rowInfo}><Text style={[styles.rowName, { color: colors.text }]}>{l.itemName}</Text><Text style={[styles.rowMeta, { color: colors.textMuted }]}>{l.quantity} × {l.unitPrice} = {(l.quantity * l.unitPrice).toFixed(2)}</Text></View>
             </View>
           ))}
         </View>
 
-        <Pressable style={styles.secondary} onPress={() => setShowItemPicker(!showItemPicker)}><Text style={styles.secondaryText}>+ إضافة منتج</Text></Pressable>
+        <Pressable style={[styles.secondary, { backgroundColor: colors.blue }]} onPress={() => setShowItemPicker(!showItemPicker)}><Text style={styles.secondaryText}>+ إضافة منتج</Text></Pressable>
         {showItemPicker && (
-          <View style={styles.addBox}>
-            <Pressable style={styles.picker} onPress={() => setShowItemPicker(false)}><Text style={styles.pickerText}>{pickItem ? pickItem.name : "اختر المنتج"}</Text></Pressable>
-            <ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>
-              {items.map((i) => (<Pressable key={i.id} style={styles.suggestItem} onPress={() => { setPickItem(i); setShowItemPicker(false); setPickPrice(String(i.average_cost || 0)); }}><Text style={styles.suggestName}>{i.name}</Text><Text style={styles.suggestMeta}>متوفر: {i.stock_quantity}</Text></Pressable>))}
+          <View style={[styles.addBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowItemPicker(false)}><Text style={[styles.pickerText, { color: colors.text }]}>{pickItem ? pickItem.name : "اختر المنتج"}</Text></Pressable>
+            <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+              {items.map((i) => (<Pressable key={i.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPickItem(i); setShowItemPicker(false); setPickPrice(String(i.average_cost || 0)); }}><Text style={[styles.suggestName, { color: colors.text }]}>{i.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>متوفر: {i.stock_quantity}</Text></Pressable>))}
             </ScrollView>
             <View style={styles.twoCols}>
-              <View style={{ flex: 1 }}><Text style={styles.label}>الكمية</Text><TextInput style={styles.input} value={pickQty} onChangeText={setPickQty} keyboardType="decimal-pad" textAlign="right" placeholder="0" /></View>
-              <View style={{ flex: 1 }}><Text style={styles.label}>السعر</Text><TextInput style={styles.input} value={pickPrice} onChangeText={setPickPrice} keyboardType="decimal-pad" textAlign="right" placeholder="0" /></View>
+              <View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textMuted }]}>الكمية</Text><TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickQty} onChangeText={setPickQty} keyboardType="decimal-pad" textAlign="right" placeholder="0" /></View>
+              <View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textMuted }]}>السعر</Text><TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickPrice} onChangeText={setPickPrice} keyboardType="decimal-pad" textAlign="right" placeholder="0" /></View>
             </View>
-            <Pressable style={styles.primary} onPress={addLine}><Text style={styles.primaryText}>إضافة للسلة</Text></Pressable>
+            <Pressable style={[styles.primary, { backgroundColor: colors.orange }]} onPress={addLine}><Text style={styles.primaryText}>إضافة للسلة</Text></Pressable>
           </View>
         )}
 
-        <Text style={styles.label}>مندوب المبيعات (اختياري)</Text>
-        <Pressable style={styles.picker} onPress={() => setShowSalesRepPicker((v) => !v)}><Text style={styles.pickerText}>{salesRep ? salesRep.name : "بدون مندوب"}</Text><Text style={styles.pickerArrow}>▼</Text></Pressable>
-        {showSalesRepPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled><Pressable style={styles.suggestItem} onPress={() => { setSalesRep(null); setShowSalesRepPicker(false); }}><Text style={styles.suggestName}>بدون مندوب</Text></Pressable>{salesReps.map((r) => (<Pressable key={r.id} style={styles.suggestItem} onPress={() => { setSalesRep(r); setShowSalesRepPicker(false); }}><Text style={styles.suggestName}>{r.name}</Text><Text style={styles.suggestMeta}>عمولة {r.commission_rate}%</Text></Pressable>))}</ScrollView>)}
+        <Text style={[styles.label, { color: colors.textMuted }]}>مندوب المبيعات (اختياري)</Text>
+        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowSalesRepPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{salesRep ? salesRep.name : "بدون مندوب"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
+        {showSalesRepPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled><Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSalesRep(null); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>بدون مندوب</Text></Pressable>{salesReps.map((r) => (<Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSalesRep(r); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>عمولة {r.commission_rate}%</Text></Pressable>))}</ScrollView>)}
 
-        <Text style={styles.label}>الخصم (اختياري)</Text>
+        <Text style={[styles.label, { color: colors.textMuted }]}>الخصم (اختياري)</Text>
         <View style={styles.typeRow}>
-          <Pressable style={[styles.typeBtn, discountType === "percent" && styles.typeBtnActive]} onPress={() => setDiscountType("percent")}><Text style={[styles.typeText, discountType === "percent" && styles.typeTextActive]}>نسبة %</Text></Pressable>
-          <Pressable style={[styles.typeBtn, discountType === "fixed" && styles.typeBtnActive]} onPress={() => setDiscountType("fixed")}><Text style={[styles.typeText, discountType === "fixed" && styles.typeTextActive]}>مبلغ</Text></Pressable>
+          <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, discountType === "percent" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setDiscountType("percent")}><Text style={[styles.typeText, { color: colors.text }, discountType === "percent" && { color: "#fff" }]}>نسبة %</Text></Pressable>
+          <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, discountType === "fixed" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setDiscountType("fixed")}><Text style={[styles.typeText, { color: colors.text }, discountType === "fixed" && { color: "#fff" }]}>مبلغ</Text></Pressable>
         </View>
-        <TextInput style={styles.input} value={discountValue} onChangeText={setDiscountValue} keyboardType="decimal-pad" textAlign="right" placeholder="0" />
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={discountValue} onChangeText={setDiscountValue} keyboardType="decimal-pad" textAlign="right" placeholder="0" />
 
-        {discountAmount > 0 && (<View style={styles.summaryBox}><View style={styles.summaryRow}><Text style={styles.summaryLabel}>الإجمالي الفرعي</Text><Text style={styles.summaryValue}>{subtotal.toFixed(2)} {symbol}</Text></View><View style={styles.summaryRow}><Text style={styles.summaryLabel}>الخصم</Text><Text style={[styles.summaryValue, { color: "#DC2626" }]}>- {discountAmount.toFixed(2)} {symbol}</Text></View></View>)}
+        {discountAmount > 0 && (<View style={[styles.summaryBox, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEF2F2" }]}><View style={styles.summaryRow}><Text style={[styles.summaryLabel, { color: colors.textMuted }]}>الإجمالي الفرعي</Text><Text style={[styles.summaryValue, { color: colors.text }]}>{subtotal.toFixed(2)} {symbol}</Text></View><View style={styles.summaryRow}><Text style={[styles.summaryLabel, { color: colors.textMuted }]}>الخصم</Text><Text style={[styles.summaryValue, { color: colors.danger }]}>- {discountAmount.toFixed(2)} {symbol}</Text></View></View>)}
 
-        <View style={styles.totalBox}><Text style={styles.totalLabel}>الإجمالي النهائي</Text><Text style={styles.totalValue}>{total.toFixed(2)} {symbol}</Text></View>
+        <View style={[styles.totalBox, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={[styles.totalLabel, { color: colors.blue }]}>الإجمالي النهائي</Text><Text style={[styles.totalValue, { color: colors.blue }]}>{total.toFixed(2)} {symbol}</Text></View>
 
-        <Text style={styles.label}>ملاحظات (اختياري)</Text>
-        <TextInput style={[styles.input, { minHeight: 60 }]} value={notes} onChangeText={setNotes} textAlign="right" multiline placeholder="ملاحظات الفاتورة" />
+        <Text style={[styles.label, { color: colors.textMuted }]}>ملاحظات (اختياري)</Text>
+        <TextInput style={[styles.input, { minHeight: 60, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={notes} onChangeText={setNotes} textAlign="right" multiline placeholder="ملاحظات الفاتورة" />
 
-        <Pressable style={[styles.primary, { marginTop: 16 }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}><Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : (editingId ? "تحديث الفاتورة" : "حفظ الفاتورة")}</Text></Pressable>
-        {editingId && <Pressable style={styles.cancel} onPress={() => { setEditingId(null); setEditingNo(null); setCustomer(null); setCustomerSearch(""); setLines([]); setNotes(""); }}><Text style={styles.cancelText}>إلغاء التعديل</Text></Pressable>}
+        <Pressable style={[styles.primary, { marginTop: 16, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}><Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : (editingId ? "تحديث الفاتورة" : "حفظ الفاتورة")}</Text></Pressable>
+        {editingId && <Pressable style={[styles.cancel, { borderColor: colors.border }]} onPress={() => { setEditingId(null); setEditingNo(null); setCustomer(null); setCustomerSearch(""); setLines([]); setNotes(""); }}><Text style={[styles.cancelText, { color: colors.text }]}>إلغاء التعديل</Text></Pressable>}
 
         {history.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>آخر فواتير المبيعات</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>آخر فواتير المبيعات</Text>
             <View style={styles.list}>
               {history.map((h) => (
-                <View key={h.id} style={styles.histRow}>
+                <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.histActions}>
-                    <Pressable onPress={() => setReturnInvoiceId(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
-                    <Pressable onPress={() => printInvoiceById(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
-                    <Pressable onPress={() => editInvoice(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
-                    <Pressable onPress={() => confirmDelete(h.id, h.invoice_no)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                    <Pressable onPress={() => setReturnInvoiceId(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
+                    <Pressable onPress={() => printInvoiceById(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
+                    <Pressable onPress={() => editInvoice(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                    <Pressable onPress={() => confirmDelete(h.id, h.invoice_no)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
                   <View style={styles.histDetails}>
-                    <Text style={styles.histName}>{h.party_name}</Text>
-                    <Text style={styles.histMeta}>{h.invoice_no}</Text>
-                    <Text style={styles.histDate}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
-                    <Text style={styles.histTotal}>{Number(h.total).toFixed(2)} {h.currency_code}</Text>
-                    <Text style={styles.histType}>{h.payment_type === "cash" ? "نقدي" : "أجل"}</Text>
+                    <Text style={[styles.histName, { color: colors.text }]}>{h.party_name}</Text>
+                    <Text style={[styles.histMeta, { color: colors.blue }]}>{h.invoice_no}</Text>
+                    <Text style={[styles.histDate, { color: colors.textMuted }]}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
+                    <Text style={[styles.histTotal, { color: colors.blue }]}>{Number(h.total).toFixed(2)} {h.currency_code}</Text>
+                    <Text style={[styles.histType, { color: colors.textMuted }]}>{h.payment_type === "cash" ? "نقدي" : "أجل"}</Text>
                   </View>
                 </View>
               ))}
@@ -383,56 +383,56 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
-  histDetails: { flex: 1, alignItems: "flex-end", paddingLeft: 12 },
-  histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
+  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-start" },
-  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "left" },
-  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 12,   alignSelf: "flex-start",textAlign: "left", width: "100%", fontFamily: "CodecBold"},
-  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 16, marginBottom: 8 ,  textAlign: "left", width: "100%", fontFamily: "CodecBold"},
-  label: {fontSize: 12, color: "#526078",  marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%"},
-  input: {backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A",textAlign: "right", width: "100%"},
-  picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
-  pickerText: { color: "#0F172A", textAlign: "right", flex: 1, fontSize: 14 },
-  pickerArrow: { color: "#8494B0", fontSize: 12, marginLeft: 8 },
-  suggestBox: { marginTop: 4, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, overflow: "hidden", maxHeight: 200 },
-  suggestItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#f1f5f9" },
-  suggestName: { fontWeight: "700", color: "#0F172A", textAlign: "right", fontSize: 13 },
-  suggestMeta: { fontSize: 11, color: "#8494B0", textAlign: "right", marginTop: 2 },
+  backText: { fontWeight: "700", textAlign: "left" },
+  screenTitle: { fontSize: 22, marginBottom: 12, alignSelf: "flex-start", textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  sectionTitle: { fontSize: 16, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  label: { fontSize: 12, marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
+  input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right", width: "100%" },
+  picker: { borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
+  pickerText: { textAlign: "right", flex: 1, fontSize: 14 },
+  pickerArrow: { fontSize: 12, marginLeft: 8 },
+  suggestBox: { marginTop: 4, borderWidth: 1, borderRadius: 8, overflow: "hidden", maxHeight: 200 },
+  suggestItem: { padding: 10, borderBottomWidth: 1 },
+  suggestName: { fontWeight: "700", textAlign: "right", fontSize: 13 },
+  suggestMeta: { fontSize: 11, textAlign: "right", marginTop: 2 },
   typeRow: { flexDirection: "row-reverse", gap: 8, marginBottom: 8 },
-  typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "#D6E3F8", backgroundColor: "#fff", alignItems: "center" },
-  typeBtnActive: { backgroundColor: "#1E40AF", borderColor: "#1E40AF" },
-  typeText: { color: "#0F172A", fontWeight: "700", fontSize: 13 },
-  typeTextActive: { color: "#fff" },
+  typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, alignItems: "center" },
+  typeText: { fontWeight: "700", fontSize: 13 },
   twoCols: { flexDirection: "row-reverse", gap: 8, marginTop: 8 },
   list: { gap: 8, marginTop: 4 },
-  row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
+  row: { borderWidth: 1, borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowName: {fontWeight: "700", fontSize: 14, color: "#0F172A",textAlign: "right", width: "100%"},
-  rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 3, textAlign: "right" },
+  rowName: { fontWeight: "700", fontSize: 14, textAlign: "right", width: "100%" },
+  rowMeta: { fontSize: 11, marginTop: 3, textAlign: "right" },
   rowActions: { flexDirection: "row-reverse", gap: 6 },
-  delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
-  delText: { color: "#991b1b", fontSize: 12 },
-  addBox: { backgroundColor: "#F8FAFC", padding: 12, borderRadius: 10, marginTop: 8, borderWidth: 1, borderColor: "#D6E3F8" },
-  summaryBox: { backgroundColor: "#FEF2F2", padding: 12, borderRadius: 10, marginTop: 12 },
+  delBtn: { padding: 8, borderRadius: 7 },
+  delText: { fontSize: 12 },
+  addBox: { padding: 12, borderRadius: 10, marginTop: 8, borderWidth: 1 },
+  summaryBox: { padding: 12, borderRadius: 10, marginTop: 12 },
   summaryRow: { flexDirection: "row-reverse", justifyContent: "space-between", paddingVertical: 4 },
-  summaryLabel: { color: "#7F1D1D", fontWeight: "600", fontSize: 13 },
-  summaryValue: { color: "#0F172A", fontWeight: "700", fontSize: 13 },
-  totalBox: { marginTop: 16, backgroundColor: "#EFF6FF", padding: 14, borderRadius: 10, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
-  totalLabel: { color: "#1E40AF", fontWeight: "700", fontSize: 14 },
-  totalValue: { color: "#1E40AF", fontWeight: "800", fontSize: 18 },
-  primary: { backgroundColor: "#F97316", padding: 14, borderRadius: 10 },
+  summaryLabel: { fontWeight: "600", fontSize: 13 },
+  summaryValue: { fontWeight: "700", fontSize: 13 },
+  totalBox: { marginTop: 16, padding: 14, borderRadius: 10, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
+  totalLabel: { fontWeight: "700", fontSize: 14 },
+  totalValue: { fontWeight: "800", fontSize: 18 },
+  primary: { padding: 14, borderRadius: 10 },
   primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  secondary: { backgroundColor: "#1E40AF", padding: 12, borderRadius: 8, marginTop: 8, alignItems: "center" },
+  secondary: { padding: 12, borderRadius: 8, marginTop: 8, alignItems: "center" },
   secondaryText: { color: "#fff", fontWeight: "700" },
-  cancel: { borderWidth: 1, borderColor: "#d1d5db", padding: 12, borderRadius: 10, marginTop: 8 },
-  cancelText: { color: "#0F172A", textAlign: "center", fontWeight: "700" },
+  cancel: { borderWidth: 1, padding: 12, borderRadius: 10, marginTop: 8 },
+  cancelText: { textAlign: "center", fontWeight: "700" },
   disabled: { opacity: 0.5 },
-  histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  histName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
-  histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
-  histDate: { fontSize: 10, color: "#8494B0", marginTop: 2, textAlign: "right" },
-  histTotal: { fontWeight: "800", fontSize: 16, color: "#1E40AF", marginTop: 6, textAlign: "right" },
-  histType: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
-  iconBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  histRow: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  histDetails: { flex: 1, alignItems: "flex-end", paddingLeft: 12 },
+  histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
+  iconBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
+  histName: { fontWeight: "700", fontSize: 14, textAlign: "right" },
+  histMeta: { fontSize: 11, marginTop: 2, textAlign: "right", fontWeight: "600" },
+  histDate: { fontSize: 10, marginTop: 2, textAlign: "right" },
+  histTotal: { fontWeight: "800", fontSize: 16, marginTop: 6, textAlign: "right" },
+  histType: { fontSize: 11, marginTop: 2, textAlign: "right" },
 });

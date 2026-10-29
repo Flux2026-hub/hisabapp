@@ -24,7 +24,7 @@ import JournalScreen from "./JournalScreen";
 import TransfersScreen from "./TransfersScreen";
 import SalesRepsScreen from "./SalesRepsScreen";
 import { getPendingSyncCount, processSyncQueue } from "../sync/queue";
-import { COLORS } from "./theme";
+import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 type Mode =
   | "menu" | "customers" | "suppliers" | "cashboxes" | "accounts" | "items" | "currencies"
@@ -52,6 +52,7 @@ const MENU: MenuItem[] = [
 ];
 
 export default function AccountingModule() {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const [mode, setMode] = useState<Mode>("menu");
   const [pending, setPending] = useState(0);
 
@@ -101,30 +102,30 @@ export default function AccountingModule() {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
       
-      <View style={styles.syncBar}>
+      <View style={[styles.syncBar, { backgroundColor: colors.isDark ? "#1E293B" : "#EFF6FF" }]}>
         <View style={styles.syncLeft}>
-          <MaterialCommunityIcons name="clock-outline" size={16} color={COLORS.orange} />
-          <Text style={styles.pendingText}>عمليات معلقة: {pending}</Text>
+          <MaterialCommunityIcons name="clock-outline" size={16} color={colors.orange} />
+          <Text style={[styles.pendingText, { color: colors.text }]}>عمليات معلقة: {pending}</Text>
         </View>
-        <Pressable style={styles.syncButton} onPress={syncNow}>
+        <Pressable style={[styles.syncButton, { backgroundColor: colors.blue }]} onPress={syncNow}>
           <MaterialCommunityIcons name="sync" size={14} color="#FFF" />
           <Text style={styles.syncButtonText}>مزامنة الآن</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.hint}>اختر الشاشة المطلوبة من القائمة أدناه. جميع العمليات تُحفظ محلياً وتعمل بدون إنترنت.</Text>
+      <Text style={[styles.hint, { color: colors.textMuted }]}>اختر الشاشة المطلوبة من القائمة أدناه. جميع العمليات تُحفظ محلياً وتعمل بدون إنترنت.</Text>
 
       {sections.map((sectionName) => (
         <View key={sectionName} style={styles.sectionBlock}>
           <View style={{ width: "100%" }}>
-            <Text style={styles.sectionLabel}>{sectionName}</Text>
+            <Text style={[styles.sectionLabel, { color: colors.blue }]}>{sectionName}</Text>
           </View>
-          <View style={styles.sectionDivider} />
+          <View style={[styles.sectionDivider, { backgroundColor: colors.orange }]} />
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
-              <Pressable key={item.mode} onPress={() => setMode(item.mode)} style={styles.tile}>
-                <MaterialCommunityIcons name={item.icon as any} size={22} color={COLORS.orange} />
-                <Text style={styles.tileText}>{item.label}</Text>
+              <Pressable key={item.mode} onPress={() => setMode(item.mode)} style={[styles.tile, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <MaterialCommunityIcons name={item.icon as any} size={22} color={colors.orange} />
+                <Text style={[styles.tileText, { color: colors.text }]}>{item.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -133,68 +134,19 @@ export default function AccountingModule() {
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 40, paddingHorizontal: 12 },
-  syncBar: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    backgroundColor: COLORS.bluePale,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    marginBottom: 12,
-    gap: 8,
-  },
+  syncBar: { flexDirection: "row-reverse", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, marginBottom: 12, gap: 8 },
   syncLeft: { flex: 1, flexDirection: "row-reverse", alignItems: "center", gap: 6 },
-  pendingText: { color: COLORS.blue, fontSize: 12, fontWeight: "700" },
-  syncButton: { flexDirection: "row-reverse", alignItems: "center", gap: 5, backgroundColor: COLORS.blue, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  pendingText: { fontSize: 12, fontWeight: "700" },
+  syncButton: { flexDirection: "row-reverse", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   syncButtonText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
-  
-  hint: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    marginBottom: 14,
-    lineHeight: 18,
-    paddingHorizontal: 4,
-    textAlign: "left", // 🚀 تم التعديل إلى اليسار
-    width: "100%"
-  },
-  
+  hint: { fontSize: 12, marginBottom: 14, lineHeight: 18, paddingHorizontal: 4, textAlign: "left", width: "100%" },
   sectionBlock: { width: "100%", marginTop: 14 },
-
   grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginBottom: 4 },
-  tile: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1.2,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    minWidth: 105,
-    flexGrow: 1,
-    flexBasis: "30%",
-  },
-  tileText: { fontSize: 13, color: COLORS.text, fontWeight: "700", textAlign: "right" },
-
-  sectionLabel: {
-    fontSize: 16,
-    fontFamily: "CodecBold",
-    color: "#1E40AF",
-    textAlign: "left", // 🚀 تم التعديل إلى اليسار
-    width: "100%",
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  sectionDivider: {
-    marginTop: 5,
-    marginBottom: 15,
-    height: 2,
-    backgroundColor: "#F97316",
-    width: "100%",
-    borderRadius: 1,
-  },
+  tile: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 14, minWidth: 105, flexGrow: 1, flexBasis: "30%" },
+  tileText: { fontSize: 13, fontWeight: "700", textAlign: "right" },
+  sectionLabel: { fontSize: 16, fontFamily: "CodecBold", textAlign: "left", width: "100%", marginTop: 10, marginBottom: 8 },
+  sectionDivider: { marginTop: 5, marginBottom: 15, height: 2, width: "100%", borderRadius: 1 },
 });
