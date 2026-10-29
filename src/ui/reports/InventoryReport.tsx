@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
 import { sqlite } from "../../db/local";
 import ReportHeader from "./components/ReportHeader";
 import ReportSummary from "./components/ReportSummary";
 import ReportActions, { exportCsv, exportPdf } from "./components/ReportActions";
+import { useTheme } from "../ThemeContext"; // 🚀 استدعاء مركز الألوان
 
 type Category = "all" | "raw" | "packaging" | "finished";
 
 export default function InventoryReport({ onBack }: { onBack: () => void }) {
+  const { colors } = useTheme(); // 🚀 قراءة الألوان
   const today = new Date().toISOString().slice(0, 10);
   const [from] = useState(today.slice(0, 8) + "01");
   const [to] = useState(today);
@@ -17,39 +19,23 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
 
   const load = async () => {
     try {
-      const base: any = await sqlite.getFirstAsync(
-        "SELECT symbol, code FROM currencies WHERE is_base = 1 LIMIT 1"
-      );
+      const base: any = await sqlite.getFirstAsync("SELECT symbol, code FROM currencies WHERE is_base = 1 LIMIT 1");
       if (base) setBaseSymbol(base.symbol || base.code);
 
-      const rows: any = await sqlite.getAllAsync(
-        `SELECT id, sku, name, item_type, unit, stock_quantity, average_cost
-         FROM items ORDER BY item_type, name`
-      );
+      const rows: any = await sqlite.getAllAsync(`SELECT id, sku, name, item_type, unit, stock_quantity, average_cost FROM items ORDER BY item_type, name`);
       setItems(rows || []);
     } catch (e) {
       Alert.alert("تعذر التحميل", String(e));
     }
   };
 
-  useEffect(() => {
-    void load();
-  }, []);
+  useEffect(() => { void load(); }, []);
 
   const filtered = useMemo(() => {
     if (filter === "all") return items;
-    if (filter === "raw")
-      return items.filter(
-        (i) =>
-          i.item_type === "raw_material" ||
-          i.item_type === "production_material"
-      );
+    if (filter === "raw") return items.filter((i) => i.item_type === "raw_material" || i.item_type === "production_material");
     if (filter === "packaging") return items.filter((i) => i.item_type === "packaging");
-    if (filter === "finished")
-      return items.filter(
-        (i) =>
-          i.item_type === "compound_finished" || i.item_type === "finished_product"
-      );
+    if (filter === "finished") return items.filter((i) => i.item_type === "compound_finished" || i.item_type === "finished_product");
     return items;
   }, [items, filter]);
 
@@ -113,108 +99,64 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
     const lines = filtered
       .map(
         (it) =>
-          `${it.sku || ""},${it.name || ""},${Number(it.stock_quantity || 0).toFixed(
-            2
-          )},${it.unit || ""},${Number(it.average_cost || 0).toFixed(2)},${(
-            Number(it.stock_quantity || 0) * Number(it.average_cost || 0)
-          ).toFixed(2)}`
+          `${it.sku || ""},${it.name || ""},${Number(it.stock_quantity || 0).toFixed(2)},${it.unit || ""},${Number(it.average_cost || 0).toFixed(2)},${(Number(it.stock_quantity || 0) * Number(it.average_cost || 0)).toFixed(2)}`
       )
       .join("\n");
     return header + lines;
   }, [filtered]);
 
   return (
-    <ScrollView
-      contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}
-    >
-      <View style={styles.backWrap}>
-        <Text style={styles.back} onPress={onBack}>
-          العودة &gt; إلى التقارير
-        </Text>
-      </View>
+    <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+      
+      <Pressable style={styles.backWrap} onPress={onBack}>
+        <Text style={[styles.back, { color: colors.blue }]}>‹ العودة إلى التقارير</Text>
+      </Pressable>
 
-      <ReportHeader
-        title="تقرير المخزون"
-        subtitle="أرصدة جميع الأصناف وقيمة المخزون"
-        from={from}
-        to={to}
-        currencySymbol={baseSymbol}
-      />
+      <ReportHeader title="تقرير المخزون" subtitle="أرصدة جميع الأصناف وقيمة المخزون" from={from} to={to} currencySymbol={baseSymbol} />
 
       <View style={styles.filterRow}>
-        {(
-          [
-            ["all", "الكل"],
-            ["raw", "مواد خام"],
-            ["packaging", "عبوات"],
-            ["finished", "منتجات نهائية"],
-          ] as [Category, string][]
-        ).map(([key, label]) => (
-          <Text
-            key={key}
-            onPress={() => setFilter(key)}
-            style={[styles.chip, filter === key && styles.chipActive]}
-          >
-            {label}
-          </Text>
+        {([["all", "الكل"], ["raw", "مواد خام"], ["packaging", "عبوات"], ["finished", "منتجات نهائية"]] as [Category, string][]).map(([key, label]) => (
+          <Pressable key={key} onPress={() => setFilter(key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, filter === key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+            <Text style={[styles.chipText, { color: colors.text }, filter === key && { color: "#FFF" }]}>{label}</Text>
+          </Pressable>
         ))}
       </View>
 
       <ReportActions
         onRefresh={load}
-        onExportPdf={() =>
-          exportPdf(buildHtml(), `تقرير-المخزون-${new Date().toISOString().slice(0, 10)}.pdf`)
-        }
-        onExportCsv={() =>
-          exportCsv(csvContent, `تقرير-المخزون-${new Date().toISOString().slice(0, 10)}.csv`)
-        }
+        onExportPdf={() => exportPdf(buildHtml(), `تقرير-المخزون-${new Date().toISOString().slice(0, 10)}.pdf`)}
+        onExportCsv={() => exportCsv(csvContent, `تقرير-المخزون-${new Date().toISOString().slice(0, 10)}.csv`)}
       />
 
       <ReportSummary
         items={[
           { label: "عدد الأصناف", value: String(stats.count) },
-          {
-            label: `قيمة المخزون (${baseSymbol})`,
-            value: stats.totalValue.toFixed(2),
-          },
-          {
-            label: "قاربت على النفاد",
-            value: String(stats.lowStock),
-            color: "#f59e0b",
-          },
-          {
-            label: "نافذة",
-            value: String(stats.outOfStock),
-            color: "#dc2626",
-          },
+          { label: `قيمة المخزون (${baseSymbol})`, value: stats.totalValue.toFixed(2) },
+          { label: "قاربت على النفاد", value: String(stats.lowStock), color: colors.orange },
+          { label: "نافذة", value: String(stats.outOfStock), color: colors.danger },
         ]}
       />
 
-      <Text style={styles.sectionTitle}>تفاصيل الأصناف</Text>
+      <Text style={[styles.sectionTitle, { color: colors.blue }]}>تفاصيل الأصناف</Text>
       {filtered.length === 0 ? (
-        <Text style={styles.empty}>لا توجد أصناف</Text>
+        <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد أصناف</Text>
       ) : (
         filtered.map((it) => {
           const q = Number(it.stock_quantity) || 0;
           const c = Number(it.average_cost) || 0;
           const value = q * c;
-          const qtyColor = q === 0 ? "#dc2626" : q < 10 ? "#f59e0b" : "#0b806c";
+          const qtyColor = q === 0 ? colors.danger : q < 10 ? colors.orange : colors.success;
+          
           return (
-            <View key={it.id} style={styles.row}>
+            <View key={it.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.rowInfo}>
-                <Text style={styles.rowName}>{it.name}</Text>
-                <Text style={styles.rowMeta}>{it.sku}</Text>
-                <Text style={[styles.qty, { color: qtyColor }]}>
-                  الرصيد: {q.toFixed(2)} {it.unit}
-                </Text>
+                <Text style={[styles.rowName, { color: colors.text }]}>{it.name}</Text>
+                <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{it.sku}</Text>
+                <Text style={[styles.qty, { color: qtyColor }]}>الرصيد: {q.toFixed(2)} {it.unit}</Text>
               </View>
               <View style={styles.rowValues}>
-                <Text style={styles.value}>
-                  {value.toFixed(2)} {baseSymbol}
-                </Text>
-                <Text style={styles.cost}>
-                  تكلفة: {c.toFixed(2)}
-                </Text>
+                <Text style={[styles.value, { color: colors.blue }]}>{value.toFixed(2)} {baseSymbol}</Text>
+                <Text style={[styles.cost, { color: colors.textMuted }]}>تكلفة: {c.toFixed(2)}</Text>
               </View>
             </View>
           );
@@ -223,52 +165,21 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
-  rowValues: { alignItems: "flex-start", minWidth: 100 },
+  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   backWrap: { paddingVertical: 8 },
-  back: { alignSelf: "flex-end",  color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  filterRow: {
-    flexDirection: "row-reverse",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 8,
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: "#D6E3F8",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 12,
-    color: "#0F172A",
-    fontWeight: "600",
-    overflow: "hidden",
-  },
-  chipActive: {
-    backgroundColor: "#1E40AF",
-    borderColor: "#1E40AF",
-    color: "#fff",
-  },
-  sectionTitle: {fontSize: 15,
-    
-    color: "#1E40AF",
-    
-    marginTop: 14,
-    marginBottom: 8,
-   textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  empty: {
-    textAlign: "right",
-    color: "#8494B0",
-    fontSize: 12,
-    padding: 10,
-  },
-  row: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  back: { alignSelf: "flex-start", fontWeight: "700", textAlign: "left" },
+  filterRow: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6, marginTop: 8, marginBottom: 8 },
+  chip: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  chipText: { fontSize: 12, fontWeight: "600" },
+  sectionTitle: { fontSize: 15, marginTop: 14, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  empty: { textAlign: "right", fontSize: 12, padding: 10 },
+  row: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
-  rowRight: { alignItems: "flex-end" },
-  rowName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
-  rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 2, textAlign: "right" },
+  rowValues: { alignItems: "flex-start", minWidth: 100 },
+  rowName: { fontWeight: "700", fontSize: 14, textAlign: "right" },
+  rowMeta: { fontSize: 11, marginTop: 2, textAlign: "right" },
   qty: { fontSize: 13, marginTop: 4, textAlign: "right", fontWeight: "700" },
-  value: { fontWeight: "800", fontSize: 16, color: "#1E40AF", textAlign: "left" },
-  cost: { fontSize: 12, color: "#8494B0", marginTop: 2, textAlign: "left" },
+  value: { fontWeight: "800", fontSize: 16, textAlign: "left" },
+  cost: { fontSize: 12, marginTop: 2, textAlign: "left" },
 });
