@@ -3,7 +3,7 @@ workflows:
     name: Android Build APK
     max_build_duration: 60
     environment:
-      node: latest
+      node: 20
       java: 17
     scripts:
       - name: Install dependencies
