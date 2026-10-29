@@ -94,12 +94,12 @@ export default function SalesReport({ onBack }: { onBack: () => void }) {
       .brand{font-size:22px;font-weight:800;color:#1E40AF}
       h1{font-size:18px;margin:12px 0}
       table{width:100%;border-collapse:collapse;margin-top:12px}
-      th,td{border:1px solid #D6E3F8;padding:7px;text-align:right;font-size:12px}
+      th,td{border:1px solid #D6E3F8;padding:7px;text-align:right;font-size:14px}
       th{background:#1E40AF;color:#fff}
       .sum{margin:14px 0;padding:12px;background:#EFF6FF;border-radius:8px}
       .sum div{margin:4px 0;font-weight:700;color:#1E40AF}
     </style></head><body>
-      <div class="head"><div class="brand">فلوكس</div><div style="font-size:12px;color:#8494B0">منتج تسليك المجاري</div></div>
+      <div class="head"><div class="brand">فلوكس</div><div style="font-size:14px;color:#8494B0">منتج تسليك المجاري</div></div>
       <h1>تقرير المبيعات</h1>
       <div style="color:#526078;font-size:11px">الفترة: ${from} → ${to} | العملة الأساسية: ${baseSymbol}</div>
       <div class="sum">

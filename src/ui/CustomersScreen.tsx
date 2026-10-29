@@ -10,7 +10,7 @@ import {
   listCustomers, listSuppliers, updateCustomer, updateSupplier,
 } from "../sync/accounting";
 import { sqlite } from "../db/local";
-import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
+import { useTheme } from "./ThemeContext";
 
 type Kind = "customers" | "suppliers";
 type Row = any;
@@ -21,7 +21,7 @@ const CONFIG: Record<Kind, any> = {
 };
 
 export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: () => void }) {
-  const { colors } = useTheme(); // 🚀 قراءة الألوان
+  const { colors } = useTheme();
   const cfg = CONFIG[kind];
   const [rows, setRows] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -86,6 +86,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
     setPhone("+967" + local);
   };
 
+  // 🚀 دالة جلب جهة الاتصال مع رسائل خطأ واضحة
   const pickContact = async () => {
     try {
       const { status } = await Contacts.requestPermissionsAsync();
@@ -94,8 +95,13 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
         if (contact && contact.phoneNumbers && contact.phoneNumbers.length > 0) {
           onPhoneChange(contact.phoneNumbers[0].number || "");
         }
+      } else {
+        Alert.alert("تنبيه", "تم رفض صلاحية الوصول لجهات الاتصال. يرجى تفعيلها من إعدادات الهاتف.");
       }
-    } catch (e) { console.log("Contacts error:", e); }
+    } catch (e: any) {
+      Alert.alert("خطأ", "تعذر فتح جهات الاتصال. تأكد من تثبيت التطبيق بشكل صحيح.");
+      console.log("Contacts error:", e);
+    }
   };
 
   const applySuggestedCode = () => { setCode(nextCode); setShowCodeSuggest(false); };
