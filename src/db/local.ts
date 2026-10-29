@@ -73,12 +73,14 @@ export async function initializeLocalDatabase() {
     }
   }
 
+  // 🗑️ حذف البيانات التجريبية القديمة
   await sqlite.execAsync(`
     DELETE FROM items WHERE sku IN ('RAW-001', 'RAW-002', 'FIN-001');
     DELETE FROM items WHERE id IN ('raw-silver', 'prod-stone', 'finished-ring');
     DELETE FROM warehouses WHERE id IN ('wip-main');
   `);
 
+  // 📦 تهيئة المخازن الأساسية
   const warehouseRows: any = await sqlite.getAllAsync("SELECT id FROM warehouses LIMIT 1");
   if (!warehouseRows || warehouseRows.length === 0) {
     await sqlite.execAsync(`
@@ -87,45 +89,71 @@ export async function initializeLocalDatabase() {
     `);
   }
 
-  // زرع دليل الحسابات (COA) تلقائياً
-  const accountCount: any = await sqlite.getAllAsync("SELECT count(id) as count FROM accounts");
-  if (accountCount[0].count === 0) {
-    const now = Date.now();
-    const coa = [
-      { id: 'acc-1', code: '1', name: 'الأصول', type: 'asset', parent: null },
-      { id: 'acc-1101', code: '1101', name: 'الصندوق الرئيسي', type: 'asset', parent: '1' },
-      { id: 'acc-1103', code: '1103', name: 'العملاء', type: 'asset', parent: '1' },
-      { id: 'acc-1104', code: '1104', name: 'المخزون', type: 'asset', parent: '1' },
-      { id: 'acc-2', code: '2', name: 'الخصوم', type: 'liability', parent: null },
-      { id: 'acc-2101', code: '2101', name: 'الموردون', type: 'liability', parent: '2' },
-      { id: 'acc-3', code: '3', name: 'حقوق الملكية', type: 'equity', parent: null },
-      { id: 'acc-4', code: '4', name: 'الإيرادات', type: 'revenue', parent: null },
-      { id: 'acc-5', code: '5', name: 'المصروفات', type: 'expense', parent: null },
-    ];
+  // 🚀 زرع دليل حسابات احترافي وشامل (COA)
+  const now = Date.now();
+  const coa = [
+    // 1. الأصول
+    { id: 'acc-1', code: '1', name: 'الأصول', type: 'asset', parent: null },
+    { id: 'acc-11', code: '11', name: 'الأصول المتداولة', type: 'asset', parent: '1' },
+    { id: 'acc-1101', code: '1101', name: 'الصندوق الرئيسي (النقدية)', type: 'asset', parent: '11' },
+    { id: 'acc-1102', code: '1102', name: 'البنك', type: 'asset', parent: '11' },
+    { id: 'acc-1103', code: '1103', name: 'العملاء (مدينون)', type: 'asset', parent: '11' },
+    { id: 'acc-1104', code: '1104', name: 'المخزون', type: 'asset', parent: '11' },
+    { id: 'acc-1105', code: '1105', name: 'مصروفات مدفوعة مقدماً', type: 'asset', parent: '11' },
+    { id: 'acc-12', code: '12', name: 'الأصول الثابتة', type: 'asset', parent: '1' },
+    { id: 'acc-1201', code: '1201', name: 'معدات وآلات', type: 'asset', parent: '12' },
+    { id: 'acc-1202', code: '1202', name: 'سيارات ومركبات', type: 'asset', parent: '12' },
+    { id: 'acc-1203', code: '1203', name: 'مجمع إهلاك الأصول', type: 'asset', parent: '12' },
 
-    for (const acc of coa) {
-      await sqlite.runAsync(
-        `INSERT INTO accounts (id, code, name, account_type, parent_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [acc.id, acc.code, acc.name, acc.type, acc.parent, 0, now]
-      );
-    }
+    // 2. الخصوم
+    { id: 'acc-2', code: '2', name: 'الخصوم', type: 'liability', parent: null },
+    { id: 'acc-21', code: '21', name: 'الخصوم المتداولة', type: 'liability', parent: '2' },
+    { id: 'acc-2101', code: '2101', name: 'الموردون (دائنون)', type: 'liability', parent: '21' },
+    { id: 'acc-2102', code: '2102', name: 'مصروفات مستحقة', type: 'liability', parent: '21' },
+    { id: 'acc-2103', code: '2103', name: 'ضرائب مستحقة', type: 'liability', parent: '21' },
+    { id: 'acc-22', code: '22', name: 'الخصوم طويلة الأجل', type: 'liability', parent: '2' },
+    { id: 'acc-2201', code: '2201', name: 'قروض طويلة الأجل', type: 'liability', parent: '22' },
+
+    // 3. حقوق الملكية
+    { id: 'acc-3', code: '3', name: 'حقوق الملكية', type: 'equity', parent: null },
+    { id: 'acc-3101', code: '3101', name: 'رأس المال', type: 'equity', parent: '3' },
+    { id: 'acc-3102', code: '3102', name: 'أرباح محتجزة', type: 'equity', parent: '3' },
+    { id: 'acc-3103', code: '3103', name: 'أرباح/خسائر العام الحالي', type: 'equity', parent: '3' },
+    { id: 'acc-3104', code: '3104', name: 'مسحوبات شخصية', type: 'equity', parent: '3' },
+
+    // 4. الإيرادات
+    { id: 'acc-4', code: '4', name: 'الإيرادات', type: 'revenue', parent: null },
+    { id: 'acc-4101', code: '4101', name: 'إيرادات المبيعات', type: 'revenue', parent: '4' },
+    { id: 'acc-4102', code: '4102', name: 'إيرادات خدمات', type: 'revenue', parent: '4' },
+    { id: 'acc-4103', code: '4103', name: 'خصم مسموح به', type: 'revenue', parent: '4' },
+    { id: 'acc-4104', code: '4104', name: 'إيرادات أخرى', type: 'revenue', parent: '4' },
+
+    // 5. المصروفات
+    { id: 'acc-5', code: '5', name: 'المصروفات', type: 'expense', parent: null },
+    { id: 'acc-5101', code: '5101', name: 'تكلفة المبيعات', type: 'expense', parent: '5' },
+    { id: 'acc-5102', code: '5102', name: 'رواتب وأجور', type: 'expense', parent: '5' },
+    { id: 'acc-5103', code: '5103', name: 'إيجار', type: 'expense', parent: '5' },
+    { id: 'acc-5104', code: '5104', name: 'كهرباء ومياه', type: 'expense', parent: '5' },
+    { id: 'acc-5105', code: '5105', name: 'مصروفات صيانة', type: 'expense', parent: '5' },
+    { id: 'acc-5106', code: '5106', name: 'تسويق وإعلان', type: 'expense', parent: '5' },
+    { id: 'acc-5107', code: '5107', name: 'مصروفات إهلاك', type: 'expense', parent: '5' },
+    { id: 'acc-5108', code: '5108', name: 'مصروفات بنكية', type: 'expense', parent: '5' },
+    { id: 'acc-5109', code: '5109', name: 'خصم مسموح به', type: 'expense', parent: '5' },
+    { id: 'acc-5110', code: '5110', name: 'مصروفات متنوعة', type: 'expense', parent: '5' },
+  ];
+
+  for (const acc of coa) {
+    await sqlite.runAsync(
+      `INSERT OR IGNORE INTO accounts (id, code, name, account_type, parent_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [acc.id, acc.code, acc.name, acc.type, acc.parent, 0, now]
+    );
   }
 
-  // زرع الصناديق (رئيسي/تحليلي) بعملات مختلفة
+  // 🚀 زرع الصناديق (رئيسي/تحليلي) بعملات مختلفة
   const cashboxCount: any = await sqlite.getAllAsync("SELECT count(id) as count FROM cashboxes");
   if (cashboxCount[0].count === 0) {
-    const now = Date.now();
-    await sqlite.runAsync(
-      `INSERT INTO cashboxes (id, code, name, parent_id, cashbox_type, currency_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ['cb-yer-main', '110101', 'الصندوق الرئيسي (YER)', null, 'main', 'YER', 0, now]
-    );
-    await sqlite.runAsync(
-      `INSERT INTO cashboxes (id, code, name, parent_id, cashbox_type, currency_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ['cb-sar-main', '110102', 'الصندوق الرئيسي (SAR)', null, 'main', 'SAR', 0, now]
-    );
-    await sqlite.runAsync(
-      `INSERT INTO cashboxes (id, code, name, parent_id, cashbox_type, currency_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ['cb-yer-sales', '11010101', 'صندوق المبيعات اليومي (YER)', 'cb-yer-main', 'sub', 'YER', 0, now]
-    );
+    await sqlite.runAsync(`INSERT INTO cashboxes (id, code, name, parent_id, cashbox_type, currency_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, ['cb-yer-main', '110101', 'الصندوق الرئيسي (YER)', null, 'main', 'YER', 0, now]);
+    await sqlite.runAsync(`INSERT INTO cashboxes (id, code, name, parent_id, cashbox_type, currency_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, ['cb-sar-main', '110102', 'الصندوق الرئيسي (SAR)', null, 'main', 'SAR', 0, now]);
+    await sqlite.runAsync(`INSERT INTO cashboxes (id, code, name, parent_id, cashbox_type, currency_code, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, ['cb-yer-sales', '11010101', 'صندوق المبيعات اليومي (YER)', 'cb-yer-main', 'sub', 'YER', 0, now]);
   }
 }
