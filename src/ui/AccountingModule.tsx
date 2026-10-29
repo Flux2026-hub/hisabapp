@@ -27,29 +27,11 @@ import { getPendingSyncCount, processSyncQueue } from "../sync/queue";
 import { COLORS } from "./theme";
 
 type Mode =
-  | "menu"
-  | "customers"
-  | "suppliers"
-  | "cashboxes"
-  | "accounts"
-  | "items"
-  | "currencies"
-  | "recipe"
-  | "production"
-  | "salesInvoice"
-  | "salesReps"
-  | "purchaseInvoice"
-  | "voucher"
-  | "journal"
-  | "transfer"
-  | "reports";
+  | "menu" | "customers" | "suppliers" | "cashboxes" | "accounts" | "items" | "currencies"
+  | "recipe" | "production" | "salesInvoice" | "salesReps" | "purchaseInvoice" | "voucher"
+  | "journal" | "transfer" | "reports";
 
-type MenuItem = {
-  mode: Mode;
-  label: string;
-  icon: string;
-  section: string;
-};
+type MenuItem = { mode: Mode; label: string; icon: string; section: string };
 
 const MENU: MenuItem[] = [
   { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-group" },
@@ -92,18 +74,14 @@ export default function AccountingModule() {
 
   useEffect(() => {
     const onBackPress = () => {
-      if (mode !== "menu") {
-        setMode("menu");
-        return true;
-      }
+      if (mode !== "menu") { setMode("menu"); return true; }
       return false;
     };
     const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
     return () => sub.remove();
   }, [mode]);
 
-  if (mode === "customers" || mode === "suppliers")
-    return <CustomersScreen kind={mode} onBack={goMenu} />;
+  if (mode === "customers" || mode === "suppliers") return <CustomersScreen kind={mode} onBack={goMenu} />;
   if (mode === "currencies") return <CurrenciesScreen onBack={goMenu} />;
   if (mode === "items") return <ItemsScreen onBack={goMenu} />;
   if (mode === "recipe") return <ProductRecipeScreen onBack={goMenu} />;
@@ -121,11 +99,8 @@ export default function AccountingModule() {
   const sections = Array.from(new Set(MENU.map((m) => m.section)));
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}
-    >
+    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
+      
       <View style={styles.syncBar}>
         <View style={styles.syncLeft}>
           <MaterialCommunityIcons name="clock-outline" size={16} color={COLORS.orange} />
@@ -137,29 +112,18 @@ export default function AccountingModule() {
         </Pressable>
       </View>
 
-      <Text style={styles.hint}>
-        اختر الشاشة المطلوبة من القائمة أدناه. جميع العمليات تُحفظ محلياً وتعمل بدون إنترنت.
-      </Text>
+      <Text style={styles.hint}>اختر الشاشة المطلوبة من القائمة أدناه. جميع العمليات تُحفظ محلياً وتعمل بدون إنترنت.</Text>
 
       {sections.map((sectionName) => (
         <View key={sectionName} style={styles.sectionBlock}>
-          <View style={{ flexDirection: "row", width: "100%" }}>
-            <View style={{ flex: 1 }} />
-            <Text style={{ ...styles.sectionLabel, marginBottom: 8, marginTop: 10 }}>{sectionName}</Text>
+          <View style={{ width: "100%" }}>
+            <Text style={styles.sectionLabel}>{sectionName}</Text>
           </View>
           <View style={styles.sectionDivider} />
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
-              <Pressable
-                key={item.mode}
-                onPress={() => setMode(item.mode)}
-                style={styles.tile}
-              >
-                <MaterialCommunityIcons
-                  name={item.icon as any}
-                  size={22}
-                  color={COLORS.orange}
-                />
+              <Pressable key={item.mode} onPress={() => setMode(item.mode)} style={styles.tile}>
+                <MaterialCommunityIcons name={item.icon as any} size={22} color={COLORS.orange} />
                 <Text style={styles.tileText}>{item.label}</Text>
               </Pressable>
             ))}
@@ -169,7 +133,6 @@ export default function AccountingModule() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 40, paddingHorizontal: 12 },
   syncBar: {
@@ -182,39 +145,24 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 8,
   },
-  syncLeft: {
-    flex: 1,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 6,
-  },
+  syncLeft: { flex: 1, flexDirection: "row-reverse", alignItems: "center", gap: 6 },
   pendingText: { color: COLORS.blue, fontSize: 12, fontWeight: "700" },
-  syncButton: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: COLORS.blue,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
+  syncButton: { flexDirection: "row-reverse", alignItems: "center", gap: 5, backgroundColor: COLORS.blue, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   syncButtonText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
-  hint: {color: COLORS.textMuted,
+  
+  hint: {
+    color: COLORS.textMuted,
     fontSize: 12,
-    
     marginBottom: 14,
     lineHeight: 18,
-    paddingHorizontal: 4,textAlign: "right", writingDirection: "rtl", width: "100%"},
-  sectionBlock: { width: "100%", marginTop: 14 },
-  
-  
-  
-  grid: {
-    flexDirection: "row-reverse",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 4,
+    paddingHorizontal: 4,
+    textAlign: "left", // 🚀 تم التعديل إلى اليسار
+    width: "100%"
   },
+  
+  sectionBlock: { width: "100%", marginTop: 14 },
+
+  grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginBottom: 4 },
   tile: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -230,23 +178,20 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexBasis: "30%",
   },
-  tileText: {
-    fontSize: 13,
-    color: COLORS.text,
-    fontWeight: "700",
-    textAlign: "right",
-  },
+  tileText: { fontSize: 13, color: COLORS.text, fontWeight: "700", textAlign: "right" },
 
-  sectionTitleRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    gap: 6,
-    marginBottom: 4,
+  sectionLabel: {
+    fontSize: 16,
+    fontFamily: "CodecBold",
+    color: "#1E40AF",
+    textAlign: "left", // 🚀 تم التعديل إلى اليسار
+    width: "100%",
+    marginTop: 10,
+    marginBottom: 8,
   },
-  
-  sectionLabel: { fontSize: 16, fontFamily: "CodecBold", color: "#1E40AF", textAlign: "right", width: "100%", marginLeft: "auto" },
-  sectionDivider: { marginTop: 5, marginBottom: 15, 
+  sectionDivider: {
+    marginTop: 5,
+    marginBottom: 15,
     height: 2,
     backgroundColor: "#F97316",
     width: "100%",
