@@ -189,8 +189,8 @@ const styles = StyleSheet.create({
   whiteCard: { backgroundColor: "#ffffff", borderRadius: 16, padding: 20 },
   transparentScreen: { backgroundColor: "transparent", paddingHorizontal: 4 }, // مسافة بسيطة للشاشات الفرعية
 
-  title: { color: COLORS.text, fontSize: 24, textAlign: "right", marginTop: 7, fontFamily: "CodecBold", width: "100%" },
-  hint: { color: COLORS.textMuted, fontSize: 12, textAlign: "right", marginVertical: 8, width: "100%" },
+  title: { color: COLORS.text, fontSize: 24, textAlign: "left", marginTop: 7, fontFamily: "CodecBold", width: "100%" },
+  hint: { color: COLORS.textMuted, fontSize: 12, textAlign: "left", marginVertical: 8, width: "100%" },
   kpiGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between", marginTop: 10, marginBottom: 20 },
   kpiCard: { width: "48%", borderRadius: 16, padding: 14, marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
   kpiHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginBottom: 10 },
