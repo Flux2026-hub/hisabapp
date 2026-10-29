@@ -78,10 +78,8 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* 🚀 إضافة الطبقة الشفافة (Overlay) لإغلاق القائمة */}
-      {menuOpen && (
-        <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />
-      )}
+      {/* طبقة الإغلاق للقائمة */}
+      {menuOpen && <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />}
 
       {menuOpen && (
         <View style={styles.dropdown}>
@@ -93,9 +91,12 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {/* 🚀 الحاوية الرئيسية للتمرير (شفافة) */}
+      <ScrollView contentContainerStyle={styles.scrollBackground} keyboardShouldPersistTaps="handled">
+        
+        {/* 🚀 لوحة التحكم: هي الوحيدة التي تحتوي على البطاقة البيضاء */}
         {tab === "home" && (
-          <>
+          <View style={styles.whiteCard}>
             <Text style={styles.title}>لوحة التحكم</Text>
             <Text style={styles.hint}>نظرة سريعة على أرصدة المصنع</Text>
 
@@ -137,7 +138,6 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* 🚀 بطاقتين مربعتين بدلاً من الإجراءات الطويلة */}
             <View style={styles.quickActionsGrid}>
               <Pressable style={[styles.quickActionCard, { backgroundColor: "#EFF6FF" }]} onPress={() => go("accounting")}>
                 <View style={[styles.iconCircle, { backgroundColor: "#DBEAFE", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
@@ -153,23 +153,23 @@ export default function HomeScreen() {
                 <Text style={styles.quickActionText}>الإعدادات</Text>
               </Pressable>
             </View>
-
-          </>
+          </View>
         )}
 
+        {/* 🚀 شاشة المحاسبة: شفافة بدون بطاقة بيضاء */}
         {tab === "accounting" && (
-          <>
-            <Text style={styles.title}>المحاسبة والإدارة</Text>
+          <View style={styles.transparentScreen}>
             <AccountingModule />
-          </>
+          </View>
         )}
 
+        {/* 🚀 شاشة الإعدادات: شفافة بدون بطاقة بيضاء */}
         {tab === "settings" && (
-          <>
-            <Text style={styles.title}>الإعدادات</Text>
+          <View style={styles.transparentScreen}>
             <SettingsModule onBack={() => go("home")} />
-          </>
+          </View>
         )}
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -183,7 +183,12 @@ const styles = StyleSheet.create({
   brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 22, textAlign: "right" },
   brandSub: { fontFamily: "Alexandria-Regular", color: "#94A3B8", fontSize: 11, textAlign: "right", marginTop: -2 },
   logo: { width: 90, height: 70 },
-  content: { backgroundColor: "#ffffff", marginHorizontal: 16, marginVertical: 16, borderRadius: 16, padding: 20, paddingBottom: 40 },
+  
+  // 🚀 إعدادات البطاقة البيضاء (للوحة التحكم فقط)
+  scrollBackground: { paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 40 },
+  whiteCard: { backgroundColor: "#ffffff", borderRadius: 16, padding: 20 },
+  transparentScreen: { backgroundColor: "transparent", paddingHorizontal: 4 }, // مسافة بسيطة للشاشات الفرعية
+
   title: { color: COLORS.text, fontSize: 24, textAlign: "right", marginTop: 7, fontFamily: "CodecBold", width: "100%" },
   hint: { color: COLORS.textMuted, fontSize: 12, textAlign: "right", marginVertical: 8, width: "100%" },
   kpiGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between", marginTop: 10, marginBottom: 20 },
@@ -195,7 +200,6 @@ const styles = StyleSheet.create({
   kpiCur: { fontSize: 10, color: "#94A3B8", fontWeight: "normal" },
   kpiSub: { fontSize: 11, color: "#64748B", fontWeight: "600", textAlign: "right", marginTop: 4 },
   
-  // 🚀 تنسيقات البطاقات المربعة الجديدة
   quickActionsGrid: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 10 },
   quickActionCard: { width: "48%", borderRadius: 16, padding: 20, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, aspectRatio: 1 },
   quickActionText: { fontSize: 16, fontFamily: "CodecBold", color: "#0F172A" },
@@ -209,9 +213,7 @@ const styles = StyleSheet.create({
   navText: { color: COLORS.textMuted, fontSize: 13, fontWeight: "600" },
   navTextActive: { color: COLORS.blue, fontWeight: "800", fontSize: 13 },
   
-  // 🚀 تنسيق الطبقة الشفافة
   overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, elevation: 10, backgroundColor: "transparent" },
-  
   dropdown: { position: "absolute", top: 130, left: 10, zIndex: 20, elevation: 11, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, width: 200 },
   dropdownItem: { padding: 13, borderBottomWidth: 1, borderBottomColor: COLORS.bg },
   dropdownText: { textAlign: "right", fontWeight: "700", color: COLORS.text },
