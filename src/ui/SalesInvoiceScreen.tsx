@@ -20,12 +20,13 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const [salesReps, setSalesReps] = useState<Row[]>([]);
 
   const [customer, setCustomer] = useState<Row | null>(null);
+  const [customerSearch, setCustomerSearch] = useState("");
   const [currency, setCurrency] = useState<Row | null>(null);
   const [paymentType, setPaymentType] = useState<PaymentType>("cash");
   const [cashbox, setCashbox] = useState<Row | null>(null);
   const [notes, setNotes] = useState("");
   const [salesRep, setSalesRep] = useState<Row | null>(null);
-  
+
   const [dateStr, setDateStr] = useState(new Date().toISOString().slice(0, 10));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -56,7 +57,6 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         const cur: any = await sqlite.getAllAsync("SELECT id, code, name, symbol, exchange_rate, is_base FROM currencies ORDER BY is_base DESC, code");
         const cb: any = await sqlite.getAllAsync("SELECT id, code, name, balance FROM cashboxes ORDER BY name");
         const reps: any = await sqlite.getAllAsync("SELECT id, code, name, phone, commission_rate FROM sales_reps WHERE is_active = 1 ORDER BY name");
-        
         setCustomers(c || []);
         setCashboxes(cb || []);
         setSalesReps(reps || []);
@@ -84,12 +84,17 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     } catch {}
   };
 
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch.trim()) return customers;
+    const q = customerSearch.toLowerCase();
+    return customers.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q) || String(c.phone || "").includes(q));
+  }, [customers, customerSearch]);
+
   const addLine = () => {
     if (!pickItem) return Alert.alert("تنبيه", "اختر المنتج");
     const qty = Number(pickQty); const price = Number(pickPrice);
     if (!qty || qty <= 0) return Alert.alert("تنبيه", "أدخل كمية صحيحة");
     if (price < 0 || Number.isNaN(price)) return Alert.alert("تنبيه", "أدخل سعراً صحيحاً");
-
     const alreadyUsed = lines.filter((l) => l.itemId === pickItem.id).reduce((s, l) => s + l.quantity, 0);
     const available = Number(pickItem.stock_quantity || 0) - alreadyUsed;
     if (qty > available) return Alert.alert("تنبيه", `المتوفر: ${available} ${pickItem.unit}`);
@@ -118,7 +123,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
       const invLines: any = await sqlite.getAllAsync(`SELECT l.*, i.name as item_name, i.sku as item_sku, i.unit as item_unit FROM invoice_lines l LEFT JOIN items i ON i.id = l.item_id WHERE l.invoice_id = ?`, [invoiceId]);
       const cur: any = await sqlite.getFirstAsync("SELECT * FROM currencies WHERE code = ?", [inv.currency_code || ""]);
       let cashboxName; if (inv.cashbox_id) { const cb: any = await sqlite.getFirstAsync("SELECT name FROM cashboxes WHERE id = ?", [inv.cashbox_id]); cashboxName = cb?.name; }
-      
+
       const data: InvoicePrintData = { type: "sales", invoiceNo: inv.invoice_no, createdAt: inv.created_at, partyLabel: "العميل", partyName: inv.party_name || "", currencyCode: inv.currency_code || "YER", currencySymbol: cur?.symbol || inv.currency_code || "YER", exchangeRate: Number(inv.exchange_rate) || 1, isBase: !!(cur?.is_base ?? cur?.isBase), paymentType: (inv.payment_type as "cash" | "credit") || "cash", cashboxName, lines: (invLines || []).map((l: any) => ({ itemName: l.item_name || l.description || "—", itemSku: l.item_sku || "", unit: l.item_unit || "", quantity: Number(l.quantity) || 0, unitPrice: Number(l.unit_price) || 0 })), subtotal: Number(inv.subtotal) || Number(inv.total) || 0, discountType: inv.discount_type || null, discountValue: Number(inv.discount_value) || 0, discountAmount: Number(inv.discount_amount) || 0, total: Number(inv.total) || 0 };
       await printHtml(await buildInvoiceHtml(data));
     } catch (e) { Alert.alert("تعذر الطباعة", String(e)); }
@@ -130,13 +135,13 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
       const invLines: any = await sqlite.getAllAsync("SELECT * FROM invoice_lines WHERE invoice_id = ?", [invoiceId]);
       for (const l of invLines || []) { await sqlite.runAsync("UPDATE items SET stock_quantity = stock_quantity + ?, updated_at = ? WHERE id = ?", [Number(l.quantity), Date.now(), l.item_id]); }
       await sqlite.runAsync("DELETE FROM stock_movements WHERE source_type = 'sales_invoice' AND source_id = ?", [invoiceId]);
-      
+
       const cur: any = await sqlite.getFirstAsync("SELECT is_base FROM currencies WHERE code = ?", [inv.currency_code || "YER"]);
       const baseAmount = (cur?.is_base ?? cur?.isBase) ? Number(inv.total) : Number(inv.total) * (Number(inv.exchange_rate) || 1);
-      
+
       if (inv.payment_type === "credit" && inv.party_id) await sqlite.runAsync("UPDATE customers SET balance = balance - ? WHERE id = ?", [baseAmount, inv.party_id]);
       if (inv.payment_type === "cash" && inv.cashbox_id) await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE id = ?", [baseAmount, inv.cashbox_id]);
-      
+
       await sqlite.runAsync("DELETE FROM invoice_lines WHERE invoice_id = ?", [invoiceId]);
       await sqlite.runAsync("DELETE FROM invoices WHERE id = ?", [invoiceId]);
       Alert.alert("تم الحذف", "تم حذف الفاتورة وعكس تأثيراتها");
@@ -160,13 +165,13 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         const oldCurrency = currencies.find((c) => c.code === inv.currency_code);
         const oldCashbox = cashboxes.find((c) => c.id === inv.cashbox_id);
         const oldSalesRep = salesReps.find((r) => r.id === inv.sales_rep_id);
-        
-        if (oldCustomer) setCustomer(oldCustomer);
+
+        if (oldCustomer) { setCustomer(oldCustomer); setCustomerSearch(oldCustomer.name); }
         if (oldCurrency) setCurrency(oldCurrency);
         if (oldCashbox) setCashbox(oldCashbox);
         if (oldSalesRep) setSalesRep(oldSalesRep); else setSalesRep(null);
         setPaymentType((inv.payment_type as PaymentType) || "cash");
-        
+
         if (inv.discount_type) { setDiscountType(inv.discount_type); setDiscountValue(String(inv.discount_value || "")); } else { setDiscountType("percent"); setDiscountValue(""); }
 
         setLines((invLines || []).map((l: any) => ({ key: newId(), itemId: l.item_id, itemName: l.item_name || l.description || "—", itemSku: l.item_sku || "", available: 0, unit: l.item_unit || "", quantity: Number(l.quantity), unitPrice: Number(l.unit_price) })));
@@ -202,13 +207,13 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
       } else {
         const oldInv: any = await sqlite.getFirstAsync("SELECT * FROM invoices WHERE id = ?", [currentInvoiceId]);
         const oldLines: any = await sqlite.getAllAsync("SELECT * FROM invoice_lines WHERE invoice_id = ?", [currentInvoiceId]);
-        
+
         for (const l of oldLines) await sqlite.runAsync("UPDATE items SET stock_quantity = stock_quantity + ?, updated_at = ? WHERE id = ?", [Number(l.quantity), Date.now(), l.item_id]);
-        
+
         const baseCur = currencies.find(c => c.isBase);
         const oldRate = Number(oldInv.exchange_rate) || 1;
         const oldBaseAmount = oldInv.currency_code === baseCur?.code ? Number(oldInv.total) : Number(oldInv.total) * oldRate;
-        
+
         if (oldInv.payment_type === "credit" && oldInv.party_id) await sqlite.runAsync("UPDATE customers SET balance = balance - ? WHERE id = ?", [oldBaseAmount, oldInv.party_id]);
         else if (oldInv.payment_type === "cash" && oldInv.cashbox_id) await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE id = ?", [oldBaseAmount, oldInv.cashbox_id]);
 
@@ -230,7 +235,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
       const currentData = buildCurrentInvoiceData(currentInvoiceNo || "—");
       Alert.alert("تم الحفظ بنجاح", `رقم الفاتورة: ${currentInvoiceNo}`, [{ text: "طباعة", onPress: async () => { if (currentData) printHtml(await buildInvoiceHtml(currentData)); } }, { text: "مشاركة PDF", onPress: async () => { if (currentData) shareHtmlAsPdf(await buildInvoiceHtml(currentData), `فاتورة-${currentInvoiceNo}.pdf`); } }, { text: "لاحقاً", style: "cancel" }]);
 
-      setCustomer(null); setLines([]); setNotes(""); setSalesRep(null); setDiscountValue(""); setDiscountType("percent"); setEditingId(null); setEditingNo(null); setDateStr(new Date().toISOString().slice(0, 10)); if (paymentType === "cash") setCashbox(null);
+      setCustomer(null); setCustomerSearch(""); setLines([]); setNotes(""); setSalesRep(null); setDiscountValue(""); setDiscountType("percent"); setEditingId(null); setEditingNo(null); setDateStr(new Date().toISOString().slice(0, 10)); if (paymentType === "cash") setCashbox(null);
       await loadItems(); await loadHistory();
     } catch (e) { Alert.alert("تعذر الحفظ", String(e)); } finally { setSaving(false); }
   };
@@ -238,23 +243,16 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   if (returnInvoiceId) return <SalesReturnScreen invoiceId={returnInvoiceId} onBack={() => setReturnInvoiceId(null)} />;
 
   const symbol = currency?.symbol || currency?.code || "";
-
-
-  const showRowOptions = (id: string, no: string) => {
-    Alert.alert(`الفاتورة ${no}`, "اختر الإجراء المطلوب:", [
-      { text: "طباعة", onPress: () => printInvoiceById(id) },
-      { text: "تعديل", onPress: () => editInvoice(id) },
-      { text: "إرجاع", onPress: () => setReturnInvoiceId(id) },
-      { text: "حذف", style: "destructive", onPress: () => confirmDelete(id, no) },
-      { text: "إلغاء", style: "cancel" },
-    ]);
-  };
-
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={{  backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40, paddingHorizontal: 4   }}>
-        <Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>{"&gt;"} العودة</Text></Pressable>
+      <ScrollView contentContainerStyle={{ backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        
+        <Pressable style={styles.back} onPress={onBack}>
+          <Text style={styles.backText}>‹ العودة</Text>
+        </Pressable>
+        
         <BrandBanner />
+        
         <Text style={styles.screenTitle}>{editingNo ? `تعديل الفاتورة ${editingNo}` : "فاتورة مبيعات جديدة"}</Text>
 
         <Text style={styles.label}>التاريخ</Text>
@@ -264,12 +262,38 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         {showDatePicker && <DateTimePicker value={dateStr ? new Date(dateStr) : new Date()} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(Platform.OS === 'ios'); if (d) setDateStr(d.toISOString().slice(0, 10)); }} />}
 
         <Text style={styles.label}>العميل</Text>
-        <Pressable style={styles.picker} onPress={() => setShowCustomerPicker((v) => !v)}><Text style={styles.pickerText}>{customer ? customer.name : "اختر عميلاً"}</Text><Text style={styles.pickerArrow}>▼</Text></Pressable>
-        {showCustomerPicker && (<View style={styles.suggestBox}>{customers.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCustomer(c); setShowCustomerPicker(false); }}><Text style={styles.suggestName}>{c.name}</Text><Text style={styles.suggestMeta}>{c.code}</Text></Pressable>))}</View>)}
+        <TextInput
+          style={styles.input}
+          value={customerSearch}
+          onChangeText={(text) => {
+            setCustomerSearch(text);
+            setShowCustomerPicker(true);
+            if (customer && text !== customer.name) setCustomer(null);
+          }}
+          onFocus={() => setShowCustomerPicker(true)}
+          onBlur={() => setTimeout(() => setShowCustomerPicker(false), 200)}
+          placeholder="ابحث أو اكتب اسم العميل..."
+          placeholderTextColor="#9CA3AF"
+          textAlign="right"
+        />
+        {showCustomerPicker && (
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>
+            {filteredCustomers.length === 0 ? (
+              <Text style={{ padding: 10, textAlign: "right", color: "#8494B0" }}>لا توجد نتائج مطابقة</Text>
+            ) : (
+              filteredCustomers.map((c) => (
+                <Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCustomer(c); setCustomerSearch(c.name); setShowCustomerPicker(false); }}>
+                  <Text style={styles.suggestName}>{c.name}</Text>
+                  <Text style={styles.suggestMeta}>{c.code} {c.phone ? `· ${c.phone}` : ""}</Text>
+                </Pressable>
+              ))
+            )}
+          </ScrollView>
+        )}
 
         <Text style={styles.label}>العملة</Text>
         <Pressable style={styles.picker} onPress={() => setShowCurrencyPicker((v) => !v)}><Text style={styles.pickerText}>{currency ? `${currency.name} (${currency.code})` : "اختر العملة"}</Text><Text style={styles.pickerArrow}>▼</Text></Pressable>
-        {showCurrencyPicker && (<View style={styles.suggestBox}>{currencies.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</View>)}
+        {showCurrencyPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>{currencies.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</ScrollView>)}
 
         <Text style={styles.label}>نوع الدفع</Text>
         <View style={{ flexDirection: "row-reverse", gap: 8 }}>
@@ -281,7 +305,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           <>
             <Text style={styles.label}>الصندوق المستلم</Text>
             <Pressable style={styles.picker} onPress={() => setShowCashboxPicker((v) => !v)}><Text style={styles.pickerText}>{cashbox ? cashbox.name : "اختر الصندوق"}</Text><Text style={styles.pickerArrow}>▼</Text></Pressable>
-            {showCashboxPicker && (<View style={styles.suggestBox}>{cashboxes.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</View>)}
+            {showCashboxPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>{cashboxes.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</ScrollView>)}
           </>
         )}
 
@@ -299,9 +323,9 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         {showItemPicker && (
           <View style={styles.addBox}>
             <Pressable style={styles.picker} onPress={() => setShowItemPicker(false)}><Text style={styles.pickerText}>{pickItem ? pickItem.name : "اختر المنتج"}</Text></Pressable>
-            <View style={styles.suggestBox}>
+            <ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled>
               {items.map((i) => (<Pressable key={i.id} style={styles.suggestItem} onPress={() => { setPickItem(i); setShowItemPicker(false); setPickPrice(String(i.average_cost || 0)); }}><Text style={styles.suggestName}>{i.name}</Text><Text style={styles.suggestMeta}>متوفر: {i.stock_quantity}</Text></Pressable>))}
-            </View>
+            </ScrollView>
             <View style={styles.twoCols}>
               <View style={{ flex: 1 }}><Text style={styles.label}>الكمية</Text><TextInput style={styles.input} value={pickQty} onChangeText={setPickQty} keyboardType="decimal-pad" textAlign="right" placeholder="0" /></View>
               <View style={{ flex: 1 }}><Text style={styles.label}>السعر</Text><TextInput style={styles.input} value={pickPrice} onChangeText={setPickPrice} keyboardType="decimal-pad" textAlign="right" placeholder="0" /></View>
@@ -312,7 +336,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
         <Text style={styles.label}>مندوب المبيعات (اختياري)</Text>
         <Pressable style={styles.picker} onPress={() => setShowSalesRepPicker((v) => !v)}><Text style={styles.pickerText}>{salesRep ? salesRep.name : "بدون مندوب"}</Text><Text style={styles.pickerArrow}>▼</Text></Pressable>
-        {showSalesRepPicker && (<View style={styles.suggestBox}><Pressable style={styles.suggestItem} onPress={() => { setSalesRep(null); setShowSalesRepPicker(false); }}><Text style={styles.suggestName}>بدون مندوب</Text></Pressable>{salesReps.map((r) => (<Pressable key={r.id} style={styles.suggestItem} onPress={() => { setSalesRep(r); setShowSalesRepPicker(false); }}><Text style={styles.suggestName}>{r.name}</Text><Text style={styles.suggestMeta}>عمولة {r.commission_rate}%</Text></Pressable>))}</View>)}
+        {showSalesRepPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200 }]} nestedScrollEnabled><Pressable style={styles.suggestItem} onPress={() => { setSalesRep(null); setShowSalesRepPicker(false); }}><Text style={styles.suggestName}>بدون مندوب</Text></Pressable>{salesReps.map((r) => (<Pressable key={r.id} style={styles.suggestItem} onPress={() => { setSalesRep(r); setShowSalesRepPicker(false); }}><Text style={styles.suggestName}>{r.name}</Text><Text style={styles.suggestMeta}>عمولة {r.commission_rate}%</Text></Pressable>))}</ScrollView>)}
 
         <Text style={styles.label}>الخصم (اختياري)</Text>
         <View style={styles.typeRow}>
@@ -329,7 +353,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         <TextInput style={[styles.input, { minHeight: 60 }]} value={notes} onChangeText={setNotes} textAlign="right" multiline placeholder="ملاحظات الفاتورة" />
 
         <Pressable style={[styles.primary, { marginTop: 16 }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}><Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : (editingId ? "تحديث الفاتورة" : "حفظ الفاتورة")}</Text></Pressable>
-        {editingId && <Pressable style={styles.cancel} onPress={() => { setEditingId(null); setEditingNo(null); setCustomer(null); setLines([]); setNotes(""); }}><Text style={styles.cancelText}>إلغاء التعديل</Text></Pressable>}
+        {editingId && <Pressable style={styles.cancel} onPress={() => { setEditingId(null); setEditingNo(null); setCustomer(null); setCustomerSearch(""); setLines([]); setNotes(""); }}><Text style={styles.cancelText}>إلغاء التعديل</Text></Pressable>}
 
         {history.length > 0 && (
           <>
@@ -337,14 +361,12 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
             <View style={styles.list}>
               {history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  {/* الأيقونات في اليمين */}
                   <View style={styles.histActions}>
                     <Pressable onPress={() => setReturnInvoiceId(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
                     <Pressable onPress={() => printInvoiceById(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
                     <Pressable onPress={() => editInvoice(h.id)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
                     <Pressable onPress={() => confirmDelete(h.id, h.invoice_no)} style={styles.iconBtn}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
-                  {/* البيانات في اليسار */}
                   <View style={styles.histDetails}>
                     <Text style={styles.histName}>{h.party_name}</Text>
                     <Text style={styles.histMeta}>{h.invoice_no}</Text>
@@ -361,15 +383,15 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
   histDetails: { flex: 1, alignItems: "flex-end", paddingLeft: 12 },
   histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
-  back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-end" },
-  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "right" },
-  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 12,   alignSelf: "flex-end",textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
-  label: {fontSize: 12, color: "#526078",  marginTop: 8, marginBottom: 4, textAlign: "right", writingDirection: "rtl", width: "100%"},
-  input: {backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
+  back: { paddingVertical: 10, marginBottom: 8, alignSelf: "flex-start" },
+  backText: { color: "#1E40AF", fontWeight: "700", textAlign: "left" },
+  screenTitle: {fontSize: 22,  color: "#0F172A",  marginBottom: 12,   alignSelf: "flex-start",textAlign: "left", width: "100%", fontFamily: "CodecBold"},
+  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 16, marginBottom: 8 ,  textAlign: "left", width: "100%", fontFamily: "CodecBold"},
+  label: {fontSize: 12, color: "#526078",  marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%"},
+  input: {backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 10, fontSize: 14, color: "#0F172A",textAlign: "right", width: "100%"},
   picker: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   pickerText: { color: "#0F172A", textAlign: "right", flex: 1, fontSize: 14 },
   pickerArrow: { color: "#8494B0", fontSize: 12, marginLeft: 8 },
@@ -383,11 +405,10 @@ const styles = StyleSheet.create({
   typeText: { color: "#0F172A", fontWeight: "700", fontSize: 13 },
   typeTextActive: { color: "#fff" },
   twoCols: { flexDirection: "row-reverse", gap: 8, marginTop: 8 },
-  sectionTitle: {fontSize: 16,  color: "#0F172A",  marginTop: 16, marginBottom: 8 ,  textAlign: "right", writingDirection: "rtl", width: "100%", fontFamily: "CodecBold"},
   list: { gap: 8, marginTop: 4 },
   row: { backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   rowInfo: { flex: 1, alignItems: "flex-end" },
-  rowName: {fontWeight: "700", fontSize: 14, color: "#0F172A",textAlign: "right", writingDirection: "rtl", width: "100%"},
+  rowName: {fontWeight: "700", fontSize: 14, color: "#0F172A",textAlign: "right", width: "100%"},
   rowMeta: { fontSize: 11, color: "#8494B0", marginTop: 3, textAlign: "right" },
   rowActions: { flexDirection: "row-reverse", gap: 6 },
   delBtn: { backgroundColor: "#fee2e2", padding: 8, borderRadius: 7 },
@@ -408,8 +429,6 @@ const styles = StyleSheet.create({
   cancelText: { color: "#0F172A", textAlign: "center", fontWeight: "700" },
   disabled: { opacity: 0.5 },
   histRow: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  histInfo: { flex: 1, alignItems: "flex-end", paddingLeft: 12 },
-  histRight: { alignItems: "flex-end", paddingRight: 8 },
   histName: { fontWeight: "700", fontSize: 14, color: "#0F172A", textAlign: "right" },
   histMeta: { fontSize: 11, color: "#1E40AF", marginTop: 2, textAlign: "right", fontWeight: "600" },
   histDate: { fontSize: 10, color: "#8494B0", marginTop: 2, textAlign: "right" },
