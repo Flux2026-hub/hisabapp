@@ -74,9 +74,10 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
   };
 
   const normalizePhone = (raw: string) => {
-    const digits = raw.replace(/\D/g, "");
-    const local = digits.startsWith("967") ? digits.slice(3) : digits;
-    return local.slice(0, 9);
+    let digits = raw.replace(/\D/g, "");
+    if (digits.startsWith("00967")) digits = digits.slice(5);
+    else if (digits.startsWith("967")) digits = digits.slice(3);
+    return digits.slice(0, 9);
   };
 
   const isValidYemeniPhone = (local: string) => /^7\d{8}$/.test(local);
@@ -86,7 +87,6 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
     setPhone("+967" + local);
   };
 
-  // 🚀 دالة جلب جهة الاتصال مع رسائل خطأ واضحة
   const pickContact = async () => {
     try {
       const { status } = await Contacts.requestPermissionsAsync();
@@ -179,7 +179,14 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>{editingId ? `تعديل ${cfg.singular}` : `إضافة ${cfg.singular}`}</Text>
 
         <Text style={[styles.label, { color: colors.textMuted }]}>الرمز</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} onFocus={() => !editingId && setShowCodeSuggest(true)} onBlur={() => setTimeout(() => setShowCodeSuggest(false), 200)} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
+        <View style={{ flexDirection: "row-reverse", gap: 8 }}>
+          <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} onFocus={() => !editingId && setShowCodeSuggest(true)} onBlur={() => setTimeout(() => setShowCodeSuggest(false), 200)} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
+          {!editingId && (
+            <Pressable style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={() => { setCode(nextCode); setShowCodeSuggest(false); }}>
+              <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>توليد</Text>
+            </Pressable>
+          )}
+        </View>
         
         {showCodeSuggest && !editingId && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
@@ -258,6 +265,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
   label: { fontSize: 12, marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
   input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right", width: "100%" },
+  genBtn: { justifyContent: "center", alignItems: "center", paddingHorizontal: 12, borderRadius: 8 },
   phoneRow: { flexDirection: "row-reverse", gap: 8, alignItems: "center" },
   contactBtn: { padding: 10, borderRadius: 8, borderWidth: 1 },
   list: { gap: 8, marginTop: 4 },

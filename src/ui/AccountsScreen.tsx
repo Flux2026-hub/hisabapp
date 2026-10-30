@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import BrandBanner from "./components/BrandBanner";
 import { createAccount, deleteAccount, listAccounts, updateAccount } from "../sync/accounting";
-import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
+import { useTheme } from "./ThemeContext";
 
 type Row = any;
 type AccountType = "asset" | "liability" | "income" | "expense";
@@ -19,7 +19,7 @@ const TYPE_MAP: Record<string, AccountType> = {
 };
 
 export default function AccountsScreen({ onBack }: { onBack: () => void }) {
-  const { colors } = useTheme(); // 🚀 قراءة الألوان
+  const { colors } = useTheme();
   const [rows, setRows] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AccountType>("asset");
@@ -112,6 +112,7 @@ export default function AccountsScreen({ onBack }: { onBack: () => void }) {
   };
 
   const balanceColor = (bal: any) => { const n = Number(bal) || 0; return n > 0 ? colors.success : n < 0 ? colors.danger : colors.textMuted; };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
@@ -156,7 +157,14 @@ export default function AccountsScreen({ onBack }: { onBack: () => void }) {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>{editingId ? "تعديل الحساب" : "إضافة حساب جديد"}</Text>
 
         <Text style={[styles.label, { color: colors.textMuted }]}>رمز الحساب</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
+        <View style={{ flexDirection: "row-reverse", gap: 8 }}>
+          <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
+          {!editingId && (
+            <Pressable style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={() => setCode(nextCode)}>
+              <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>توليد</Text>
+            </Pressable>
+          )}
+        </View>
 
         <Text style={[styles.label, { color: colors.textMuted }]}>اسم الحساب</Text>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={name} onChangeText={setName} placeholder="مثال: الصندوق - النقدية" placeholderTextColor={colors.textMuted} textAlign="right" />
@@ -223,6 +231,7 @@ export default function AccountsScreen({ onBack }: { onBack: () => void }) {
     </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
   scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 8 },
@@ -235,6 +244,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
   label: { fontSize: 12, marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
   input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right", width: "100%" },
+  genBtn: { justifyContent: "center", alignItems: "center", paddingHorizontal: 12, borderRadius: 8 },
   picker: { borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   pickerText: { textAlign: "right", flex: 1, fontSize: 14 },
   pickerArrow: { fontSize: 12, marginLeft: 8 },

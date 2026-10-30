@@ -3,7 +3,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import BrandBanner from "./components/BrandBanner";
 import { createCashbox, deleteCashbox, listCashboxes, updateCashbox } from "../sync/accounting";
 import { sqlite } from "../db/local";
-import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
+import { useTheme } from "./ThemeContext";
 
 type Row = any;
 type CashboxType = "main" | "sub" | "analytical";
@@ -17,7 +17,7 @@ const TYPES: { key: CashboxType; label: string; color: string }[] = [
 const TYPE_MAP: Record<string, CashboxType> = { main: "main", sub: "sub", analytical: "analytical" };
 
 export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
-  const { colors } = useTheme(); // 🚀 قراءة الألوان
+  const { colors } = useTheme();
   const [rows, setRows] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<CashboxType>("main");
@@ -160,7 +160,14 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>{editingId ? "تعديل الصندوق" : "إضافة صندوق جديد"}</Text>
 
         <Text style={[styles.label, { color: colors.textMuted }]}>الرمز</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
+        <View style={{ flexDirection: "row-reverse", gap: 8 }}>
+          <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
+          {!editingId && (
+            <Pressable style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={() => setCode(nextCode)}>
+              <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>توليد</Text>
+            </Pressable>
+          )}
+        </View>
 
         <Text style={[styles.label, { color: colors.textMuted }]}>الاسم</Text>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={name} onChangeText={setName} placeholder="مثال: الصندوق الرئيسي - الكاش" placeholderTextColor={colors.textMuted} textAlign="right" />
@@ -250,6 +257,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, marginTop: 16, marginBottom: 8, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
   label: { fontSize: 12, marginTop: 8, marginBottom: 4, textAlign: "right", width: "100%" },
   input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right", width: "100%" },
+  genBtn: { justifyContent: "center", alignItems: "center", paddingHorizontal: 12, borderRadius: 8 },
   picker: { borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   pickerText: { textAlign: "right", flex: 1, fontSize: 14 },
   pickerArrow: { fontSize: 12, marginLeft: 8 },
