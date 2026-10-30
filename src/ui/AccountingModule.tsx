@@ -27,7 +27,6 @@ type Mode =
 
 type MenuItem = { mode: Mode; label: string; icon: string; section: string };
 
-// 🚀 تم إزالة الألوان للحصول على تصميم بسيط وموحد
 const MENU: MenuItem[] = [
   { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-multiple" },
   { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck" },
@@ -100,9 +99,10 @@ export default function AccountingModule() {
           <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textMuted} />
           <Text style={[styles.pendingText, { color: colors.text }]}>عمليات معلقة: {pending}</Text>
         </View>
-        <Pressable style={[styles.syncButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={syncNow}>
-          <MaterialCommunityIcons name="sync" size={14} color={colors.text} />
-          <Text style={[styles.syncButtonText, { color: colors.text }]}>مزامنة الآن</Text>
+        {/* 🚀 زر المزامنة أصبح أزرق */}
+        <Pressable style={[styles.syncButton, { backgroundColor: colors.blue }]} onPress={syncNow}>
+          <MaterialCommunityIcons name="sync" size={14} color="#FFF" />
+          <Text style={styles.syncButtonText}>مزامنة الآن</Text>
         </Pressable>
       </View>
 
@@ -121,8 +121,9 @@ export default function AccountingModule() {
                 onPress={() => setMode(item.mode)} 
                 style={[styles.tile, { backgroundColor: colors.surface, borderColor: colors.border }]} 
               >
-                {/* 🚀 تصميم بسيط: أيقونة بدون دائرة، ومساحة بيضاء أكبر */}
-                <MaterialCommunityIcons name={item.icon as any} size={26} color={colors.text} style={{ marginBottom: 12 }} />
+                <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#E2E8F0" }]}>
+                  <MaterialCommunityIcons name={item.icon as any} size={24} color={colors.isDark ? "#94A3B8" : "#475569"} />
+                </View>
                 <Text style={[styles.tileText, { color: colors.text }]}>{item.label}</Text>
               </Pressable>
             ))}
@@ -138,35 +139,14 @@ const styles = StyleSheet.create({
   syncBar: { flexDirection: "row-reverse", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, marginBottom: 12, gap: 8, borderWidth: 1 },
   syncLeft: { flex: 1, flexDirection: "row-reverse", alignItems: "center", gap: 6 },
   pendingText: { fontSize: 12, fontWeight: "700" },
-  syncButton: { flexDirection: "row-reverse", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1 },
-  syncButtonText: { fontSize: 12, fontWeight: "700" },
+  syncButton: { flexDirection: "row-reverse", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  syncButtonText: { color: "#FFF", fontSize: 12, fontWeight: "700" },
   hint: { fontSize: 12, marginBottom: 14, lineHeight: 18, paddingHorizontal: 4, textAlign: "left", width: "100%" },
   sectionBlock: { width: "100%", marginTop: 20 },
   grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 10, marginBottom: 4 },
-  
-  // 🚀 التصميم البسيط للبطاقات (زيادة المساحة، حدود خفيفة، وظل ناعم)
-  tile: { 
-    flexDirection: "column", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    borderRadius: 16,
-    paddingVertical: 20, 
-    paddingHorizontal: 10,
-    minWidth: "30%", 
-    flexGrow: 1, 
-    flexBasis: "30%",
-    borderWidth: 1, // حدود رمادية خفيفة جداً
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02, // ظل بسيط جداً
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  tileText: { 
-    fontSize: 13, 
-    fontFamily: "CodecBold", 
-    textAlign: "center" 
-  },
+  tile: { flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 16, paddingVertical: 20, paddingHorizontal: 10, minWidth: "30%", flexGrow: 1, flexBasis: "30%", borderWidth: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  iconCircle: { width: 48, height: 48, borderRadius: 24, justifyContent: "center", alignItems: "center", marginBottom: 12 },
+  tileText: { fontSize: 13, fontFamily: "CodecBold", textAlign: "center" },
   sectionLabel: { fontSize: 13, fontFamily: "CodecBold", textAlign: "left", width: "100%", marginBottom: 8 },
-  sectionDivider: { marginBottom: 15, height: 1, width: "100%" }, // خط فاصل خفيف جداً
+  sectionDivider: { marginBottom: 15, height: 1, width: "100%" },
 });
