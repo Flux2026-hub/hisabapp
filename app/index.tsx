@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View,
-} from "react-native";
+import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
@@ -10,7 +8,13 @@ import { sqlite } from "../src/db/local";
 import { useTheme } from "../src/ui/ThemeContext";
 
 type Tab = "home" | "accounting" | "settings";
-const sections: Array<[Tab, string]> = [["home", "الرئيسية"], ["accounting", "المحاسبة"], ["settings", "الإعدادات"]];
+
+// تمت إزالة الأيقونات من الشريط العلوي لتقليل الزحام
+const sections: Array<[Tab, string]> = [
+  ["home", "الرئيسية"],
+  ["accounting", "المحاسبة"],
+  ["settings", "الإعدادات"],
+];
 
 export default function HomeScreen() {
   const { colors } = useTheme();
@@ -30,7 +34,7 @@ export default function HomeScreen() {
         const c: any = await sqlite.getFirstAsync("SELECT SUM(balance) as total FROM customers");
         const s: any = await sqlite.getFirstAsync("SELECT SUM(balance) as total FROM suppliers");
         const cb: any = await sqlite.getFirstAsync("SELECT SUM(balance) as total FROM cashboxes");
-        const inv: any = await sqlite.getFirstAsync("SELECT SUM(stock_quantity * IFNULL(average_cost, 0)) as total FROM items");
+        const inv: any = await sqlite.getFirstAsync("SELECT SUM(IFNULL(stock_quantity,0) * IFNULL(average_cost, 0)) as total FROM items");
         const sar: any = await sqlite.getFirstAsync("SELECT exchange_rate FROM currencies WHERE code = 'SAR'");
 
         setKpis({
@@ -67,16 +71,24 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* شريط التنقل العلوي المحدث */}
       <View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <Pressable style={styles.menuButton} onPress={() => setMenuOpen((v) => !v)}>
-          <Text style={styles.menuText}>☰</Text>
+          <MaterialCommunityIcons name="menu" size={26} color={colors.text} />
         </Pressable>
+        
         <View style={styles.navTabs}>
-          {sections.map(([key, label]) => (
-            <Pressable key={key} onPress={() => go(key)} style={[styles.navItem, tab === key && styles.navActive]}>
-              <Text style={tab === key ? styles.navTextActive : [styles.navText, { color: colors.textMuted }]}>{label}</Text>
-            </Pressable>
-          ))}
+          {sections.map(([key, label]) => {
+            const active = tab === key;
+            return (
+              <Pressable key={key} onPress={() => go(key)} style={styles.navItem}>
+                <Text style={active ? [styles.navTextActive, { color: colors.orange }] : [styles.navText, { color: colors.textMuted }]}>
+                  {label}
+                </Text>
+                {active && <View style={[styles.activeIndicator, { backgroundColor: colors.orange }]} />}
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
@@ -198,14 +210,19 @@ const styles = StyleSheet.create({
   quickActionsGrid: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 10 },
   quickActionCard: { width: "48%", borderRadius: 16, padding: 20, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, aspectRatio: 1 },
   quickActionText: { fontSize: 16, fontFamily: "CodecBold" },
-  nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 10, alignItems: "center", paddingHorizontal: 10 },
+  
+  // شريط التنقل المحدث مع الخطوط
+  nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 8, alignItems: "center", paddingHorizontal: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, zIndex: 5 },
   navTabs: { flex: 1, flexDirection: "row-reverse", justifyContent: "space-around" },
-  menuButton: { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COLORS.navy, borderRadius: 8 },
-  menuText: { color: "#FFF", fontSize: 20, fontWeight: "700" },
-  navItem: { alignItems: "center", paddingVertical: 6, paddingHorizontal: 12 },
-  navActive: { borderBottomWidth: 3, borderBottomColor: COLORS.orange },
-  navText: { fontSize: 13, fontWeight: "600" },
-  navTextActive: { color: COLORS.blue, fontWeight: "800", fontSize: 13 },
+  menuButton: { padding: 8, marginLeft: 8 },
+  navItem: { alignItems: "center", paddingVertical: 8, paddingHorizontal: 16, position: "relative" },
+  
+  // الخطوط: Alexandria للتبويب غير النشط، و CodecBold للنشط
+  navText: { fontSize: 14, fontFamily: "Alexandria-Regular" },
+  navTextActive: { fontSize: 14, fontFamily: "CodecBold" },
+  
+  activeIndicator: { position: "absolute", bottom: -8, height: 3, width: 30, borderRadius: 2 },
+  
   overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, elevation: 10, backgroundColor: "transparent" },
   dropdown: { position: "absolute", top: 130, left: 10, zIndex: 20, elevation: 11, borderWidth: 1, borderRadius: 12, width: 200 },
   dropdownItem: { padding: 13, borderBottomWidth: 1 },

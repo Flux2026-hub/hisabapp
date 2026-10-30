@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
-  BackHandler,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+  Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, View,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import ReportsIndex from "./reports";
@@ -24,35 +18,36 @@ import JournalScreen from "./JournalScreen";
 import TransfersScreen from "./TransfersScreen";
 import SalesRepsScreen from "./SalesRepsScreen";
 import { getPendingSyncCount, processSyncQueue } from "../sync/queue";
-import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
+import { useTheme } from "./ThemeContext";
 
 type Mode =
   | "menu" | "customers" | "suppliers" | "cashboxes" | "accounts" | "items" | "currencies"
   | "recipe" | "production" | "salesInvoice" | "salesReps" | "purchaseInvoice" | "voucher"
   | "journal" | "transfer" | "reports";
 
-type MenuItem = { mode: Mode; label: string; icon: string; section: string };
+type MenuItem = { mode: Mode; label: string; icon: string; section: string; color: string };
 
+// 🚀 إضافة الألوان المخصصة لكل أيقونة
 const MENU: MenuItem[] = [
-  { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-group" },
-  { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck-delivery" },
-  { section: "البيانات الأساسية", mode: "cashboxes", label: "الصناديق", icon: "wallet-outline" },
-  { section: "البيانات الأساسية", mode: "accounts", label: "الحسابات الرئيسية", icon: "file-document-outline" },
-  { section: "المخزون والإنتاج", mode: "items", label: "الأصناف", icon: "package-variant-closed" },
-  { section: "المخزون والإنتاج", mode: "currencies", label: "العملات", icon: "cash-multiple" },
-  { section: "المخزون والإنتاج", mode: "recipe", label: "التركيبة", icon: "cog-outline" },
-  { section: "المخزون والإنتاج", mode: "production", label: "أمر الإنتاج", icon: "factory" },
-  { section: "البيانات الأساسية", mode: "salesReps", label: "مناديب المبيعات", icon: "account-tie" },
-  { section: "العمليات", mode: "salesInvoice", label: "فاتورة مبيعات", icon: "file-document-outline" },
-  { section: "العمليات", mode: "purchaseInvoice", label: "فاتورة مشتريات", icon: "file-document-multiple-outline" },
-  { section: "العمليات", mode: "voucher", label: "سند قبض/دفع", icon: "swap-horizontal" },
-  { section: "العمليات", mode: "journal", label: "قيد يومية", icon: "clipboard-text-outline" },
-  { section: "العمليات", mode: "transfer", label: "تحويل بين الصناديق", icon: "swap-horizontal-bold" },
-  { section: "التقارير", mode: "reports", label: "التقارير", icon: "chart-bar" },
+  { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-multiple", color: "#059669" },
+  { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck", color: "#DC2626" },
+  { section: "البيانات الأساسية", mode: "cashboxes", label: "الصناديق", icon: "wallet", color: "#2563EB" },
+  { section: "البيانات الأساسية", mode: "accounts", label: "الحسابات الرئيسية", icon: "file-tree", color: "#7C3AED" },
+  { section: "المخزون والإنتاج", mode: "items", label: "الأصناف", icon: "package-variant", color: "#F97316" },
+  { section: "المخزون والإنتاج", mode: "currencies", label: "العملات", icon: "cash", color: "#F59E0B" },
+  { section: "المخزون والإنتاج", mode: "recipe", label: "التركيبة", icon: "clipboard-list", color: "#8B5CF6" },
+  { section: "المخزون والإنتاج", mode: "production", label: "أمر الإنتاج", icon: "factory", color: "#EC4899" },
+  { section: "البيانات الأساسية", mode: "salesReps", label: "مناديب المبيعات", icon: "account-tie", color: "#0EA5E9" },
+  { section: "العمليات", mode: "salesInvoice", label: "فاتورة مبيعات", icon: "receipt", color: "#10B981" },
+  { section: "العمليات", mode: "purchaseInvoice", label: "فاتورة مشتريات", icon: "file-document-multiple", color: "#EF4444" },
+  { section: "العمليات", mode: "voucher", label: "سند قبض/دفع", icon: "swap-horizontal-bold", color: "#6366F1" },
+  { section: "العمليات", mode: "journal", label: "قيد يومية", icon: "book-open-page-variant", color: "#14B8A6" },
+  { section: "العمليات", mode: "transfer", label: "تحويل بين الصناديق", icon: "bank-transfer", color: "#F43F5E" },
+  { section: "التقارير", mode: "reports", label: "التقارير", icon: "chart-box", color: "#475569" },
 ];
 
 export default function AccountingModule() {
-  const { colors } = useTheme(); // 🚀 قراءة الألوان
+  const { colors } = useTheme();
   const [mode, setMode] = useState<Mode>("menu");
   const [pending, setPending] = useState(0);
 
@@ -68,9 +63,7 @@ export default function AccountingModule() {
       await processSyncQueue(base);
       setPending(await getPendingSyncCount());
       Alert.alert("المزامنة", "اكتملت محاولة مزامنة العمليات المحلية");
-    } catch (e) {
-      Alert.alert("تعذر المزامنة", String(e));
-    }
+    } catch (e) { Alert.alert("تعذر المزامنة", String(e)); }
   };
 
   useEffect(() => {
@@ -101,7 +94,6 @@ export default function AccountingModule() {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
-      
       <View style={[styles.syncBar, { backgroundColor: colors.isDark ? "#1E293B" : "#EFF6FF" }]}>
         <View style={styles.syncLeft}>
           <MaterialCommunityIcons name="clock-outline" size={16} color={colors.orange} />
@@ -123,8 +115,11 @@ export default function AccountingModule() {
           <View style={[styles.sectionDivider, { backgroundColor: colors.orange }]} />
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
-              <Pressable key={item.mode} onPress={() => setMode(item.mode)} style={[styles.tile, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <MaterialCommunityIcons name={item.icon as any} size={22} color={colors.orange} />
+              <Pressable key={item.mode} onPress={() => setMode(item.mode)} style={[styles.tile, { backgroundColor: colors.surface }]}>
+                {/* 🚀 الأيقونة داخل دائرة ملونة */}
+                <View style={[styles.iconCircle, { backgroundColor: item.color + '15' }]}> 
+                  <MaterialCommunityIcons name={item.icon as any} size={22} color={item.color} />
+                </View>
                 <Text style={[styles.tileText, { color: colors.text }]}>{item.label}</Text>
               </Pressable>
             ))}
@@ -145,8 +140,9 @@ const styles = StyleSheet.create({
   hint: { fontSize: 12, marginBottom: 14, lineHeight: 18, paddingHorizontal: 4, textAlign: "left", width: "100%" },
   sectionBlock: { width: "100%", marginTop: 14 },
   grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginBottom: 4 },
-  tile: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 14, minWidth: 105, flexGrow: 1, flexBasis: "30%" },
-  tileText: { fontSize: 13, fontWeight: "700", textAlign: "right" },
+  tile: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 10, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 12, minWidth: 105, flexGrow: 1, flexBasis: "30%", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  iconCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center" },
+  tileText: { fontSize: 13, fontFamily: "CodecBold", textAlign: "right" },
   sectionLabel: { fontSize: 16, fontFamily: "CodecBold", textAlign: "left", width: "100%", marginTop: 10, marginBottom: 8 },
   sectionDivider: { marginTop: 5, marginBottom: 15, height: 2, width: "100%", borderRadius: 1 },
 });
