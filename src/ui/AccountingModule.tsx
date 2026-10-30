@@ -25,25 +25,25 @@ type Mode =
   | "recipe" | "production" | "salesInvoice" | "salesReps" | "purchaseInvoice" | "voucher"
   | "journal" | "transfer" | "reports";
 
-type MenuItem = { mode: Mode; label: string; icon: string; section: string; color: string };
+type MenuItem = { mode: Mode; label: string; icon: string; section: string };
 
-// 🚀 إضافة الألوان المخصصة لكل أيقونة
+// 🚀 تم إزالة الألوان للحصول على تصميم بسيط وموحد
 const MENU: MenuItem[] = [
-  { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-multiple", color: "#059669" },
-  { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck", color: "#DC2626" },
-  { section: "البيانات الأساسية", mode: "cashboxes", label: "الصناديق", icon: "wallet", color: "#2563EB" },
-  { section: "البيانات الأساسية", mode: "accounts", label: "الحسابات الرئيسية", icon: "file-tree", color: "#7C3AED" },
-  { section: "المخزون والإنتاج", mode: "items", label: "الأصناف", icon: "package-variant", color: "#F97316" },
-  { section: "المخزون والإنتاج", mode: "currencies", label: "العملات", icon: "cash", color: "#F59E0B" },
-  { section: "المخزون والإنتاج", mode: "recipe", label: "التركيبة", icon: "clipboard-list", color: "#8B5CF6" },
-  { section: "المخزون والإنتاج", mode: "production", label: "أمر الإنتاج", icon: "factory", color: "#EC4899" },
-  { section: "البيانات الأساسية", mode: "salesReps", label: "مناديب المبيعات", icon: "account-tie", color: "#0EA5E9" },
-  { section: "العمليات", mode: "salesInvoice", label: "فاتورة مبيعات", icon: "receipt", color: "#10B981" },
-  { section: "العمليات", mode: "purchaseInvoice", label: "فاتورة مشتريات", icon: "file-document-multiple", color: "#EF4444" },
-  { section: "العمليات", mode: "voucher", label: "سند قبض/دفع", icon: "swap-horizontal-bold", color: "#6366F1" },
-  { section: "العمليات", mode: "journal", label: "قيد يومية", icon: "book-open-page-variant", color: "#14B8A6" },
-  { section: "العمليات", mode: "transfer", label: "تحويل بين الصناديق", icon: "bank-transfer", color: "#F43F5E" },
-  { section: "التقارير", mode: "reports", label: "التقارير", icon: "chart-box", color: "#475569" },
+  { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-multiple" },
+  { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck" },
+  { section: "البيانات الأساسية", mode: "cashboxes", label: "الصناديق", icon: "wallet" },
+  { section: "البيانات الأساسية", mode: "accounts", label: "الحسابات الرئيسية", icon: "file-tree" },
+  { section: "المخزون والإنتاج", mode: "items", label: "الأصناف", icon: "package-variant" },
+  { section: "المخزون والإنتاج", mode: "currencies", label: "العملات", icon: "cash" },
+  { section: "المخزون والإنتاج", mode: "recipe", label: "التركيبة", icon: "clipboard-list" },
+  { section: "المخزون والإنتاج", mode: "production", label: "أمر الإنتاج", icon: "factory" },
+  { section: "البيانات الأساسية", mode: "salesReps", label: "مناديب المبيعات", icon: "account-tie" },
+  { section: "العمليات", mode: "salesInvoice", label: "فاتورة مبيعات", icon: "receipt" },
+  { section: "العمليات", mode: "purchaseInvoice", label: "فاتورة مشتريات", icon: "file-document-multiple" },
+  { section: "العمليات", mode: "voucher", label: "سند قبض/دفع", icon: "swap-horizontal-bold" },
+  { section: "العمليات", mode: "journal", label: "قيد يومية", icon: "book-open-page-variant" },
+  { section: "العمليات", mode: "transfer", label: "تحويل بين الصناديق", icon: "bank-transfer" },
+  { section: "التقارير", mode: "reports", label: "التقارير", icon: "chart-box" },
 ];
 
 export default function AccountingModule() {
@@ -94,14 +94,15 @@ export default function AccountingModule() {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
-      <View style={[styles.syncBar, { backgroundColor: colors.isDark ? "#1E293B" : "#EFF6FF" }]}>
+      
+      <View style={[styles.syncBar, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC", borderColor: colors.border }]}>
         <View style={styles.syncLeft}>
-          <MaterialCommunityIcons name="clock-outline" size={16} color={colors.orange} />
+          <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textMuted} />
           <Text style={[styles.pendingText, { color: colors.text }]}>عمليات معلقة: {pending}</Text>
         </View>
-        <Pressable style={[styles.syncButton, { backgroundColor: colors.blue }]} onPress={syncNow}>
-          <MaterialCommunityIcons name="sync" size={14} color="#FFF" />
-          <Text style={styles.syncButtonText}>مزامنة الآن</Text>
+        <Pressable style={[styles.syncButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={syncNow}>
+          <MaterialCommunityIcons name="sync" size={14} color={colors.text} />
+          <Text style={[styles.syncButtonText, { color: colors.text }]}>مزامنة الآن</Text>
         </Pressable>
       </View>
 
@@ -110,16 +111,18 @@ export default function AccountingModule() {
       {sections.map((sectionName) => (
         <View key={sectionName} style={styles.sectionBlock}>
           <View style={{ width: "100%" }}>
-            <Text style={[styles.sectionLabel, { color: colors.blue }]}>{sectionName}</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{sectionName}</Text>
           </View>
-          <View style={[styles.sectionDivider, { backgroundColor: colors.orange }]} />
+          <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
-              <Pressable key={item.mode} onPress={() => setMode(item.mode)} style={[styles.tile, { backgroundColor: colors.surface }]}>
-                {/* 🚀 الأيقونة داخل دائرة ملونة */}
-                <View style={[styles.iconCircle, { backgroundColor: item.color + '15' }]}> 
-                  <MaterialCommunityIcons name={item.icon as any} size={22} color={item.color} />
-                </View>
+              <Pressable 
+                key={item.mode} 
+                onPress={() => setMode(item.mode)} 
+                style={[styles.tile, { backgroundColor: colors.surface, borderColor: colors.border }]} 
+              >
+                {/* 🚀 تصميم بسيط: أيقونة بدون دائرة، ومساحة بيضاء أكبر */}
+                <MaterialCommunityIcons name={item.icon as any} size={26} color={colors.text} style={{ marginBottom: 12 }} />
                 <Text style={[styles.tileText, { color: colors.text }]}>{item.label}</Text>
               </Pressable>
             ))}
@@ -132,17 +135,38 @@ export default function AccountingModule() {
 
 const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 40, paddingHorizontal: 12 },
-  syncBar: { flexDirection: "row-reverse", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, marginBottom: 12, gap: 8 },
+  syncBar: { flexDirection: "row-reverse", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, marginBottom: 12, gap: 8, borderWidth: 1 },
   syncLeft: { flex: 1, flexDirection: "row-reverse", alignItems: "center", gap: 6 },
   pendingText: { fontSize: 12, fontWeight: "700" },
-  syncButton: { flexDirection: "row-reverse", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  syncButtonText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
+  syncButton: { flexDirection: "row-reverse", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1 },
+  syncButtonText: { fontSize: 12, fontWeight: "700" },
   hint: { fontSize: 12, marginBottom: 14, lineHeight: 18, paddingHorizontal: 4, textAlign: "left", width: "100%" },
-  sectionBlock: { width: "100%", marginTop: 14 },
-  grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginBottom: 4 },
-  tile: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 10, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 12, minWidth: 105, flexGrow: 1, flexBasis: "30%", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
-  iconCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center" },
-  tileText: { fontSize: 13, fontFamily: "CodecBold", textAlign: "right" },
-  sectionLabel: { fontSize: 16, fontFamily: "CodecBold", textAlign: "left", width: "100%", marginTop: 10, marginBottom: 8 },
-  sectionDivider: { marginTop: 5, marginBottom: 15, height: 2, width: "100%", borderRadius: 1 },
+  sectionBlock: { width: "100%", marginTop: 20 },
+  grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 10, marginBottom: 4 },
+  
+  // 🚀 التصميم البسيط للبطاقات (زيادة المساحة، حدود خفيفة، وظل ناعم)
+  tile: { 
+    flexDirection: "column", 
+    alignItems: "center", 
+    justifyContent: "center", 
+    borderRadius: 16,
+    paddingVertical: 20, 
+    paddingHorizontal: 10,
+    minWidth: "30%", 
+    flexGrow: 1, 
+    flexBasis: "30%",
+    borderWidth: 1, // حدود رمادية خفيفة جداً
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02, // ظل بسيط جداً
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  tileText: { 
+    fontSize: 13, 
+    fontFamily: "CodecBold", 
+    textAlign: "center" 
+  },
+  sectionLabel: { fontSize: 13, fontFamily: "CodecBold", textAlign: "left", width: "100%", marginBottom: 8 },
+  sectionDivider: { marginBottom: 15, height: 1, width: "100%" }, // خط فاصل خفيف جداً
 });
