@@ -6,7 +6,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'hisabapp',
   version: '1.0.0',
   orientation: 'portrait',
-  icon: './assets/images/icon.png',
   scheme: 'myapp',
   userInterfaceStyle: 'automatic',
   assetBundlePatterns: ['**/*'],
@@ -15,16 +14,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: 'com.flux.hisabapp'
   },
   android: {
-    adaptiveIcon: {
-      foregroundImage: './assets/images/adaptive-icon.png',
-      backgroundColor: '#0B2545'
-    },
     package: 'com.flux.hisabapp'
   },
   web: {
     bundler: 'metro',
-    output: 'static',
-    favicon: './assets/images/favicon.png'
+    output: 'static'
   },
   plugins: [
     'expo-router',
@@ -41,15 +35,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-contacts',
       {
         contactsPermission: 'نحتاج صلاحية الوصول لجهات الاتصال لاختيار أرقام الهواتف.'
-      }
-    ],
-    [
-      'expo-splash-screen',
-      {
-        image: './assets/images/splash.png',
-        imageWidth: 200,
-        resizeMode: 'contain',
-        backgroundColor: '#0B2545'
       }
     ]
   ],
