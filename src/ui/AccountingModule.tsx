@@ -118,7 +118,8 @@ export default function AccountingModule() {
               <Pressable 
                 key={item.mode} 
                 onPress={() => setMode(item.mode)} 
-                style={[styles.tile, { backgroundColor: colors.surface }]} 
+                // 🚀 تم تطبيق اللون الرمادي الفاتح جداً هنا
+                style={[styles.tile, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }]} 
               >
                 <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#E2E8F0" }]}>
                   <MaterialCommunityIcons name={item.icon as any} size={26} color={colors.blue} />
@@ -144,7 +145,6 @@ const styles = StyleSheet.create({
   sectionBlock: { width: "100%", marginTop: 20 },
   grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 10, marginBottom: 4 },
   
-  // 🚀 التعديل هنا: إزالة الحدود وضبط الظل ليكون فخماً مثل لوحة التحكم
   tile: { 
     flexDirection: "column", 
     alignItems: "center", 
@@ -155,12 +155,11 @@ const styles = StyleSheet.create({
     minWidth: "30%", 
     flexGrow: 1, 
     flexBasis: "30%",
-    // borderWidth: 1,  <-- تم إزالة الحدود نهائياً
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05, // زيادة الظل قليلاً ليعطي تأثير الطفو
+    shadowOpacity: 0.05, 
     shadowRadius: 8,
-    elevation: 3, // مطابق للوحة التحكم
+    elevation: 3,
   },
   iconCircle: {
     width: 56,
