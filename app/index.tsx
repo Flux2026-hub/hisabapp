@@ -9,7 +9,6 @@ import { useTheme } from "../src/ui/ThemeContext";
 
 type Tab = "home" | "accounting" | "settings";
 
-// تمت إزالة الأيقونات من الشريط العلوي لتقليل الزحام
 const sections: Array<[Tab, string]> = [
   ["home", "الرئيسية"],
   ["accounting", "المحاسبة"],
@@ -71,7 +70,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* شريط التنقل العلوي المحدث */}
       <View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <Pressable style={styles.menuButton} onPress={() => setMenuOpen((v) => !v)}>
           <MaterialCommunityIcons name="menu" size={26} color={colors.text} />
@@ -169,14 +167,16 @@ export default function HomeScreen() {
 
         {tab === "accounting" && (
           <View style={styles.transparentScreen}>
-            <Text style={[styles.title, { color: colors.text, paddingHorizontal: 8 }]}>المحاسبة والإدارة</Text>
+            {/* 🚀 تمت إضافة marginBottom هنا */}
+            <Text style={[styles.title, { color: colors.text, paddingHorizontal: 8, marginBottom: 16 }]}>المحاسبة والإدارة</Text>
             <AccountingModule />
           </View>
         )}
 
         {tab === "settings" && (
           <View style={styles.transparentScreen}>
-            <Text style={[styles.title, { color: colors.text, paddingHorizontal: 8 }]}>الإعدادات</Text>
+            {/* 🚀 تمت إضافة marginBottom هنا أيضاً */}
+            <Text style={[styles.title, { color: colors.text, paddingHorizontal: 8, marginBottom: 16 }]}>الإعدادات</Text>
             <SettingsModule onBack={() => go("home")} />
           </View>
         )}
@@ -211,18 +211,13 @@ const styles = StyleSheet.create({
   quickActionCard: { width: "48%", borderRadius: 16, padding: 20, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, aspectRatio: 1 },
   quickActionText: { fontSize: 16, fontFamily: "CodecBold" },
   
-  // شريط التنقل المحدث مع الخطوط
   nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 8, alignItems: "center", paddingHorizontal: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, zIndex: 5 },
   navTabs: { flex: 1, flexDirection: "row-reverse", justifyContent: "space-around" },
   menuButton: { padding: 8, marginLeft: 8 },
   navItem: { alignItems: "center", paddingVertical: 8, paddingHorizontal: 16, position: "relative" },
-  
-  // الخطوط: Alexandria للتبويب غير النشط، و CodecBold للنشط
   navText: { fontSize: 14, fontFamily: "Alexandria-Regular" },
   navTextActive: { fontSize: 14, fontFamily: "CodecBold" },
-  
   activeIndicator: { position: "absolute", bottom: -8, height: 3, width: 30, borderRadius: 2 },
-  
   overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, elevation: 10, backgroundColor: "transparent" },
   dropdown: { position: "absolute", top: 130, left: 10, zIndex: 20, elevation: 11, borderWidth: 1, borderRadius: 12, width: 200 },
   dropdownItem: { padding: 13, borderBottomWidth: 1 },
