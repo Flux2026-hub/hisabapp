@@ -121,7 +121,7 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
@@ -133,7 +133,7 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
           {ITEM_TYPES.map((t) => {
             const active = activeTab === t.key;
             return (
-              <Pressable key={t.key} onPress={() => { setActiveTab(t.key); clearForm(); }} style={[styles.tab, { borderColor: colors.border, backgroundColor: colors.surface }, active && { backgroundColor: t.color, borderColor: t.color }]}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={t.key} onPress={() => { setActiveTab(t.key); clearForm(); }} style={[styles.tab, { borderColor: colors.border, backgroundColor: colors.surface }, active && { backgroundColor: t.color, borderColor: t.color }]}>
                 <Text style={[styles.tabText, { color: colors.text }, active && { color: "#fff", fontWeight: "700" }]}>{t.label} ({counts[t.key] || 0})</Text>
               </Pressable>
             );
@@ -149,7 +149,7 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text>
             ) : (
               filteredRows.slice(0, 8).map((r) => (
-                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.sku}</Text>
                 </Pressable>
@@ -164,7 +164,7 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
         <View style={{ flexDirection: "row-reverse", gap: 8 }}>
           <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={sku} onChangeText={setSku} placeholder="SKU-001" placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
           {!editingId && (
-            <Pressable style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={generateSku}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={generateSku}>
               <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>توليد</Text>
             </Pressable>
           )}
@@ -174,7 +174,7 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={name} onChangeText={setName} placeholder="اسم المادة أو المنتج" placeholderTextColor={colors.textMuted} textAlign="right" />
 
         <Text style={[styles.label, { color: colors.textMuted }]}>وحدة القياس</Text>
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowUnitPicker((v) => !v)}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowUnitPicker((v) => !v)}>
           <Text style={[styles.pickerText, { color: colors.text }]}>{unit}</Text>
           <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
         </Pressable>
@@ -182,7 +182,7 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
         {showUnitPicker && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {UNITS.map((u) => (
-              <Pressable key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setUnit(u); setShowUnitPicker(false); }}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setUnit(u); setShowUnitPicker(false); }}>
                 <Text style={[styles.suggestName, { color: colors.text }]}>{u}</Text>
               </Pressable>
             ))}
@@ -201,11 +201,11 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
         </View>
 
         <View style={styles.buttons}>
-          <Pressable style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}>
             <Text style={styles.primaryText}>{editingId ? "حفظ التعديل" : "إضافة وحفظ"}</Text>
           </Pressable>
           {editingId && (
-            <Pressable style={[styles.cancel, { borderColor: colors.border }]} onPress={clearForm}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.cancel, { borderColor: colors.border }]} onPress={clearForm}>
               <Text style={[styles.cancelText, { color: colors.text }]}>إلغاء</Text>
             </Pressable>
           )}
@@ -219,8 +219,8 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
             filteredRows.map((r) => (
               <View key={r.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.rowActions}>
-                  <Pressable onPress={() => edit(r)} style={[styles.editBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={styles.editText}>✏️</Text></Pressable>
-                  <Pressable onPress={() => remove(r)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>🗑️</Text></Pressable>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => edit(r)} style={[styles.editBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={styles.editText}>✏️</Text></Pressable>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => remove(r)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>🗑️</Text></Pressable>
                 </View>
                 <View style={styles.rowInfo}>
                   <Text style={[styles.rowName, { color: colors.text }]}>{r.name}</Text>

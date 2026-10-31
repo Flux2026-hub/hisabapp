@@ -106,23 +106,23 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
         
-        {onBack && (<Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>‹ العودة</Text></Pressable>)}
+        {onBack && (<Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}><Text style={styles.backText}>‹ العودة</Text></Pressable>)}
 
         <BrandBanner />
         <Text style={[styles.screenTitle, { marginTop: 15 }]}>إعدادات النظام</Text>
         <Text style={styles.hint}>تظهر هذه الإعدادات في ترويسة الفواتير والتقارير المطبوعة</Text>
 
         <View style={styles.tabs}>
-          <Pressable style={[styles.tab, activeTab === "company" && styles.tabActive]} onPress={() => setActiveTab("company")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.tab, activeTab === "company" && styles.tabActive]} onPress={() => setActiveTab("company")}>
             <Text style={[styles.tabText, activeTab === "company" && styles.tabTextActive]}>معلومات الشركة</Text>
           </Pressable>
-          <Pressable style={[styles.tab, activeTab === "invoices" && styles.tabActive]} onPress={() => setActiveTab("invoices")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.tab, activeTab === "invoices" && styles.tabActive]} onPress={() => setActiveTab("invoices")}>
             <Text style={[styles.tabText, activeTab === "invoices" && styles.tabTextActive]}>الفواتير</Text>
           </Pressable>
-          <Pressable style={[styles.tab, activeTab === "reports" && styles.tabActive]} onPress={() => setActiveTab("reports")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.tab, activeTab === "reports" && styles.tabActive]} onPress={() => setActiveTab("reports")}>
             <Text style={[styles.tabText, activeTab === "reports" && styles.tabTextActive]}>التقارير</Text>
           </Pressable>
-          <Pressable style={[styles.tab, activeTab === "appearance" && styles.tabActive]} onPress={() => setActiveTab("appearance")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.tab, activeTab === "appearance" && styles.tabActive]} onPress={() => setActiveTab("appearance")}>
             <Text style={[styles.tabText, activeTab === "appearance" && styles.tabTextActive]}>المظهر</Text>
           </Pressable>
         </View>
@@ -143,8 +143,8 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
             <Field label="السجل التجاري" value={settings.commercialRegister} onChange={(v: any) => update("commercialRegister", v)} placeholder="اختياري" />
             <Text style={styles.sectionLabel}>النسخ الاحتياطي</Text>
             <Text style={styles.backupHint}>احفظ نسخة من كل بياناتك في ملف واحد يمكن استعادته لاحقاً.</Text>
-            <Pressable style={styles.backupBtn} onPress={handleExport}><Text style={styles.backupBtnText}>📤 تصدير نسخة احتياطية</Text></Pressable>
-            <Pressable style={styles.restoreBtn} onPress={handleRestore}><Text style={styles.restoreBtnText}>📥 استعادة نسخة احتياطية</Text></Pressable>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.backupBtn} onPress={handleExport}><Text style={styles.backupBtnText}>📤 تصدير نسخة احتياطية</Text></Pressable>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.restoreBtn} onPress={handleRestore}><Text style={styles.restoreBtnText}>📥 استعادة نسخة احتياطية</Text></Pressable>
           </View>
         )}
 
@@ -189,7 +189,7 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
                 { color: "#F0FDF4", name: "أخضر فاتح" },
                 { color: "#FDFBF7", name: "بيج دافئ" },
               ].map((item) => (
-                <Pressable key={item.color} onPress={() => update("lightBgColor", item.color)} style={{ alignItems: "center", gap: 5 }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={item.color} onPress={() => update("lightBgColor", item.color)} style={{ alignItems: "center", gap: 5 }}>
                   <View style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: item.color, borderWidth: settings.lightBgColor === item.color ? 3 : 1, borderColor: settings.lightBgColor === item.color ? COLORS.blue : COLORS.border }} />
                   <Text style={{ fontSize: 10, color: COLORS.textMuted }}>{item.name}</Text>
                 </Pressable>
@@ -199,10 +199,10 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
         )}
 
         <View style={styles.buttons}>
-          <Pressable style={[styles.primary, saving && styles.disabled]} onPress={save} disabled={saving}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, saving && styles.disabled]} onPress={save} disabled={saving}>
             <Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : "حفظ الإعدادات"}</Text>
           </Pressable>
-          <Pressable style={styles.secondary} onPress={reset}><Text style={styles.secondaryText}>إعادة تعيين</Text></Pressable>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.secondary} onPress={reset}><Text style={styles.secondaryText}>إعادة تعيين</Text></Pressable>
         </View>
 
       </ScrollView>

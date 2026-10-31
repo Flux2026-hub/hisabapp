@@ -45,7 +45,7 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-      <Pressable style={styles.back} onPress={onBack}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
         <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
       </Pressable>
 
@@ -54,7 +54,7 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
 
       <View style={styles.grid}>
         {MENU.map((m) => (
-          <Pressable key={m.key} onPress={() => setKey(m.key)} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, { borderRightColor: m.color, borderRightWidth: 5 }]}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={m.key} onPress={() => setKey(m.key)} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, { borderRightColor: m.color, borderRightWidth: 5 }]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>{m.label}</Text>
             <Text style={[styles.cardDesc, { color: colors.textMuted }]}>{m.desc}</Text>
           </Pressable>

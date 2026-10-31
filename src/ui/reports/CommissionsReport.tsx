@@ -103,7 +103,7 @@ export default function CommissionsReport({ onBack }: { onBack: () => void }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       
-      <Pressable style={styles.backWrap} onPress={() => selectedRep ? setSelectedRep(null) : onBack()}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.backWrap} onPress={() => selectedRep ? setSelectedRep(null) : onBack()}>
         <Text style={[styles.back, { color: colors.blue }]}>‹ {selectedRep ? "العودة للقائمة" : "العودة إلى التقارير"}</Text>
       </Pressable>
 
@@ -120,10 +120,10 @@ export default function CommissionsReport({ onBack }: { onBack: () => void }) {
             <TextInput style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]} value={to} onChangeText={setTo} textAlign="right" />
             
             <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 12 }}>
-              <Pressable style={[styles.btnPrimary, { backgroundColor: colors.orange }]} onPress={applyFilter}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.btnPrimary, { backgroundColor: colors.orange }]} onPress={applyFilter}>
                 <Text style={styles.btnPrimaryText}>تطبيق الفلتر</Text>
               </Pressable>
-              <Pressable style={[styles.btnSecondary, { borderColor: colors.border, backgroundColor: colors.bg }]} onPress={clearFilter}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.btnSecondary, { borderColor: colors.border, backgroundColor: colors.bg }]} onPress={clearFilter}>
                 <Text style={[styles.btnSecondaryText, { color: colors.text }]}>مسح</Text>
               </Pressable>
             </View>
@@ -142,7 +142,7 @@ export default function CommissionsReport({ onBack }: { onBack: () => void }) {
 
           <Text style={[styles.sectionTitle, { color: colors.text }]}>التفاصيل ({data.length})</Text>
           {data.map((rep) => (
-            <Pressable key={rep.id} style={[styles.repCard, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadRepInvoices(rep)}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={rep.id} style={[styles.repCard, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadRepInvoices(rep)}>
               <View style={styles.repHeader}>
                 <View style={[styles.rateBadge, { backgroundColor: colors.isDark ? "#7C2D12" : "#FFF7ED" }]}>
                   <Text style={[styles.rateText, { color: colors.orange }]}>{rep.commission_rate}%</Text>
@@ -194,7 +194,7 @@ export default function CommissionsReport({ onBack }: { onBack: () => void }) {
             </View>
           </View>
 
-          <Pressable style={[styles.btnPrimary, { backgroundColor: colors.orange, marginBottom: 20 }]} onPress={() => printRepStatement(selectedRep)}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.btnPrimary, { backgroundColor: colors.orange, marginBottom: 20 }]} onPress={() => printRepStatement(selectedRep)}>
             <Text style={styles.btnPrimaryText}>طباعة الكشف (PDF)</Text>
           </Pressable>
 

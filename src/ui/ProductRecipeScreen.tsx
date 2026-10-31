@@ -134,7 +134,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
@@ -161,7 +161,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد منتجات نهائية مطابقة</Text>
             ) : (
               filteredFinished.map((it) => (
-                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setSelectedFinished(it); setFinishedSearch(it.name); setShowFinishedPicker(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setSelectedFinished(it); setFinishedSearch(it.name); setShowFinishedPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · {it.unit}</Text>
                 </Pressable>
@@ -183,7 +183,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
                 <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={outputUnit} onChangeText={setOutputUnit} textAlign="right" placeholder="علبة" placeholderTextColor={colors.textMuted} />
               </View>
             </View>
-            <Pressable style={[styles.secondary, { backgroundColor: colors.blue }]} onPress={saveBomHead}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.secondary, { backgroundColor: colors.blue }]} onPress={saveBomHead}>
               <Text style={styles.secondaryText}>{bomId ? "تحديث رأس التركيبة" : "إنشاء رأس التركيبة"}</Text>
             </Pressable>
 
@@ -196,7 +196,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
                 {lines.map((l) => (
                   <View key={l.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={styles.rowActions}>
-                      <Pressable onPress={() => removeLine(l)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}>
+                      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => removeLine(l)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}>
                         <Text style={[styles.delText, { color: colors.isDark ? "#FCA5A5" : "#0F172A" }]}>حذف</Text>
                       </Pressable>
                     </View>
@@ -231,7 +231,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
                   <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد مواد أو عبوات مطابقة</Text>
                 ) : (
                   filteredComponents.map((it) => (
-                    <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setNewComponent(it); setComponentSearch(it.name); setNewUnit(it.unit); setUnitSearch(it.unit); setShowComponentPicker(false); }}>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setNewComponent(it); setComponentSearch(it.name); setNewUnit(it.unit); setUnitSearch(it.unit); setShowComponentPicker(false); }}>
                       <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
                       <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · {it.unit}</Text>
                     </Pressable>
@@ -257,7 +257,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
             {showUnitPicker && (
               <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredUnits.map((u) => (
-                  <Pressable key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setNewUnit(u); setUnitSearch(u); setShowUnitPicker(false); }}>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setNewUnit(u); setUnitSearch(u); setShowUnitPicker(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{u}</Text>
                   </Pressable>
                 ))}
@@ -267,7 +267,7 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
             <Text style={[styles.label, { color: colors.textMuted }]}>نسبة الهدر % (اختياري)</Text>
             <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={newWaste} onChangeText={setNewWaste} keyboardType="decimal-pad" textAlign="right" placeholder="0" placeholderTextColor={colors.textMuted} />
 
-            <Pressable style={[styles.primary, { backgroundColor: colors.orange }]} onPress={addLine}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange }]} onPress={addLine}>
               <Text style={styles.primaryText}>+ إضافة المكوّن</Text>
             </Pressable>
           </>

@@ -69,7 +69,7 @@ export default function SalesReturnScreen({ invoiceId, onBack }: { invoiceId: st
 
   return (
     <ScrollView contentContainerStyle={{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 16, marginBottom: 16, borderRadius: 16, padding: 20, paddingBottom: 40 }}>
-      <Pressable style={styles.back} onPress={onBack}><Text style={styles.backText}>{"&gt;"} العودة لسجل المبيعات</Text></Pressable>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}><Text style={styles.backText}>{"&gt;"} العودة لسجل المبيعات</Text></Pressable>
       <Text style={styles.screenTitle}>مرتجع مبيعات</Text>
       <Text style={styles.hint}>الفاتورة: {invoice.invoice_no} · العميل: {invoice.party_name}</Text>
 
@@ -87,20 +87,20 @@ export default function SalesReturnScreen({ invoiceId, onBack }: { invoiceId: st
 
       <Text style={styles.sectionTitle}>طريقة الاسترداد</Text>
       <View style={{ flexDirection: "row-reverse", gap: 8, marginBottom: 8 }}>
-        <Pressable style={[styles.typeBtn, refundType === "credit" && styles.typeBtnActive]} onPress={() => setRefundType("credit")}><Text style={[styles.typeText, refundType === "credit" && styles.typeTextActive]}>خصم من رصيد العميل</Text></Pressable>
-        <Pressable style={[styles.typeBtn, refundType === "cash" && styles.typeBtnActive]} onPress={() => setRefundType("cash")}><Text style={[styles.typeText, refundType === "cash" && styles.typeTextActive]}>إرجاع نقدي</Text></Pressable>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.typeBtn, refundType === "credit" && styles.typeBtnActive]} onPress={() => setRefundType("credit")}><Text style={[styles.typeText, refundType === "credit" && styles.typeTextActive]}>خصم من رصيد العميل</Text></Pressable>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.typeBtn, refundType === "cash" && styles.typeBtnActive]} onPress={() => setRefundType("cash")}><Text style={[styles.typeText, refundType === "cash" && styles.typeTextActive]}>إرجاع نقدي</Text></Pressable>
       </View>
 
       {refundType === "cash" && (
         <View style={{ marginTop: 8 }}>
           <Text style={styles.label}>اختر الصندوق</Text>
-          <View style={styles.suggestBox}>{cashboxes.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPressIn={() => setCashbox(c)}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</View>
+          <View style={styles.suggestBox}>{cashboxes.map((c) => (<Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={styles.suggestItem} onPressIn={() => setCashbox(c)}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</View>
         </View>
       )}
 
       <View style={styles.totalBox}><Text style={styles.totalLabel}>إجمالي المرتجع</Text><Text style={styles.totalValue}>{totalReturnAmount.toFixed(2)} {invoice.currency_code}</Text></View>
 
-      <Pressable style={[styles.primary, (!hasItems || saving) && { opacity: 0.5 }]} onPress={save} disabled={!hasItems || saving}><Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : "حفظ المرتجع"}</Text></Pressable>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, (!hasItems || saving) && { opacity: 0.5 }]} onPress={save} disabled={!hasItems || saving}><Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : "حفظ المرتجع"}</Text></Pressable>
     </ScrollView>
   );
 }

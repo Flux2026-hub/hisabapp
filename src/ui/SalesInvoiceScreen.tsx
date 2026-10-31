@@ -244,7 +244,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
@@ -252,7 +252,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         <Text style={[styles.screenTitle, { color: colors.text }]}>{editingNo ? `تعديل الفاتورة ${editingNo}` : "فاتورة مبيعات جديدة"}</Text>
 
         <Text style={[styles.label, { color: colors.textMuted }]}>التاريخ</Text>
-        <Pressable style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: "center", height: 42 }]} onPress={() => setShowDatePicker(true)}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: "center", height: 42 }]} onPress={() => setShowDatePicker(true)}>
           <Text style={{ textAlign: "right", color: colors.text, fontSize: 14 }}>{dateStr}</Text>
         </Pressable>
         {showDatePicker && <DateTimePicker value={dateStr ? new Date(dateStr) : new Date()} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(Platform.OS === 'ios'); if (d) setDateStr(d.toISOString().slice(0, 10)); }} />}
@@ -278,7 +278,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
               <Text style={{ padding: 10, textAlign: "right", color: colors.textMuted }}>لا توجد نتائج مطابقة</Text>
             ) : (
               filteredCustomers.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCustomer(c); setCustomerSearch(c.name); setShowCustomerPicker(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCustomer(c); setCustomerSearch(c.name); setShowCustomerPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} {c.phone ? `· ${c.phone}` : ""}</Text>
                 </Pressable>
@@ -288,20 +288,20 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         )}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>العملة</Text>
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCurrencyPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{currency ? `${currency.name} (${currency.code})` : "اختر العملة"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
-        {showCurrencyPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">{currencies.map((c) => (<Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCurrencyPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{currency ? `${currency.name} (${currency.code})` : "اختر العملة"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
+        {showCurrencyPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">{currencies.map((c) => (<Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>نوع الدفع</Text>
         <View style={{ flexDirection: "row-reverse", gap: 8 }}>
-          <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "cash" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setPaymentType("cash")}><Text style={[styles.typeText, { color: colors.text }, paymentType === "cash" && { color: "#fff" }]}>نقدي</Text></Pressable>
-          <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "credit" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setPaymentType("credit")}><Text style={[styles.typeText, { color: colors.text }, paymentType === "credit" && { color: "#fff" }]}>أجل</Text></Pressable>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "cash" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setPaymentType("cash")}><Text style={[styles.typeText, { color: colors.text }, paymentType === "cash" && { color: "#fff" }]}>نقدي</Text></Pressable>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "credit" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setPaymentType("credit")}><Text style={[styles.typeText, { color: colors.text }, paymentType === "credit" && { color: "#fff" }]}>أجل</Text></Pressable>
         </View>
 
         {paymentType === "cash" && (
           <>
             <Text style={[styles.label, { color: colors.textMuted }]}>الصندوق المستلم</Text>
-            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCashboxPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{cashbox ? cashbox.name : "اختر الصندوق"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
-            {showCashboxPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">{cashboxes.map((c) => (<Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCashboxPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{cashbox ? cashbox.name : "اختر الصندوق"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
+            {showCashboxPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">{cashboxes.map((c) => (<Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
           </>
         )}
 
@@ -309,7 +309,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         <View style={styles.list}>
           {lines.map((l) => (
             <View key={l.key} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={styles.rowActions}><Pressable onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>حذف</Text></Pressable></View>
+              <View style={styles.rowActions}><Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>حذف</Text></Pressable></View>
               <View style={styles.rowInfo}><Text style={[styles.rowName, { color: colors.text }]}>{l.itemName}</Text><Text style={[styles.rowMeta, { color: colors.textMuted }]}>{l.quantity} × {l.unitPrice} = {(l.quantity * l.unitPrice).toFixed(2)}</Text></View>
             </View>
           ))}
@@ -319,13 +319,13 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         <SalesItemPicker items={items} onAddLine={handleAddLine} />
 
         <Text style={[styles.label, { color: colors.textMuted }]}>مندوب المبيعات (اختياري)</Text>
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowSalesRepPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{salesRep ? salesRep.name : "بدون مندوب"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
-        {showSalesRepPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always"><Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSalesRep(null); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>بدون مندوب</Text></Pressable>{salesReps.map((r) => (<Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSalesRep(r); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>عمولة {r.commission_rate}%</Text></Pressable>))}</ScrollView>)}
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowSalesRepPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{salesRep ? salesRep.name : "بدون مندوب"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
+        {showSalesRepPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always"><Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSalesRep(null); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>بدون مندوب</Text></Pressable>{salesReps.map((r) => (<Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSalesRep(r); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>عمولة {r.commission_rate}%</Text></Pressable>))}</ScrollView>)}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>الخصم (اختياري)</Text>
         <View style={styles.typeRow}>
-          <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, discountType === "percent" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setDiscountType("percent")}><Text style={[styles.typeText, { color: colors.text }, discountType === "percent" && { color: "#fff" }]}>نسبة %</Text></Pressable>
-          <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, discountType === "fixed" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setDiscountType("fixed")}><Text style={[styles.typeText, { color: colors.text }, discountType === "fixed" && { color: "#fff" }]}>مبلغ</Text></Pressable>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, discountType === "percent" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setDiscountType("percent")}><Text style={[styles.typeText, { color: colors.text }, discountType === "percent" && { color: "#fff" }]}>نسبة %</Text></Pressable>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, discountType === "fixed" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => setDiscountType("fixed")}><Text style={[styles.typeText, { color: colors.text }, discountType === "fixed" && { color: "#fff" }]}>مبلغ</Text></Pressable>
         </View>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={discountValue} onChangeText={setDiscountValue} keyboardType="decimal-pad" textAlign="right" placeholder="0" />
 
@@ -336,8 +336,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         <Text style={[styles.label, { color: colors.textMuted }]}>ملاحظات (اختياري)</Text>
         <TextInput style={[styles.input, { minHeight: 60, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={notes} onChangeText={setNotes} textAlign="right" multiline placeholder="ملاحظات الفاتورة" />
 
-        <Pressable style={[styles.primary, { marginTop: 16, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}><Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : (editingId ? "تحديث الفاتورة" : "حفظ الفاتورة")}</Text></Pressable>
-        {editingId && <Pressable style={[styles.cancel, { borderColor: colors.border }]} onPress={() => { setEditingId(null); setEditingNo(null); setCustomer(null); setCustomerSearch(""); setLines([]); setNotes(""); }}><Text style={[styles.cancelText, { color: colors.text }]}>إلغاء التعديل</Text></Pressable>}
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { marginTop: 16, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}><Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : (editingId ? "تحديث الفاتورة" : "حفظ الفاتورة")}</Text></Pressable>
+        {editingId && <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.cancel, { borderColor: colors.border }]} onPress={() => { setEditingId(null); setEditingNo(null); setCustomer(null); setCustomerSearch(""); setLines([]); setNotes(""); }}><Text style={[styles.cancelText, { color: colors.text }]}>إلغاء التعديل</Text></Pressable>}
 
         {history.length > 0 && (
           <>
@@ -346,10 +346,10 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
               {history.map((h) => (
                 <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.histActions}>
-                    <Pressable onPress={() => setReturnInvoiceId(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
-                    <Pressable onPress={() => printInvoiceById(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
-                    <Pressable onPress={() => editInvoice(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
-                    <Pressable onPress={() => confirmDelete(h.id, h.invoice_no)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setReturnInvoiceId(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => printInvoiceById(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => editInvoice(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => confirmDelete(h.id, h.invoice_no)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
                   <View style={styles.histDetails}>
                     <Text style={[styles.histName, { color: colors.text }]}>{h.party_name}</Text>

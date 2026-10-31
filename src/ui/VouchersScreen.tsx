@@ -248,7 +248,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true} contentContainerStyle={styles.scrollContent}>
         
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
@@ -257,10 +257,10 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         <Text style={[styles.hint, { color: colors.textMuted }]}>سند القبض يُضيف للصندوق، وسند الدفع يُنقص منه. يمكن ربط السند بطرف (عميل / مورد / حساب).</Text>
 
         <View style={styles.toggleRow}>
-          <Pressable style={[styles.toggleBtn, { backgroundColor: colors.surface, borderColor: colors.border }, isReceipt && { backgroundColor: colors.orange, borderColor: colors.orange }]} onPress={() => setVType("receipt")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.toggleBtn, { backgroundColor: colors.surface, borderColor: colors.border }, isReceipt && { backgroundColor: colors.orange, borderColor: colors.orange }]} onPress={() => setVType("receipt")}>
             <Text style={[styles.toggleText, { color: colors.text }, isReceipt && { color: "#FFF", fontWeight: "800" }]}>قبض</Text>
           </Pressable>
-          <Pressable style={[styles.toggleBtn, { backgroundColor: colors.surface, borderColor: colors.border }, !isReceipt && { backgroundColor: colors.orange, borderColor: colors.orange }]} onPress={() => setVType("payment")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.toggleBtn, { backgroundColor: colors.surface, borderColor: colors.border }, !isReceipt && { backgroundColor: colors.orange, borderColor: colors.orange }]} onPress={() => setVType("payment")}>
             <Text style={[styles.toggleText, { color: colors.text }, !isReceipt && { color: "#FFF", fontWeight: "800" }]}>دفع</Text>                                           
           </Pressable>
         </View>
@@ -269,7 +269,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           {([["none", "بلا طرف"], ["customer", "عميل"], ["supplier", "مورد"], ["account", "حساب"]] as [PartyType, string][]).map(([key, label]) => {
             const active = partyType === key;
             return (
-              <Pressable key={key} onPress={() => changePartyType(key)} style={[styles.partyBtn, { backgroundColor: colors.surface, borderColor: colors.border }, active && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={key} onPress={() => changePartyType(key)} style={[styles.partyBtn, { backgroundColor: colors.surface, borderColor: colors.border }, active && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
                 <Text style={[styles.partyText, { color: colors.text }, active && { color: "#FFF", fontWeight: "800" }]}>{label}</Text>
               </Pressable>
             );
@@ -302,7 +302,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
                     const bal = Number(p.balance || 0);
                     const sarEq = bal / sarRate;
                     return (
-                      <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPartyRecord(p); setPartySearch(p.name); setShowParty(false); }}>
+                      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPartyRecord(p); setPartySearch(p.name); setShowParty(false); }}>
                         <Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text>
                         <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code} · الرصيد: {bal.toFixed(2)} YER (≈ {sarEq.toFixed(2)} SAR)</Text>
                       </Pressable>
@@ -335,7 +335,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد صناديق تحليلية مطابقة</Text>
             ) : (
               filteredCashboxes.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCashbox(c); setCashboxSearch(c.name); setShowCashbox(false); }}>                                                                                                                                                                 
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCashbox(c); setCashboxSearch(c.name); setShowCashbox(false); }}>                                                                                                                                                                 
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                 </Pressable>
@@ -345,14 +345,14 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         )}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>العملة</Text>
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCurrency((v) => !v)}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCurrency((v) => !v)}>
           <Text style={[styles.pickerText, { color: colors.text }]}>{currency ? currency.name + " (" + currency.symbol + ")" + (currency.isBase ? " — أساسية" : " — 1 = " + Number(currency.exchangeRate).toFixed(2) + " YER") : "اختر عملة"}</Text>
           <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
         </Pressable>
         {showCurrency && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {currencies.map((c) => (
-              <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setShowCurrency(false); }}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setShowCurrency(false); }}>
                 <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.symbol})</Text>
                 <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} {c.isBase ? " · أساسية" : " · 1 = " + Number(c.exchangeRate).toFixed(2) + " YER"}</Text>                                                                                                                                                       
               </Pressable>
@@ -361,7 +361,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         )}
                                                                                                                                                                         
         <Text style={[styles.label, { color: colors.textMuted }]}>التاريخ</Text>
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
           <Text style={[styles.pickerText, { color: colors.text }]}>{dateStr}</Text>
           <MaterialCommunityIcons name="calendar" size={20} color={colors.textMuted} />
         </Pressable>
@@ -376,11 +376,11 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         <TextInput style={[styles.input, { minHeight: 60, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={description} onChangeText={setDescription} placeholder="سبب العملية" placeholderTextColor={colors.textMuted} textAlign="right" multiline />
 
         <View style={{ flexDirection: "row", gap: 10 }}>
-          <Pressable style={[styles.primary, { flex: 1, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { flex: 1, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
             <Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : (editingId ? "تحديث السند" : "حفظ السند")}</Text>
           </Pressable>
           {editingId && (
-            <Pressable style={[styles.cancelBtn, { backgroundColor: colors.isDark ? "#334155" : "#f1f5f9" }]} onPress={cancelEdit}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.cancelBtn, { backgroundColor: colors.isDark ? "#334155" : "#f1f5f9" }]} onPress={cancelEdit}>
               <Text style={[styles.cancelBtnText, { color: colors.text }]}>إلغاء</Text>
             </Pressable>
           )}
@@ -390,23 +390,23 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           <>
             <View style={styles.filterContainer}>
               <View style={styles.filterRow}>
-                <Pressable onPress={() => setFilterVType("all")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "all" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "all" && { color: "#FFF" }]}>الكل</Text></Pressable>
-                <Pressable onPress={() => setFilterVType("receipt")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "receipt" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "receipt" && { color: "#FFF" }]}>قبض</Text></Pressable>
-                <Pressable onPress={() => setFilterVType("payment")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "payment" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "payment" && { color: "#FFF" }]}>دفع</Text></Pressable>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterVType("all")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "all" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "all" && { color: "#FFF" }]}>الكل</Text></Pressable>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterVType("receipt")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "receipt" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "receipt" && { color: "#FFF" }]}>قبض</Text></Pressable>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterVType("payment")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "payment" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "payment" && { color: "#FFF" }]}>دفع</Text></Pressable>
               </View>                                                                                                                                                         
               <View style={styles.filterRow}>
-                <Pressable onPress={() => setFilterParty("all")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterParty === "all" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterParty === "all" && { color: "#FFF" }]}>الكل</Text></Pressable>
-                <Pressable onPress={() => setFilterParty("customer")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterParty === "customer" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterParty === "customer" && { color: "#FFF" }]}>عملاء</Text></Pressable>
-                <Pressable onPress={() => setFilterParty("supplier")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterParty === "supplier" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterParty === "supplier" && { color: "#FFF" }]}>موردين</Text></Pressable>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterParty("all")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterParty === "all" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterParty === "all" && { color: "#FFF" }]}>الكل</Text></Pressable>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterParty("customer")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterParty === "customer" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterParty === "customer" && { color: "#FFF" }]}>عملاء</Text></Pressable>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterParty("supplier")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterParty === "supplier" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterParty === "supplier" && { color: "#FFF" }]}>موردين</Text></Pressable>
               </View>
             </View>
 
             {history.map((h) => (
               <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.histActions}>                                                                                                                                 
-                  <Pressable onPress={() => printVoucher(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
-                  <Pressable onPress={() => editVoucher(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
-                  <Pressable onPress={() => deleteVoucher(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => printVoucher(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => editVoucher(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => deleteVoucher(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                 </View>
                 <View style={styles.histInfo}>
                   <Text style={[styles.histName, { color: colors.text }]}>{h.party_name || "—"}</Text>

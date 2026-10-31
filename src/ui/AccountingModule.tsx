@@ -102,7 +102,7 @@ export default function AccountingModule() {
           <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textMuted} />
           <Text style={[styles.pendingText, { color: colors.text }]}>عمليات معلقة: {pending}</Text>
         </View>
-        <Pressable style={[styles.syncButton, { backgroundColor: colors.blue }]} onPress={syncNow}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.syncButton, { backgroundColor: colors.blue }]} onPress={syncNow}>
           <MaterialCommunityIcons name="sync" size={14} color="#FFF" />
           <Text style={styles.syncButtonText}>مزامنة الآن</Text>
         </Pressable>
@@ -118,7 +118,7 @@ export default function AccountingModule() {
           <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
           <View style={styles.grid}>
             {MENU.filter((m) => m.section === sectionName).map((item) => (
-              <Pressable 
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} 
                 key={item.mode} 
                 onPress={() => setMode(item.mode)} 
                 // 🚀 تعديل العرض في التلفاز ليكون 5 أعمدة

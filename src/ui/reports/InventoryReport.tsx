@@ -108,7 +108,7 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       
-      <Pressable style={styles.backWrap} onPress={onBack}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.backWrap} onPress={onBack}>
         <Text style={[styles.back, { color: colors.blue }]}>‹ العودة إلى التقارير</Text>
       </Pressable>
 
@@ -116,7 +116,7 @@ export default function InventoryReport({ onBack }: { onBack: () => void }) {
 
       <View style={styles.filterRow}>
         {([["all", "الكل"], ["raw", "مواد خام"], ["packaging", "عبوات"], ["finished", "منتجات نهائية"]] as [Category, string][]).map(([key, label]) => (
-          <Pressable key={key} onPress={() => setFilter(key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, filter === key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={key} onPress={() => setFilter(key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, filter === key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
             <Text style={[styles.chipText, { color: colors.text }, filter === key && { color: "#FFF" }]}>{label}</Text>
           </Pressable>
         ))}

@@ -11,6 +11,7 @@ import {
 } from "../sync/accounting";
 import { sqlite } from "../db/local";
 import { useTheme } from "./ThemeContext";
+import { useToast } from "./ToastContext";
 
 type Kind = "customers" | "suppliers";
 type Row = any;
@@ -22,6 +23,7 @@ const CONFIG: Record<Kind, any> = {
 
 export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: () => void }) {
   const { colors } = useTheme();
+  const { showToast } = useToast();
   const cfg = CONFIG[kind];
   const [rows, setRows] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("+967");
+  const [phone, setPhone] = useState(""); // تم إزالة +967
 
   const [search, setSearch] = useState("");
   const [searchFocus, setSearchFocus] = useState(false);
@@ -70,21 +72,15 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
   }, [rows, name]);
 
   const clearForm = () => {
-    setEditingId(null); setCode(""); setName(""); setPhone("+967"); setShowCodeSuggest(false); setShowNameSuggest(false);
+    setEditingId(null); setCode(""); setName(""); setPhone(""); setShowCodeSuggest(false); setShowNameSuggest(false);
   };
 
-  const normalizePhone = (raw: string) => {
-    let digits = raw.replace(/\D/g, "");
-    if (digits.startsWith("00967")) digits = digits.slice(5);
-    else if (digits.startsWith("967")) digits = digits.slice(3);
-    return digits.slice(0, 9);
+  const cleanPhone = (raw: string) => {
+    return raw.replace(/[^\d+]/g, "");
   };
-
-  const isValidYemeniPhone = (local: string) => /^7\d{8}$/.test(local);
 
   const onPhoneChange = (text: string) => {
-    const local = normalizePhone(text);
-    setPhone("+967" + local);
+    setPhone(cleanPhone(text));
   };
 
   const pickContact = async () => {
@@ -93,13 +89,14 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
       if (status === 'granted') {
         const contact = await Contacts.presentContactPickerAsync();
         if (contact && contact.phoneNumbers && contact.phoneNumbers.length > 0) {
-          onPhoneChange(contact.phoneNumbers[0].number || "");
+          const rawNumber = contact.phoneNumbers[0].number || "";
+          setPhone(cleanPhone(rawNumber));
         }
       } else {
         Alert.alert("تنبيه", "تم رفض صلاحية الوصول لجهات الاتصال. يرجى تفعيلها من إعدادات الهاتف.");
       }
     } catch (e: any) {
-      Alert.alert("خطأ", "تعذر فتح جهات الاتصال. تأكد من تثبيت التطبيق بشكل صحيح.");
+      Alert.alert("خطأ في جهات الاتصال", "التفاصيل: " + String(e.message || e));
       console.log("Contacts error:", e);
     }
   };
@@ -110,15 +107,14 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
     try {
       const trimmedName = name.trim();
       const trimmedCode = code.trim();
-      const localPhone = normalizePhone(phone);
+      const trimmedPhone = phone.trim();
 
       if (!trimmedCode) return Alert.alert("تنبيه", "الرمز مطلوب");
       if (!trimmedName) return Alert.alert("تنبيه", "الاسم مطلوب");
       if (rows.some((r) => String(r.code ?? "").trim() === trimmedCode && r.id !== editingId)) return Alert.alert("تنبيه", "الرمز مستخدم");
       if (rows.some((r) => String(r.name ?? "").trim().toLowerCase() === trimmedName.toLowerCase() && r.id !== editingId)) return Alert.alert("تنبيه", `يوجد ${cfg.singular} بهذا الاسم مسبقًا`);
-      if (localPhone && !isValidYemeniPhone(localPhone)) return Alert.alert("تنبيه", "رقم الهاتف غير صحيح");
 
-      const input: any = { code: trimmedCode, name: trimmedName, phone: localPhone ? `+967${localPhone}` : "", parentAccountCode: cfg.parentAccountCode };
+      const input: any = { code: trimmedCode, name: trimmedName, phone: trimmedPhone, parentAccountCode: cfg.parentAccountCode };
 
       if (editingId) await cfg.update(editingId, input);
       else await cfg.create(input);
@@ -126,21 +122,25 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
       await load();
       const wasEdit = !!editingId;
       clearForm();
-      Alert.alert("تم الحفظ", `تم ${wasEdit ? "تعديل" : "إضافة"} ${cfg.singular}`);
+      showToast(`تم ${wasEdit ? "تعديل" : "إضافة"} ${cfg.singular}`, "success");
     } catch (e) { Alert.alert("تعذر الحفظ", String(e)); }
   };
 
   const edit = (r: Row) => {
     setEditingId(r.id); setCode(String(r.code ?? "")); setName(String(r.name ?? ""));
-    const local = normalizePhone(String(r.phone ?? ""));
-    setPhone("+967" + local);
+    setPhone(String(r.phone ?? ""));
   };
 
   const remove = (r: Row) => {
     Alert.alert("تأكيد الحذف", `هل تريد حذف «${r.name}»؟`, [
       { text: "إلغاء", style: "cancel" },
       { text: "حذف", style: "destructive", onPress: async () => {
-          try { await cfg.remove(r.id); await load(); if (editingId === r.id) clearForm(); } catch (e) { Alert.alert("تعذر الحذف", String(e)); }
+          try { 
+            await cfg.remove(r.id); 
+            await load(); 
+            if (editingId === r.id) clearForm(); 
+            showToast("تم الحذف بنجاح", "success");
+          } catch (e) { Alert.alert("تعذر الحذف", String(e)); }
       }},
     ]);
   };
@@ -151,7 +151,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContainer}>
         
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
@@ -167,7 +167,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text>
             ) : (
               filteredRows.slice(0, 8).map((r) => (
-                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.code ?? ""} · {r.phone ?? ""}</Text>
                 </Pressable>
@@ -182,7 +182,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
         <View style={{ flexDirection: "row-reverse", gap: 8 }}>
           <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} onFocus={() => !editingId && setShowCodeSuggest(true)} onBlur={() => setTimeout(() => setShowCodeSuggest(false), 200)} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
           {!editingId && (
-            <Pressable style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={() => { setCode(nextCode); setShowCodeSuggest(false); }}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={() => { setCode(nextCode); setShowCodeSuggest(false); }}>
               <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>توليد</Text>
             </Pressable>
           )}
@@ -190,7 +190,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
         
         {showCodeSuggest && !editingId && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-            <Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={applySuggestedCode}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={applySuggestedCode}>
               <Text style={[styles.suggestName, { color: colors.text }]}>{nextCode}</Text>
               <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>اضغط لاعتماد الرمز التالي</Text>
             </Pressable>
@@ -203,7 +203,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
         {showNameSuggest && nameSuggestions.length > 0 && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {nameSuggestions.map((r) => (
-              <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setName(r.name); setShowNameSuggest(false); }}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setName(r.name); setShowNameSuggest(false); }}>
                 <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
                 <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.code ?? ""}</Text>
               </Pressable>
@@ -213,18 +213,18 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
 
         <Text style={[styles.label, { color: colors.textMuted }]}>الهاتف</Text>
         <View style={styles.phoneRow}>
-          <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={phone} onChangeText={onPhoneChange} placeholder="+9677XXXXXXXX" placeholderTextColor={colors.textMuted} keyboardType="phone-pad" textAlign="right" />
-          <Pressable style={[styles.contactBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickContact}>
+          <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={phone} onChangeText={onPhoneChange} placeholder="رقم الهاتف (اختياري)" placeholderTextColor={colors.textMuted} keyboardType="phone-pad" textAlign="right" />
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.contactBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickContact}>
             <MaterialCommunityIcons name="contacts" size={24} color={colors.blue} />
           </Pressable>
         </View>
 
         <View style={styles.buttons}>
-          <Pressable style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}>
             <Text style={styles.primaryText}>{editingId ? "حفظ التعديل" : "إضافة وحفظ"}</Text>
           </Pressable>
           {editingId && (
-            <Pressable style={[styles.cancel, { borderColor: colors.border }]} onPress={clearForm}><Text style={[styles.cancelText, { color: colors.text }]}>إلغاء</Text></Pressable>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.cancel, { borderColor: colors.border }]} onPress={clearForm}><Text style={[styles.cancelText, { color: colors.text }]}>إلغاء</Text></Pressable>
           )}
         </View>
 
@@ -238,8 +238,8 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
               return (
                 <View key={r.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.rowActions}>
-                    <Pressable onPress={() => edit(r)} style={[styles.editBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
-                    <Pressable onPress={() => remove(r)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => edit(r)} style={[styles.editBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => remove(r)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
                   <View style={styles.rowInfo}>
                     <Text style={[styles.rowName, { color: colors.text }]}>{r.name}</Text>

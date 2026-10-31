@@ -45,7 +45,7 @@ export default function PurchaseItemPicker({ items, onAddLine }: Props) {
 
   return (
     <View style={{ marginTop: 12 }}>
-      <Pressable style={[styles.secondary, { backgroundColor: colors.blue }]} onPress={() => setShowItemPicker(!showItemPicker)}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.secondary, { backgroundColor: colors.blue }]} onPress={() => setShowItemPicker(!showItemPicker)}>
         <Text style={styles.secondaryText}>+ إضافة مادة / عبوة</Text>
       </Pressable>
 
@@ -68,7 +68,7 @@ export default function PurchaseItemPicker({ items, onAddLine }: Props) {
               <Text style={{ padding: 10, textAlign: "right", color: colors.textMuted }}>لا نتائج</Text>
             ) : (
               filteredItems.map((i) => (
-                <Pressable key={i.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }, pickItem?.id === i.id && { backgroundColor: colors.bg }]} onPress={() => { setPickItem(i); setSearchItem(i.name); setPickPrice(String(i.average_cost || 0)); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={i.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }, pickItem?.id === i.id && { backgroundColor: colors.bg }]} onPress={() => { setPickItem(i); setSearchItem(i.name); setPickPrice(String(i.average_cost || 0)); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{i.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>متوفر: {i.stock_quantity}</Text>
                 </Pressable>
@@ -87,7 +87,7 @@ export default function PurchaseItemPicker({ items, onAddLine }: Props) {
             </View>
           </View>
 
-          <Pressable style={[styles.primary, { backgroundColor: colors.orange, marginTop: 12 }]} onPress={handleAdd}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange, marginTop: 12 }]} onPress={handleAdd}>
             <Text style={styles.primaryText}>إضافة للسلة</Text>
           </Pressable>
         </View>

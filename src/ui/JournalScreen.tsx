@@ -209,7 +209,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
@@ -219,7 +219,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
         <View style={styles.headerBox}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.label, { color: colors.textMuted }]}>التاريخ</Text>
-            <Pressable style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: "center", height: 42 }]} onPress={() => setShowDatePicker(true)}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: "center", height: 42 }]} onPress={() => setShowDatePicker(true)}>
               <Text style={{ textAlign: "right", color: colors.text, fontSize: 14 }}>{dateStr}</Text>
             </Pressable>
             {showDatePicker && (
@@ -241,7 +241,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
             {showCurrency && (
               <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredCurrencies.map((c) => (                                                                                                            
-                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setCurrencySearch(c.name); setExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowCurrency(false); }}>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setCurrencySearch(c.name); setExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowCurrency(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.code})</Text>
                   </Pressable>
                 ))}
@@ -266,7 +266,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
               <View key={l.key} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.rowHeader}>
                   <Text style={[styles.rowIndex, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF", color: colors.blue }]}>{index + 1}</Text>
-                  <Pressable onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={[styles.delText, { color: colors.isDark ? "#FCA5A5" : "#991b1b" }]}>حذف</Text></Pressable>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={[styles.delText, { color: colors.isDark ? "#FCA5A5" : "#991b1b" }]}>حذف</Text></Pressable>
                 </View>
                 <View style={styles.rowBody}>
                   <View style={{ flex: 1 }}>                                                                                                          
@@ -290,9 +290,9 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
           <Text style={[styles.addTitle, { color: colors.text }]}>إضافة سطر جديد</Text>
           <Text style={[styles.label, { color: colors.textMuted }]}>نوع الحساب</Text>
           <View style={{ flexDirection: "row-reverse", gap: 8, marginBottom: 8 }}>
-            <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pickPartyType === "none" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => { setPickPartyType("none"); setPickParty(null); setPartySearch(""); }}><Text style={[styles.typeText, { color: colors.text }, pickPartyType === "none" && { color: "#fff" }]}>حساب عام</Text></Pressable>
-            <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pickPartyType === "customer" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => { setPickPartyType("customer"); setPickParty(null); setPartySearch(""); }}><Text style={[styles.typeText, { color: colors.text }, pickPartyType === "customer" && { color: "#fff" }]}>عميل</Text></Pressable>
-            <Pressable style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pickPartyType === "supplier" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => { setPickPartyType("supplier"); setPickParty(null); setPartySearch(""); }}><Text style={[styles.typeText, { color: colors.text }, pickPartyType === "supplier" && { color: "#fff" }]}>مورد</Text></Pressable>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pickPartyType === "none" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => { setPickPartyType("none"); setPickParty(null); setPartySearch(""); }}><Text style={[styles.typeText, { color: colors.text }, pickPartyType === "none" && { color: "#fff" }]}>حساب عام</Text></Pressable>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pickPartyType === "customer" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => { setPickPartyType("customer"); setPickParty(null); setPartySearch(""); }}><Text style={[styles.typeText, { color: colors.text }, pickPartyType === "customer" && { color: "#fff" }]}>عميل</Text></Pressable>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.typeBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pickPartyType === "supplier" && { backgroundColor: colors.blue, borderColor: colors.blue }]} onPress={() => { setPickPartyType("supplier"); setPickParty(null); setPartySearch(""); }}><Text style={[styles.typeText, { color: colors.text }, pickPartyType === "supplier" && { color: "#fff" }]}>مورد</Text></Pressable>
           </View>
 
           {pickPartyType === "none" ? (
@@ -310,7 +310,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
               {showAccount && (
                 <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">                                                                                                    
                   {filteredAccounts.map((a) => (
-                    <Pressable key={a.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickAccount(a); setAccountSearch(a.name); setShowAccount(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{a.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{a.code}</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={a.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickAccount(a); setAccountSearch(a.name); setShowAccount(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{a.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{a.code}</Text></Pressable>
                   ))}
                 </ScrollView>
               )}
@@ -330,7 +330,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
               {showPartyPicker && (
                 <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                   {filteredParties.map((p) => (
-                    <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickParty(p); setPartySearch(p.name); setShowPartyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code}</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickParty(p); setPartySearch(p.name); setShowPartyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code}</Text></Pressable>
                   ))}                                                                                                                             
                 </ScrollView>
               )}
@@ -353,11 +353,11 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
           />
           {showLineCurrency && (
             <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-              <Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setLineCurrency(null); setLineCurrencySearch(""); setShowLineCurrency(false); }}>                       
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setLineCurrency(null); setLineCurrencySearch(""); setShowLineCurrency(false); }}>                       
                 <Text style={[styles.suggestName, { color: colors.text }]}>العملة الأساسية</Text>
               </Pressable>
               {filteredLineCurrencies.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setLineCurrency(c); setLineCurrencySearch(c.name); setLineExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowLineCurrency(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setLineCurrency(c); setLineCurrencySearch(c.name); setLineExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowLineCurrency(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.code})</Text>
                 </Pressable>
               ))}
@@ -376,7 +376,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
             <View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textMuted }]}>دائن ({lineCurrency ? lineCurrency.code : currency?.code})</Text><TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickCredit} onChangeText={(t) => { setPickCredit(t); if (t) setPickDebit(""); }} placeholder="0" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" textAlign="right" /></View>
           </View>
                                                                                                                                             
-          <Pressable style={[styles.addBtn, { backgroundColor: colors.navy }]} onPress={addLine}><Text style={styles.addBtnText}>+ إدراج السطر في القيد</Text></Pressable>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.addBtn, { backgroundColor: colors.navy }]} onPress={addLine}><Text style={styles.addBtnText}>+ إدراج السطر في القيد</Text></Pressable>
         </View>
 
         <View style={[styles.balanceBox, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF", borderColor: colors.blue }]}>
@@ -392,7 +392,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
           </View>
         </View>
 
-        <Pressable style={[styles.primary, { backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
           <Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : "حفظ القيد نهائياً"}</Text>                                          
         </Pressable>
 
@@ -403,8 +403,8 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
               {history.map((h) => (
                 <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>                                                                                            
                   <View style={styles.histActions}>
-                    <Pressable onPress={() => editEntry(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
-                    <Pressable onPress={() => deleteEntry(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => editEntry(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => deleteEntry(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
                   <View style={styles.histInfo}>
                     <Text style={[styles.histName, { color: colors.text }]}>{h.description}</Text>

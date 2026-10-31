@@ -199,7 +199,7 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
           <Text style={[styles.filterLabel, { color: colors.textMuted }]}>فلترة العملة</Text>
           <View style={styles.filterRow}>
             {currencyTabs.map((o) => (
-              <Pressable key={o.key} onPress={() => setCurrencyFilter(o.key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, currencyFilter === o.key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={o.key} onPress={() => setCurrencyFilter(o.key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, currencyFilter === o.key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
                 <Text style={[styles.chipText, { color: colors.text }, currencyFilter === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
@@ -207,7 +207,7 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
           <Text style={[styles.filterLabel, { color: colors.textMuted }]}>عرض المبالغ</Text>
           <View style={styles.filterRow}>
             {viewTabs.map((o) => (
-              <Pressable key={o.key} onPress={() => setViewCurrency(o.key)} style={[styles.chipView, { backgroundColor: colors.surface, borderColor: colors.border }, viewCurrency === o.key && { backgroundColor: colors.orange, borderColor: colors.orange }]}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={o.key} onPress={() => setViewCurrency(o.key)} style={[styles.chipView, { backgroundColor: colors.surface, borderColor: colors.border }, viewCurrency === o.key && { backgroundColor: colors.orange, borderColor: colors.orange }]}>
                 <Text style={[styles.chipText, { color: colors.text }, viewCurrency === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
@@ -220,7 +220,7 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
           <Text style={[styles.filterLabel, { color: colors.textMuted }]}>الفلتر</Text>
           <View style={styles.filterRow}>
             {[ { key: "all", label: `الكل (${customers.length})` }, { key: "positive", label: `لهم رصيد (${positiveCount})` }, { key: "negative", label: `عليهم رصيد (${negativeCount})` } ].map((o) => (
-              <Pressable key={o.key} onPress={() => setBalanceFilter(o.key as BalanceFilter)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, balanceFilter === o.key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={o.key} onPress={() => setBalanceFilter(o.key as BalanceFilter)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, balanceFilter === o.key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
                 <Text style={[styles.chipText, { color: colors.text }, balanceFilter === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
@@ -249,7 +249,7 @@ export default function CustomersReport({ onBack }: { onBack: () => void }) {
               const bal = Number(c.balance || 0);
               const balColor = bal > 0 ? colors.success : bal < 0 ? colors.danger : colors.textMuted;
               return (
-                <Pressable key={c.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadStatement(c)}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadStatement(c)}>
                   <View style={styles.rowRight}>
                     <Text style={[styles.amount, { color: balColor }]}>{bal.toFixed(2)} {baseSymbol}</Text>
                   </View>

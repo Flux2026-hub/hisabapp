@@ -106,7 +106,7 @@ export default function GlobalSearchModal({ visible, onClose }: { visible: boole
               autoFocus={true}
               textAlign="right"
             />
-            <Pressable onPress={onClose} style={{ padding: 4 }}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={onClose} style={{ padding: 4 }}>
               <MaterialCommunityIcons name="close" size={24} color={colors.textMuted} />
             </Pressable>
           </View>

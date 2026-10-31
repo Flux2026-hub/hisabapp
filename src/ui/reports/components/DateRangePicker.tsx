@@ -59,7 +59,7 @@ export default function DateRangePicker({
         {quickSets.map((q) => {
           const isActive = from === q.from && to === q.to;
           return (
-            <Pressable
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }}
               key={q.label}
               style={[styles.quickBtn, isActive && styles.quickActive]}
               onPress={() => {

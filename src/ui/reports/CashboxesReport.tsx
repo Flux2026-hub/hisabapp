@@ -170,7 +170,7 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
           <Text style={[styles.filterLabel, { color: colors.textMuted }]}>فلترة العملة</Text>
           <View style={styles.filterRow}>
             {currencyTabs.map((o) => (
-              <Pressable key={o.key} onPress={() => setCurrencyFilter(o.key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, currencyFilter === o.key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={o.key} onPress={() => setCurrencyFilter(o.key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, currencyFilter === o.key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
                 <Text style={[styles.chipText, { color: colors.text }, currencyFilter === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
@@ -179,7 +179,7 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
           <Text style={[styles.filterLabel, { color: colors.textMuted }]}>عرض المبالغ</Text>
           <View style={styles.filterRow}>
             {viewTabs.map((o) => (
-              <Pressable key={o.key} onPress={() => setViewCurrency(o.key)} style={[styles.chipView, { backgroundColor: colors.surface, borderColor: colors.border }, viewCurrency === o.key && { backgroundColor: colors.orange, borderColor: colors.orange }]}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={o.key} onPress={() => setViewCurrency(o.key)} style={[styles.chipView, { backgroundColor: colors.surface, borderColor: colors.border }, viewCurrency === o.key && { backgroundColor: colors.orange, borderColor: colors.orange }]}>
                 <Text style={[styles.chipText, { color: colors.text }, viewCurrency === o.key && { color: "#FFF" }]}>{o.label}</Text>
               </Pressable>
             ))}
@@ -210,7 +210,7 @@ export default function CashboxesReport({ onBack }: { onBack: () => void }) {
               const paddingRight = c.cashbox_type === 'analytical' ? 30 : (c.cashbox_type === 'sub' ? 15 : 0);
               const icon = c.cashbox_type === 'main' ? "🏦" : (c.cashbox_type === 'sub' ? "📁" : "💵");
               return (
-                <Pressable key={c.id} style={[styles.row, { paddingRight: 12 + paddingRight, backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadMovements(c)}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.row, { paddingRight: 12 + paddingRight, backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadMovements(c)}>
                   <View style={styles.rowInfo}>
                     <Text style={[styles.rowName, { color: colors.text }]}>{icon} {c.name}</Text>
                     <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{c.code}</Text>

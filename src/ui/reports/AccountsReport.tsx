@@ -47,7 +47,7 @@ export default function AccountsReport({ onBack }: { onBack: () => void }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       
-      <Pressable style={styles.backWrap} onPress={onBack}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.backWrap} onPress={onBack}>
         <Text style={[styles.back, { color: colors.blue }]}>‹ العودة إلى التقارير</Text>
       </Pressable>
 
@@ -55,7 +55,7 @@ export default function AccountsReport({ onBack }: { onBack: () => void }) {
 
       <View style={styles.filterRow}>
         {[["all", "الكل"], ["asset", "أصول"], ["liability", "خصوم"], ["revenue", "إيرادات"], ["expense", "مصروفات"]].map(([key, label]) => (
-          <Pressable key={key} onPress={() => setFilter(key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, filter === key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={key} onPress={() => setFilter(key)} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, filter === key && { backgroundColor: colors.blue, borderColor: colors.blue }]}>
             <Text style={[styles.chipText, { color: colors.text }, filter === key && { color: "#FFF" }]}>{label}</Text>
           </Pressable>
         ))}

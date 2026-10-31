@@ -236,7 +236,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
@@ -244,7 +244,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
         <Text style={[styles.screenTitle, { color: colors.text }]}>{editingNo ? `تعديل الفاتورة ${editingNo}` : "فاتورة مشتريات جديدة"}</Text>
 
         <Text style={[styles.label, { color: colors.textMuted }]}>التاريخ</Text>
-        <Pressable style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: "center", height: 42 }]} onPress={() => setShowDatePicker(true)}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: "center", height: 42 }]} onPress={() => setShowDatePicker(true)}>
           <Text style={{ textAlign: "right", color: colors.text, fontSize: 14 }}>{dateStr}</Text>
         </Pressable>
         {showDatePicker && <DateTimePicker value={dateStr ? new Date(dateStr) : new Date()} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(Platform.OS === 'ios'); if (d) setDateStr(d.toISOString().slice(0, 10)); }} />}
@@ -270,7 +270,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد نتائج مطابقة</Text>
             ) : (
               filteredSuppliers.map((s) => (
-                <Pressable key={s.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSupplier(s); setSupplierSearch(s.name); setShowSupplierPicker(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={s.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSupplier(s); setSupplierSearch(s.name); setShowSupplierPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{s.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{s.code} {s.phone ? `· ${s.phone}` : ""}</Text>
                 </Pressable>
@@ -280,14 +280,14 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
         )}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>العملة</Text>
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCurrencyPicker((v) => !v)}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCurrencyPicker((v) => !v)}>
           <Text style={[styles.pickerText, { color: colors.text }]}>{currency ? `${currency.name} (${currency.symbol})${currency.isBase ? " — أساسية" : ` — 1 = ${Number(currency.exchangeRate).toFixed(2)} YER`}` : "اختر عملة"}</Text>
           <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
         </Pressable>
         {showCurrencyPicker && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {currencies.map((c) => (
-              <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}>
                 <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.symbol})</Text>
                 <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code}{c.isBase ? " · أساسية" : ` · 1 = ${Number(c.exchangeRate).toFixed(2)} YER`}</Text>
               </Pressable>
@@ -297,10 +297,10 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
 
         <Text style={[styles.label, { color: colors.textMuted }]}>نوع الدفع</Text>
         <View style={styles.toggleRow}>
-          <Pressable style={[styles.toggleBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "cash" && { backgroundColor: colors.orange, borderColor: colors.orange }]} onPress={() => setPaymentType("cash")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.toggleBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "cash" && { backgroundColor: colors.orange, borderColor: colors.orange }]} onPress={() => setPaymentType("cash")}>
             <Text style={[styles.toggleText, { color: colors.text }, paymentType === "cash" && { color: "#FFF", fontWeight: "700" }]}>نقدي</Text>
           </Pressable>
-          <Pressable style={[styles.toggleBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "credit" && { backgroundColor: colors.orange, borderColor: colors.orange }]} onPress={() => setPaymentType("credit")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.toggleBtn, { backgroundColor: colors.surface, borderColor: colors.border }, paymentType === "credit" && { backgroundColor: colors.orange, borderColor: colors.orange }]} onPress={() => setPaymentType("credit")}>
             <Text style={[styles.toggleText, { color: colors.text }, paymentType === "credit" && { color: "#FFF", fontWeight: "700" }]}>أجل</Text>
           </Pressable>
         </View>
@@ -308,7 +308,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
         {paymentType === "cash" && (
           <>
             <Text style={[styles.label, { color: colors.textMuted }]}>الصندوق المدفوع منه</Text>
-            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCashboxPicker((v) => !v)}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCashboxPicker((v) => !v)}>
               <Text style={[styles.pickerText, { color: colors.text }]}>{cashbox ? cashbox.name : "اختر الصندوق"}</Text>
               <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
             </Pressable>
@@ -318,7 +318,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
                   <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد صناديق</Text>
                 ) : (
                   cashboxes.map((c) => (
-                    <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}>
                       <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                       <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                     </Pressable>
@@ -337,7 +337,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
             lines.map((l) => (
               <View key={l.key} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.rowActions}>
-                  <Pressable onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={[styles.delText, { color: colors.isDark ? "#FCA5A5" : "#0F172A" }]}>حذف</Text></Pressable>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={[styles.delText, { color: colors.isDark ? "#FCA5A5" : "#0F172A" }]}>حذف</Text></Pressable>
                 </View>
                 <View style={styles.rowInfo}>
                   <Text style={[styles.rowName, { color: colors.text }]}>{l.itemName}</Text>
@@ -362,10 +362,10 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
         <TextInput style={[styles.input, { minHeight: 60, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={notes} onChangeText={setNotes} textAlign="right" multiline placeholder="ملاحظات الفاتورة" placeholderTextColor={colors.textMuted} />
 
         <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 16 }}>
-          <Pressable style={[styles.primary, { marginTop: 0, flex: 1, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { marginTop: 0, flex: 1, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
             <Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : (editingId ? "تحديث الفاتورة" : "حفظ الفاتورة")}</Text>
           </Pressable>
-          <Pressable style={{ borderWidth: 1, borderColor: colors.blue, paddingHorizontal: 16, borderRadius: 10, justifyContent: "center" }} onPress={async () => {
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={{ borderWidth: 1, borderColor: colors.blue, paddingHorizontal: 16, borderRadius: 10, justifyContent: "center" }} onPress={async () => {
               const data = buildCurrentInvoiceData("—");
               if (!data) return Alert.alert("تنبيه", "أكمل بيانات الفاتورة أولاً");
               printHtml(await buildInvoiceHtml(data));
@@ -381,10 +381,10 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
               {history.map((h) => (
                 <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.histActions}>
-                    <Pressable onPress={() => setReturnInvoiceId(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
-                    <Pressable onPress={() => printInvoiceById(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
-                    <Pressable onPress={() => editInvoice(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
-                    <Pressable onPress={() => confirmDelete(h.id, h.invoice_no)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setReturnInvoiceId(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => printInvoiceById(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => editInvoice(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => confirmDelete(h.id, h.invoice_no)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
                   <View style={styles.histDetails}>
                     <Text style={[styles.histName, { color: colors.text }]}>{h.party_name}</Text>

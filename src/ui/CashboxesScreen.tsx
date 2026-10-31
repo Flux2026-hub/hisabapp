@@ -120,7 +120,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
@@ -132,7 +132,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
           {TYPES.map((t) => {
             const active = activeTab === t.key;
             return (
-              <Pressable key={t.key} onPress={() => { setActiveTab(t.key); clearForm(); }} style={[styles.tab, { borderColor: colors.border, backgroundColor: colors.surface }, active && { backgroundColor: t.color, borderColor: t.color }]}>
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={t.key} onPress={() => { setActiveTab(t.key); clearForm(); }} style={[styles.tab, { borderColor: colors.border, backgroundColor: colors.surface }, active && { backgroundColor: t.color, borderColor: t.color }]}>
                 <Text style={[styles.tabText, { color: colors.text }, active && { color: "#fff", fontWeight: "700" }]}>{t.label} ({counts[t.key]})</Text>
               </Pressable>
             );
@@ -148,7 +148,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text>
             ) : (
               filteredRows.slice(0, 8).map((r) => (
-                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.code}</Text>
                 </Pressable>
@@ -163,7 +163,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
         <View style={{ flexDirection: "row-reverse", gap: 8 }}>
           <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={code} onChangeText={setCode} placeholder={nextCode} placeholderTextColor={colors.textMuted} textAlign="right" editable={!editingId} />
           {!editingId && (
-            <Pressable style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={() => setCode(nextCode)}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.genBtn, { backgroundColor: colors.blue }]} onPress={() => setCode(nextCode)}>
               <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>توليد</Text>
             </Pressable>
           )}
@@ -175,7 +175,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
         {activeTab !== "main" && (
           <>
             <Text style={[styles.label, { color: colors.textMuted }]}>الصندوق الأب</Text>
-            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowParentPicker((v) => !v)}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowParentPicker((v) => !v)}>
               <Text style={[styles.pickerText, { color: colors.text }]}>{parentLabel || "اختر الصندوق الأب"}</Text>
               <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
             </Pressable>
@@ -185,7 +185,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
                   <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد صناديق مناسبة كآباء</Text>
                 ) : (
                   possibleParents.map((p) => (
-                    <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setParentId(p.id); setParentLabel(p.name); setShowParentPicker(false); }}>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setParentId(p.id); setParentLabel(p.name); setShowParentPicker(false); }}>
                       <Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text>
                       <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code}</Text>
                     </Pressable>
@@ -198,10 +198,10 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
 
         <Text style={[styles.label, { color: colors.textMuted }]}>العملة</Text>
         <View style={styles.currencyRow}>
-          <Pressable style={[styles.currencyBtn, { backgroundColor: colors.surface, borderColor: colors.border }, currencyCode === "YER" && styles.currencyBtnActive]} onPress={() => setCurrencyCode("YER")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.currencyBtn, { backgroundColor: colors.surface, borderColor: colors.border }, currencyCode === "YER" && styles.currencyBtnActive]} onPress={() => setCurrencyCode("YER")}>
             <Text style={[styles.currencyText, { color: colors.textMuted }, currencyCode === "YER" && styles.currencyTextActive]}>ريال يمني (YER)</Text>
           </Pressable>
-          <Pressable style={[styles.currencyBtn, { backgroundColor: colors.surface, borderColor: colors.border }, currencyCode === "SAR" && styles.currencyBtnActive]} onPress={() => setCurrencyCode("SAR")}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.currencyBtn, { backgroundColor: colors.surface, borderColor: colors.border }, currencyCode === "SAR" && styles.currencyBtnActive]} onPress={() => setCurrencyCode("SAR")}>
             <Text style={[styles.currencyText, { color: colors.textMuted }, currencyCode === "SAR" && styles.currencyTextActive]}>ريال سعودي (SAR)</Text>
           </Pressable>
         </View>
@@ -210,8 +210,8 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={initialBalance} onChangeText={setInitialBalance} placeholder="0" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" textAlign="right" />
 
         <View style={styles.buttons}>
-          <Pressable style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}><Text style={styles.primaryText}>{editingId ? "حفظ التعديل" : "إضافة وحفظ"}</Text></Pressable>
-          {editingId && (<Pressable style={[styles.cancel, { borderColor: colors.border }]} onPress={clearForm}><Text style={[styles.cancelText, { color: colors.text }]}>إلغاء</Text></Pressable>)}
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}><Text style={styles.primaryText}>{editingId ? "حفظ التعديل" : "إضافة وحفظ"}</Text></Pressable>
+          {editingId && (<Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.cancel, { borderColor: colors.border }]} onPress={clearForm}><Text style={[styles.cancelText, { color: colors.text }]}>إلغاء</Text></Pressable>)}
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>{TYPES.find((t) => t.key === activeTab)?.label} ({tabRows.length})</Text>
@@ -226,8 +226,8 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
               return (
                 <View key={r.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.rowActions}>
-                    <Pressable onPress={() => edit(r)} style={[styles.editBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={styles.editText}>✏️</Text></Pressable>
-                    <Pressable onPress={() => remove(r)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>🗑️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => edit(r)} style={[styles.editBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={styles.editText}>✏️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => remove(r)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>🗑️</Text></Pressable>
                   </View>
                   <View style={styles.rowInfo}>
                     <Text style={[styles.rowName, { color: colors.text }]}>{r.name}</Text>

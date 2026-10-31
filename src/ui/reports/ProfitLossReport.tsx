@@ -81,7 +81,7 @@ export default function ProfitLossReport({ onBack }: { onBack: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-      <Pressable style={styles.backWrap} onPress={onBack}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.backWrap} onPress={onBack}>
         <Text style={[styles.back, { color: colors.blue }]}>‹ العودة إلى التقارير</Text>
       </Pressable>
 

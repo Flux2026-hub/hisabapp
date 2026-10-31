@@ -46,7 +46,7 @@ export default function TrialBalanceScreen({ onBack }: { onBack: () => void }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       
-      <Pressable style={styles.back} onPress={onBack}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
         <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى التقارير</Text>
       </Pressable>
 

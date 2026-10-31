@@ -136,7 +136,7 @@ export default function ProductionOrderScreen({ onBack }: { onBack: () => void }
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
 
@@ -166,7 +166,7 @@ export default function ProductionOrderScreen({ onBack }: { onBack: () => void }
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد منتجات مطابقة</Text>
             ) : (
               filteredFinished.map((it) => (
-                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setSelectedFinished(it); setSearchFinished(it.name); setShowPicker(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setSelectedFinished(it); setSearchFinished(it.name); setShowPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · متوفر: {Number(it.stockQuantity || 0).toFixed(0)} {it.unit}</Text>
                 </Pressable>
@@ -213,7 +213,7 @@ export default function ProductionOrderScreen({ onBack }: { onBack: () => void }
 
         {/* زر التنفيذ */}
         {selectedFinished && qty && (
-          <Pressable style={[styles.primary, { backgroundColor: colors.orange }, (!canExecute || loading) && styles.disabled]} onPress={execute} disabled={!canExecute || loading}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange }, (!canExecute || loading) && styles.disabled]} onPress={execute} disabled={!canExecute || loading}>
             <Text style={styles.primaryText}>{loading ? "جارٍ التنفيذ..." : hasShortage ? "⚠️ نقص في المواد" : "تنفيذ أمر الإنتاج"}</Text>
           </Pressable>
         )}

@@ -46,13 +46,13 @@ export default function ReportActions({
 }) {
   return (
     <View style={styles.row}>
-      <Pressable style={styles.refresh} onPress={onRefresh}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.refresh} onPress={onRefresh}>
         <Text style={styles.btnText}>🔄 تحديث</Text>
       </Pressable>
-      <Pressable style={styles.pdf} onPress={onExportPdf}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.pdf} onPress={onExportPdf}>
         <Text style={styles.btnText}>📄 PDF</Text>
       </Pressable>
-      <Pressable style={styles.csv} onPress={onExportCsv}>
+      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.csv} onPress={onExportCsv}>
         <Text style={styles.btnText}>📊 CSV</Text>
       </Pressable>
     </View>

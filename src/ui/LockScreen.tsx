@@ -156,7 +156,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
             {row.map((d, di) => {
               if (d === "BIO") {
                 return biometricAvailable && !setupMode ? (
-                  <Pressable
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }}
                     key={di}
                     style={({ pressed }) => [styles.padBtn, pressed && styles.padBtnPressed]}
                     onPress={tryBiometric}
@@ -169,7 +169,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
               }
               if (d === "DEL") {
                 return (
-                  <Pressable
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }}
                     key={di}
                     style={({ pressed }) => [styles.padBtn, pressed && styles.padBtnPressed]}
                     onPress={removeDigit}
@@ -179,7 +179,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
                 );
               }
               return (
-                <Pressable
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }}
                   key={di}
                   style={({ pressed }) => [styles.padBtn, pressed && styles.padBtnPressed]}
                   onPress={() => appendDigit(d)}

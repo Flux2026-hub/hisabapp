@@ -203,7 +203,7 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
-        <Pressable style={styles.back} onPress={onBack}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
                                                                                                                                                                         
@@ -224,7 +224,7 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredFromBoxes.length === 0 ? <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text> : 
               filteredFromBoxes.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setFrom(c); setFromSearch(c.name); setShowFrom(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setFrom(c); setFromSearch(c.name); setShowFrom(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                 </Pressable>
@@ -248,7 +248,7 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredToBoxes.length === 0 ? <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text> : 
               filteredToBoxes.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setTo(c); setToSearch(c.name); setShowTo(false); }}>
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setTo(c); setToSearch(c.name); setShowTo(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                 </Pressable>
@@ -273,7 +273,7 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
             {showFromCur && (
               <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredFromCur.map((c) => (
-                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setFromCurrency(c); setFromCurSearch(c.name); setShowFromCur(false); }}>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setFromCurrency(c); setFromCurSearch(c.name); setShowFromCur(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{c.code} - {c.name}</Text>
                   </Pressable>
                 ))}
@@ -295,7 +295,7 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
             {showToCur && (
               <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredToCur.map((c) => (
-                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setToCurrency(c); setToCurSearch(c.name); setShowToCur(false); }}>
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setToCurrency(c); setToCurSearch(c.name); setShowToCur(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{c.code} - {c.name}</Text>
                   </Pressable>
                 ))}
@@ -323,7 +323,7 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
         )}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>التاريخ</Text>
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
+        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
           <Text style={[styles.pickerText, { color: colors.text }]}>{dateStr}</Text>
           <MaterialCommunityIcons name="calendar" size={20} color={colors.textMuted} />
         </Pressable>
@@ -335,11 +335,11 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
         <TextInput style={[styles.input, { minHeight: 60, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={description} onChangeText={setDescription} textAlign="right" multiline />
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-          <Pressable style={[styles.primary, { flex: 1, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
+          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { flex: 1, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
             <Text style={styles.primaryText}>{saving ? "جارٍ..." : (editingId ? "تحديث التحويل" : "تنفيذ التحويل")}</Text>
           </Pressable>
           {editingId && (                                                                                                                                                   
-            <Pressable style={[styles.cancelBtn, { backgroundColor: colors.isDark ? "#334155" : "#f1f5f9" }]} onPress={() => { setEditingId(null); setAmount(""); setDescription(""); setFrom(null); setTo(null); setFromSearch(""); setToSearch(""); }}>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.cancelBtn, { backgroundColor: colors.isDark ? "#334155" : "#f1f5f9" }]} onPress={() => { setEditingId(null); setAmount(""); setDescription(""); setFrom(null); setTo(null); setFromSearch(""); setToSearch(""); }}>
               <Text style={[styles.cancelBtnText, { color: colors.text }]}>إلغاء</Text>
             </Pressable>
           )}
@@ -352,8 +352,8 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
               {history.map((h) => (
                 <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.histActions}>
-                    <Pressable onPress={() => editTransfer(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{fontSize:14}}>✏️</Text></Pressable>                                              
-                    <Pressable onPress={() => deleteTransfer(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{fontSize:14}}>🗑️</Text></Pressable>                                       
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => editTransfer(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{fontSize:14}}>✏️</Text></Pressable>                                              
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => deleteTransfer(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{fontSize:14}}>🗑️</Text></Pressable>                                       
                   </View>                                                                                                                                                         
                   <View style={styles.histInfo}>
                     <Text style={[styles.histName, { color: colors.text }]}>{h.from_account} → {h.to_account}</Text>                                                                                          
