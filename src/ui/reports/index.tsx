@@ -9,8 +9,10 @@ import CashboxesReport from "./CashboxesReport";
 import AccountsReport from "./AccountsReport";
 import TrialBalanceScreen from "./TrialBalanceScreen";
 import CommissionsReport from "./CommissionsReport";
+import ProfitLossReport from "./ProfitLossReport"; // 🚀 استدعاء التقرير الجديد
+import { useTheme } from "../ThemeContext";
 
-type ReportKey = "menu" | "sales" | "purchase" | "inventory" | "customers" | "suppliers" | "cashboxes" | "accounts" | "commissions" | "trial";
+type ReportKey = "menu" | "sales" | "purchase" | "inventory" | "customers" | "suppliers" | "cashboxes" | "accounts" | "commissions" | "trial" | "profitLoss";
 
 const MENU: { key: ReportKey; label: string; desc: string; color: string }[] = [
   { key: "sales", label: "تقرير المبيعات", desc: "كل فواتير المبيعات في الفترة", color: "#0b806c" },
@@ -22,9 +24,11 @@ const MENU: { key: ReportKey; label: string; desc: string; color: string }[] = [
   { key: "accounts", label: "تقرير الحسابات", desc: "شجرة الحسابات والأرصدة", color: "#7c3aed" },
   { key: "trial", label: "ميزان المراجعة", desc: "ملخص مدين ودائن لجميع الحسابات", color: "#0F172A" },
   { key: "commissions", label: "تقرير العمولات", desc: "مبيعات وعمولات مناديب البيع", color: "#c2410c" },
+  { key: "profitLoss", label: "الأرباح والخسائر", desc: "ملخص الإيرادات والمصروفات وصافي الربح", color: "#059669" }, // 🚀 التقرير الجديد
 ];
 
 export default function ReportsIndex({ onBack }: { onBack: () => void }) {
+  const { colors } = useTheme();
   const [key, setKey] = useState<ReportKey>("menu");
   const goMenu = () => setKey("menu");
 
@@ -37,39 +41,37 @@ export default function ReportsIndex({ onBack }: { onBack: () => void }) {
   if (key === "accounts") return <AccountsReport onBack={goMenu} />;
   if (key === "trial") return <TrialBalanceScreen onBack={goMenu} />;
   if (key === "commissions") return <CommissionsReport onBack={goMenu} />;
+  if (key === "profitLoss") return <ProfitLossReport onBack={goMenu} />; // 🚀 تفعيل التقرير الجديد
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       <Pressable style={styles.back} onPress={onBack}>
-        <Text style={styles.backText}>‹ العودة إلى الوحدات المحاسبية</Text>
+        <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
       </Pressable>
 
-      <Text style={styles.screenTitle}>التقارير</Text>
-      <Text style={styles.hint}>اختر التقرير المطلوب. جميع التقارير محلية وتعمل بدون إنترنت.</Text>
+      <Text style={[styles.screenTitle, { color: colors.text }]}>التقارير</Text>
+      <Text style={[styles.hint, { color: colors.textMuted }]}>اختر التقرير المطلوب. جميع التقارير محلية وتعمل بدون إنترنت.</Text>
 
       <View style={styles.grid}>
         {MENU.map((m) => (
-          <Pressable
-            key={m.key}
-            onPress={() => setKey(m.key)}
-            style={[styles.card, { borderRightColor: m.color, borderRightWidth: 5 }]}
-          >
-            <Text style={styles.cardTitle}>{m.label}</Text>
-            <Text style={styles.cardDesc}>{m.desc}</Text>
+          <Pressable key={m.key} onPress={() => setKey(m.key)} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, { borderRightColor: m.color, borderRightWidth: 5 }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{m.label}</Text>
+            <Text style={[styles.cardDesc, { color: colors.textMuted }]}>{m.desc}</Text>
           </Pressable>
         ))}
       </View>
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 8 },
-  backText: { color: "#1E40AF", textAlign: "left", fontWeight: "700" },
-  screenTitle: { fontSize: 22, color: "#0F172A", marginBottom: 6, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
-  hint: { fontSize: 12, color: "#8494B0", marginBottom: 14, lineHeight: 18, textAlign: "left", width: "100%" },
+  backText: { textAlign: "left", fontWeight: "700" },
+  screenTitle: { fontSize: 22, marginBottom: 6, textAlign: "left", width: "100%", fontFamily: "CodecBold" },
+  hint: { fontSize: 12, marginBottom: 14, lineHeight: 18, textAlign: "left", width: "100%" },
   grid: { gap: 10 },
-  card: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#D6E3F8", borderRadius: 12, padding: 16 },
-  cardTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A", textAlign: "right", width: "100%", fontFamily: "CodecBold" },
-  cardDesc: { fontSize: 12, color: "#8494B0", textAlign: "right", marginTop: 6 },
+  card: { borderWidth: 1, borderRadius: 12, padding: 16 },
+  cardTitle: { fontSize: 16, fontWeight: "800", textAlign: "right", width: "100%", fontFamily: "CodecBold" },
+  cardDesc: { fontSize: 12, textAlign: "right", marginTop: 6 },
 });
