@@ -6,6 +6,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { initializeLocalDatabase } from "../src/db/local";
 import LockScreen, { isSessionActive } from "../src/ui/LockScreen";
 import { ThemeProvider } from "../src/ui/ThemeContext";
+import { ToastProvider } from "../src/ui/ToastContext"; // 🚀 استدعاء نظام الإشعارات
+import { runAutoBackup } from "../src/utils/autoBackup";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 I18nManager.allowRTL(true);
@@ -28,6 +30,7 @@ export default function RootLayout() {
         await initializeLocalDatabase();
         const session = await isSessionActive();
         setUnlocked(session);
+        runAutoBackup().catch(console.error);
       } catch (e: any) {
         console.error("DB Error:", e);
         setDbError(e.message || "حدث خطأ");
@@ -60,7 +63,10 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      {/* 🚀 تغليف التطبيق بنظام الإشعارات */}
+      <ToastProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ToastProvider>
     </ThemeProvider>
   );
 }
