@@ -6,12 +6,13 @@ import { sqlite } from "../db/local";
 import { buildInvoiceHtml, printHtml, shareHtmlAsPdf, type InvoicePrintData } from "../utils/printDocument";
 import SalesReturnScreen from "./SalesReturnScreen";
 import { useTheme } from "./ThemeContext";
+import SalesItemPicker from "./components/SalesItemPicker"; // 🚀 استدعاء المكون الجديد
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 type Row = any;
 type PaymentType = "cash" | "credit";
-type InvoiceLine = { key: string; itemId: string; itemName: string; itemSku: string; available: number; unit: string; quantity: number; unitPrice: number; };
+type InvoiceLine = { key: string; itemId: string; itemName: string; itemSku: string; available?: number; unit: string; quantity: number; unitPrice: number; };
 
 export default function SalesInv({ onBack }: { onBack: () => void }) {
   const { colors } = useTheme();
@@ -38,14 +39,9 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const [discountValue, setDiscountValue] = useState("");
 
   const [lines, setLines] = useState<InvoiceLine[]>([]);
-  const [pickItem, setPickItem] = useState<Row | null>(null);
-  const [pickQty, setPickQty] = useState("");
-  const [pickPrice, setPickPrice] = useState("");
-
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showCashboxPicker, setShowCashboxPicker] = useState(false);
-  const [showItemPicker, setShowItemPicker] = useState(false);
   const [showSalesRepPicker, setShowSalesRepPicker] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -92,17 +88,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     return customers.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q) || String(c.phone || "").includes(q));
   }, [customers, customerSearch]);
 
-  const addLine = () => {
-    if (!pickItem) return Alert.alert("تنبيه", "اختر المنتج");
-    const qty = Number(pickQty); const price = Number(pickPrice);
-    if (!qty || qty <= 0) return Alert.alert("تنبيه", "أدخل كمية صحيحة");
-    if (price < 0 || Number.isNaN(price)) return Alert.alert("تنبيه", "أدخل سعراً صحيحاً");
-    const alreadyUsed = lines.filter((l) => l.itemId === pickItem.id).reduce((s, l) => s + l.quantity, 0);
-    const available = Number(pickItem.stock_quantity || 0) - alreadyUsed;
-    if (qty > available) return Alert.alert("تنبيه", `المتوفر: ${available} ${pickItem.unit}`);
-
-    setLines([...lines, { key: newId(), itemId: pickItem.id, itemName: pickItem.name, itemSku: pickItem.sku, available: Number(pickItem.stock_quantity || 0), unit: pickItem.unit, quantity: qty, unitPrice: price }]);
-    setPickItem(null); setPickQty(""); setPickPrice(""); setShowItemPicker(false);
+  const handleAddLine = (newLine: InvoiceLine) => {
+    setLines(prev => [...prev, newLine]);
   };
 
   const removeLine = (key: string) => setLines(lines.filter((l) => l.key !== key));
@@ -328,20 +315,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           ))}
         </View>
 
-        <Pressable style={[styles.secondary, { backgroundColor: colors.blue, marginTop: 12 }]} onPress={() => setShowItemPicker(!showItemPicker)}><Text style={styles.secondaryText}>+ إضافة منتج</Text></Pressable>
-        {showItemPicker && (
-          <View style={[styles.addBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowItemPicker(false)}><Text style={[styles.pickerText, { color: colors.text }]}>{pickItem ? pickItem.name : "اختر المنتج"}</Text></Pressable>
-            <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-              {items.map((i) => (<Pressable key={i.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPickItem(i); setShowItemPicker(false); setPickPrice(String(i.average_cost || 0)); }}><Text style={[styles.suggestName, { color: colors.text }]}>{i.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>متوفر: {i.stock_quantity}</Text></Pressable>))}
-            </ScrollView>
-            <View style={styles.twoCols}>
-              <View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textMuted }]}>الكمية</Text><TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickQty} onChangeText={setPickQty} keyboardType="decimal-pad" textAlign="right" placeholder="0" /></View>
-              <View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textMuted }]}>السعر</Text><TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickPrice} onChangeText={setPickPrice} keyboardType="decimal-pad" textAlign="right" placeholder="0" /></View>
-            </View>
-            <Pressable style={[styles.primary, { backgroundColor: colors.orange, marginTop: 12 }]} onPress={addLine}><Text style={styles.primaryText}>إضافة للسلة</Text></Pressable>
-          </View>
-        )}
+        {/* 🚀 استخدام المكون الجديد هنا */}
+        <SalesItemPicker items={items} onAddLine={handleAddLine} />
 
         <Text style={[styles.label, { color: colors.textMuted }]}>مندوب المبيعات (اختياري)</Text>
         <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowSalesRepPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{salesRep ? salesRep.name : "بدون مندوب"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
@@ -411,7 +386,6 @@ const styles = StyleSheet.create({
   typeRow: { flexDirection: "row-reverse", gap: 8, marginBottom: 8 },
   typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, alignItems: "center" },
   typeText: { fontWeight: "700", fontSize: 13 },
-  twoCols: { flexDirection: "row-reverse", gap: 8, marginTop: 8 },
   list: { gap: 8, marginTop: 4 },
   row: { borderWidth: 1, borderRadius: 10, padding: 10, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   rowInfo: { flex: 1, alignItems: "flex-end" },
