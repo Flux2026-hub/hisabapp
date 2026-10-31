@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, View,
+  Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import ReportsIndex from "./reports";
@@ -47,6 +47,9 @@ const MENU: MenuItem[] = [
 
 export default function AccountingModule() {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions(); // 🚀 مراقبة الشاشة
+  const isDesktop = width >= 768;
+
   const [mode, setMode] = useState<Mode>("menu");
   const [pending, setPending] = useState(0);
 
@@ -92,7 +95,7 @@ export default function AccountingModule() {
   const sections = Array.from(new Set(MENU.map((m) => m.section)));
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
+    <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.desktopContent]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
       
       <View style={[styles.syncBar, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC", borderColor: colors.border }]}>
         <View style={styles.syncLeft}>
@@ -118,8 +121,8 @@ export default function AccountingModule() {
               <Pressable 
                 key={item.mode} 
                 onPress={() => setMode(item.mode)} 
-                // 🚀 تم تطبيق اللون الرمادي الفاتح جداً هنا
-                style={[styles.tile, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }]} 
+                // 🚀 تعديل العرض في التلفاز ليكون 5 أعمدة
+                style={[styles.tile, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }, isDesktop && { flexBasis: "18%" }]} 
               >
                 <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#E2E8F0" }]}>
                   <MaterialCommunityIcons name={item.icon as any} size={26} color={colors.blue} />
@@ -136,6 +139,7 @@ export default function AccountingModule() {
 
 const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 40, paddingHorizontal: 12 },
+  desktopContent: { maxWidth: 1200, alignSelf: "center", width: "100%" }, // 🚀 تحديد أقصى عرض للتلفاز
   syncBar: { flexDirection: "row-reverse", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, marginBottom: 12, gap: 8, borderWidth: 1 },
   syncLeft: { flex: 1, flexDirection: "row-reverse", alignItems: "center", gap: 6 },
   pendingText: { fontSize: 12, fontWeight: "700" },
@@ -144,36 +148,9 @@ const styles = StyleSheet.create({
   hint: { fontSize: 12, marginBottom: 14, lineHeight: 18, paddingHorizontal: 4, textAlign: "left", width: "100%" },
   sectionBlock: { width: "100%", marginTop: 20 },
   grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 10, marginBottom: 4 },
-  
-  tile: { 
-    flexDirection: "column", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    borderRadius: 16,
-    paddingVertical: 20, 
-    paddingHorizontal: 10,
-    minWidth: "30%", 
-    flexGrow: 1, 
-    flexBasis: "30%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05, 
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  tileText: { 
-    fontSize: 13, 
-    fontFamily: "CodecBold", 
-    textAlign: "center" 
-  },
+  tile: { flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 16, paddingVertical: 20, paddingHorizontal: 10, minWidth: "30%", flexGrow: 1, flexBasis: "30%", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  iconCircle: { width: 56, height: 56, borderRadius: 28, justifyContent: "center", alignItems: "center", marginBottom: 12 },
+  tileText: { fontSize: 13, fontFamily: "CodecBold", textAlign: "center" },
   sectionLabel: { fontSize: 13, fontFamily: "CodecBold", textAlign: "left", width: "100%", marginBottom: 8 },
   sectionDivider: { marginBottom: 15, height: 1, width: "100%" },
 });

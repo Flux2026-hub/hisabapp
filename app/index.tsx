@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions } from "react-native";
+import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions, useWindowDimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit";
 import AccountingModule from "../src/ui/AccountingModule";
@@ -19,6 +19,9 @@ const sections: Array<[Tab, string]> = [
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions(); // 🚀 مراقبة عرض الشاشة
+  const isDesktop = width >= 768; // إذا كان العرض كبيراً (تلفاز / DeX)
+
   const [tab, setTab] = useState<Tab>("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -143,10 +146,11 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <ScrollView contentContainerStyle={styles.scrollBackground} keyboardShouldPersistTaps="handled">
+      {/* 🚀 تطبيق التصميم المتجاوب على المحتوى */}
+      <ScrollView contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent]} keyboardShouldPersistTaps="handled">
         
         {tab === "home" && (
-          <View style={[styles.whiteCard, { backgroundColor: colors.surface }]}>
+          <View style={[styles.whiteCard, { backgroundColor: colors.surface }, isDesktop && { padding: 40 }]}>
             <Text style={[styles.title, { color: colors.text }]}>لوحة التحكم</Text>
             <Text style={[styles.hint, { color: colors.textMuted }]}>نظرة سريعة على أرصدة المصنع</Text>
 
@@ -154,7 +158,7 @@ export default function HomeScreen() {
               <Text style={[styles.chartTitle, { color: colors.text }]}>مبيعات آخر 7 أيام (YER)</Text>
               <LineChart
                 data={chartData}
-                width={Dimensions.get("window").width - 80}
+                width={isDesktop ? width - 200 : width - 80} // 🚀 تكبير الرسم البياني في التلفاز
                 height={200}
                 yAxisLabel=""
                 yAxisSuffix=""
@@ -173,8 +177,9 @@ export default function HomeScreen() {
               />
             </View>
 
+            {/* 🚀 البطاقات تصبح 4 في صف واحد عند العرض على تلفاز */}
             <View style={styles.kpiGrid}>
-              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#064E3B" : "#F0FDF4" }]}>
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#064E3B" : "#F0FDF4" }, isDesktop && { width: "23.5%" }]}>
                 <View style={styles.kpiHeader}>
                   <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#065F46" : "#DCFCE7" }]}><MaterialCommunityIcons name="account-group" size={22} color="#059669" /></View>
                   <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>العملاء (مدينون)</Text>
@@ -183,7 +188,7 @@ export default function HomeScreen() {
                 <Text style={styles.kpiSub}>≈ {(kpis.customers / sarRate).toFixed(2)} SAR</Text>
               </View>
 
-              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEF2F2" }]}>
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEF2F2" }, isDesktop && { width: "23.5%" }]}>
                 <View style={styles.kpiHeader}>
                   <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#991B1B" : "#FEE2E2" }]}><MaterialCommunityIcons name="truck-delivery" size={22} color="#DC2626" /></View>
                   <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>الموردون (دائنون)</Text>
@@ -192,7 +197,7 @@ export default function HomeScreen() {
                 <Text style={styles.kpiSub}>≈ {(kpis.suppliers / sarRate).toFixed(2)} SAR</Text>
               </View>
 
-              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}>
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }, isDesktop && { width: "23.5%" }]}>
                 <View style={styles.kpiHeader}>
                   <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#1D4ED8" : "#DBEAFE" }]}><MaterialCommunityIcons name="wallet" size={22} color="#2563EB" /></View>
                   <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>إجمالي الصناديق</Text>
@@ -201,7 +206,7 @@ export default function HomeScreen() {
                 <Text style={styles.kpiSub}>≈ {(kpis.cashboxes / sarRate).toFixed(2)} SAR</Text>
               </View>
 
-              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#7C2D12" : "#FFF7ED" }]}>
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#7C2D12" : "#FFF7ED" }, isDesktop && { width: "23.5%" }]}>
                 <View style={styles.kpiHeader}>
                   <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#9A3412" : "#FFEDD5" }]}><MaterialCommunityIcons name="package-variant" size={22} color="#F97316" /></View>
                   <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>قيمة المخزون</Text>
@@ -212,14 +217,14 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.quickActionsGrid}>
-              <Pressable style={[styles.quickActionCard, { backgroundColor: colors.isDark ? "#1E293B" : "#EFF6FF" }]} onPress={() => go("accounting")}>
+              <Pressable style={[styles.quickActionCard, { backgroundColor: colors.isDark ? "#1E293B" : "#EFF6FF" }, isDesktop && { width: "23.5%", aspectRatio: 1.5 }]} onPress={() => go("accounting")}>
                 <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#DBEAFE", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
                   <MaterialCommunityIcons name="pencil" size={32} color="#2563EB" />
                 </View>
                 <Text style={[styles.quickActionText, { color: colors.text }]}>المحاسبة</Text>
               </Pressable>
 
-              <Pressable style={[styles.quickActionCard, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }]} onPress={() => go("settings")}>
+              <Pressable style={[styles.quickActionCard, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }, isDesktop && { width: "23.5%", aspectRatio: 1.5 }]} onPress={() => go("settings")}>
                 <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#E2E8F0", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
                   <MaterialCommunityIcons name="cog" size={32} color="#475569" />
                 </View>
@@ -260,6 +265,7 @@ const styles = StyleSheet.create({
   logo: { width: 90, height: 70 },
   searchBtn: { padding: 8, marginHorizontal: 10 },
   scrollBackground: { paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 40 },
+  desktopContent: { maxWidth: 1200, alignSelf: "center", width: "100%" }, // 🚀 تحديد أقصى عرض للتلفاز
   whiteCard: { borderRadius: 16, padding: 20 },
   transparentScreen: { backgroundColor: "transparent", paddingHorizontal: 4 },
   title: { fontSize: 24, textAlign: "left", marginTop: 7, fontFamily: "CodecBold", width: "100%" },
