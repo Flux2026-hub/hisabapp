@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LineChart } from "react-native-chart-kit"; // 🚀 استدعاء مكتبة الرسوم البيانية
+import { LineChart } from "react-native-chart-kit";
 import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
 import GlobalSearchModal from "../src/ui/components/GlobalSearchModal";
@@ -28,7 +28,6 @@ export default function HomeScreen() {
     customers: 0, suppliers: 0, cashboxes: 0, inventory: 0,
   });
 
-  // 🚀 حالة الرسم البياني
   const [chartData, setChartData] = useState({
     labels: [] as string[],
     datasets: [{ data: [0] }]
@@ -151,7 +150,6 @@ export default function HomeScreen() {
             <Text style={[styles.title, { color: colors.text }]}>لوحة التحكم</Text>
             <Text style={[styles.hint, { color: colors.textMuted }]}>نظرة سريعة على أرصدة المصنع</Text>
 
-            {/* 🚀 الرسم البياني للمبيعات */}
             <View style={[styles.chartContainer, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }]}>
               <Text style={[styles.chartTitle, { color: colors.text }]}>مبيعات آخر 7 أيام (YER)</Text>
               <LineChart
@@ -266,11 +264,8 @@ const styles = StyleSheet.create({
   transparentScreen: { backgroundColor: "transparent", paddingHorizontal: 4 },
   title: { fontSize: 24, textAlign: "left", marginTop: 7, fontFamily: "CodecBold", width: "100%" },
   hint: { fontSize: 12, textAlign: "left", marginVertical: 8, width: "100%" },
-  
-  // 🚀 ستايل الرسم البياني
   chartContainer: { marginTop: 16, borderRadius: 16, paddingTop: 12, paddingBottom: 4, alignItems: "center" },
   chartTitle: { fontSize: 13, fontWeight: "700", marginBottom: 8, textAlign: "right", width: "100%", paddingHorizontal: 20 },
-
   kpiGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between", marginTop: 20, marginBottom: 20 },
   kpiCard: { width: "48%", borderRadius: 16, padding: 14, marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
   kpiHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginBottom: 10 },
@@ -282,7 +277,6 @@ const styles = StyleSheet.create({
   quickActionsGrid: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 10 },
   quickActionCard: { width: "48%", borderRadius: 16, padding: 20, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, aspectRatio: 1 },
   quickActionText: { fontSize: 16, fontFamily: "CodecBold" },
-  
   nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 8, alignItems: "center", paddingHorizontal: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, zIndex: 5 },
   navTabs: { flex: 1, flexDirection: "row-reverse", justifyContent: "space-around" },
   menuButton: { padding: 8, marginLeft: 8 },
