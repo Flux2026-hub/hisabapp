@@ -5,7 +5,7 @@ import { sqlite } from "../db/local";
 import PurchaseReturnScreen from "./PurchaseReturnScreen";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { buildInvoiceHtml, printHtml, shareHtmlAsPdf, type InvoicePrintData } from "../utils/printDocument";
-import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
+import { useTheme } from "./ThemeContext";
 
 type Row = any;
 type PaymentType = "cash" | "credit";
@@ -14,7 +14,7 @@ type InvoiceLine = { key: string; itemId: string; itemName: string; itemSku: str
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 export default function PurchaseInv({ onBack }: { onBack: () => void }) {
-  const { colors } = useTheme(); // 🚀 قراءة الألوان
+  const { colors } = useTheme();
   const [suppliers, setSuppliers] = useState<Row[]>([]);
   const [currencies, setCurrencies] = useState<Row[]>([]);
   const [cashboxes, setCashboxes] = useState<Row[]>([]);
@@ -40,6 +40,10 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
   const [saving, setSaving] = useState(false);
   const [returnInvoiceId, setReturnInvoiceId] = useState<string | null>(null);
   const [history, setHistory] = useState<Row[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingNo, setEditingNo] = useState<string | null>(null);
+  const [dateStr, setDateStr] = useState(new Date().toISOString().slice(0, 10));
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -96,8 +100,9 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
   const buildCurrentInvoiceData = (invoiceNo: string): InvoicePrintData | null => {
     if (!supplier || !currency) return null;
     const rate = Number(currency.exchangeRate) || 1;
-    return { type: "purchase", invoiceNo, createdAt: Date.now(), partyLabel: "المورد", partyName: supplier.name, partyPhone: supplier.phone || undefined, currencyCode: currency.code, currencySymbol: currency.symbol || currency.code, exchangeRate: rate, isBase: !!currency.isBase, paymentType, cashboxName: cashbox?.name, lines: lines.map((l) => ({ itemName: l.itemName, itemSku: l.itemSku, unit: l.unit, quantity: l.quantity, unitPrice: l.unitPrice })), total, notes: notes.trim() || undefined };
+    return { type: "purchase", invoiceNo, createdAt: dateStr ? new Date(dateStr).getTime() : Date.now(), partyLabel: "المورد", partyName: supplier.name, partyPhone: supplier.phone || undefined, currencyCode: currency.code, currencySymbol: currency.symbol || currency.code, exchangeRate: rate, isBase: !!currency.isBase, paymentType, cashboxName: cashbox?.name, lines: lines.map((l) => ({ itemName: l.itemName, itemSku: l.itemSku, unit: l.unit, quantity: l.quantity, unitPrice: l.unitPrice })), total, notes: notes.trim() || undefined };
   };
+
   const printInvoiceById = async (invoiceId: string) => {
     try {
       const inv: any = await sqlite.getFirstAsync("SELECT * FROM invoices WHERE id = ?", [invoiceId]);
@@ -140,7 +145,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
   };
 
   const editInvoice = async (invoiceId: string) => {
-    Alert.alert("تعديل الفاتورة", "سيتم حذف الفاتورة الحالية وفتح نموذج جديد بنفس البيانات للتعديل.\n\nمتابعة؟", [{ text: "إلغاء", style: "cancel" }, { text: "متابعة", onPress: async () => {
+    Alert.alert("تعديل الفاتورة", "سيتم فتح الفاتورة للتعديل المباشر. متابعة؟", [{ text: "إلغاء", style: "cancel" }, { text: "متابعة", onPress: async () => {
         try {
           const inv: any = await sqlite.getFirstAsync("SELECT * FROM invoices WHERE id = ?", [invoiceId]);
           if (!inv) return;
@@ -150,16 +155,14 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
           const oldCashbox = cashboxes.find((c) => c.id === inv.cashbox_id);
           const oldPaymentType = (inv.payment_type as PaymentType) || "cash";
 
-          await deleteInvoice(invoiceId);
+          setEditingId(inv.id); setEditingNo(inv.invoice_no);
+          if (inv.created_at) setDateStr(new Date(inv.created_at).toISOString().slice(0, 10));
 
           if (oldSupplier) { setSupplier(oldSupplier); setSupplierSearch(oldSupplier.name); }
           if (oldCurrency) setCurrency(oldCurrency);
           if (oldCashbox) setCashbox(oldCashbox);
           setPaymentType(oldPaymentType);
           setLines((invLines || []).map((l: any) => ({ key: newId(), itemId: l.item_id, itemName: l.item_name || l.description || "—", itemSku: l.item_sku || "", unit: l.item_unit || "", quantity: Number(l.quantity), unitPrice: Number(l.unit_price) })));
-
-          await loadItems();
-          Alert.alert("تم التحميل", "الفاتورة جاهزة للتعديل — أكمل ثم احفظ كفاتورة جديدة");
         } catch (e) { Alert.alert("تعذر التعديل", String(e)); }
     }}]);
   };
@@ -174,32 +177,62 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
     if (!supplier || !currency) return;
     setSaving(true);
     try {
-      const now = Date.now();
-      const invoiceId = newId();
-      const prefix = "PUR";
-      const last: any = await sqlite.getAllAsync(`SELECT invoice_no FROM invoices WHERE invoice_type = 'purchase' AND invoice_no LIKE ? ORDER BY created_at DESC LIMIT 1`, [`${prefix}-%`]);
-      let nextNum = 1; if (last && last.length > 0) nextNum = parseInt(String(last[0].invoice_no).replace(/\D/g, ""), 10) + 1;
-      const invoiceNo = `${prefix}-${String(nextNum).padStart(3, "0")}`;
+      const now = dateStr ? new Date(dateStr).getTime() : Date.now();
+      let currentInvoiceId = editingId;
+      let currentInvoiceNo = editingNo;
 
       const rate = Number(currency.exchangeRate) || 1;
       const isBase = !!currency.isBase;
       const baseAmount = isBase ? total : total * rate;
 
-      await sqlite.runAsync(`INSERT INTO invoices (id, invoice_no, invoice_type, party_id, party_name, status, subtotal, tax, total, created_at, currency_code, exchange_rate, payment_type, cashbox_id) VALUES (?, ?, 'purchase', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`, [invoiceId, invoiceNo, supplier.id, supplier.name, paymentType === "cash" ? "paid" : "posted", total, total, now, currency.code, rate, paymentType, paymentType === "cash" && cashbox ? cashbox.id : null]);
+      if (!currentInvoiceId) {
+        currentInvoiceId = newId();
+        const prefix = "PUR";
+        const last: any = await sqlite.getAllAsync(`SELECT invoice_no FROM invoices WHERE invoice_type = 'purchase' AND invoice_no LIKE ?`, [`${prefix}-%`]);
+        let maxNum = 0;
+        if (last && last.length > 0) {
+          last.forEach((row: any) => {
+            const num = parseInt(String(row.invoice_no).replace(/\D/g, ""), 10);
+            if (!isNaN(num) && num > maxNum) maxNum = num;
+          });
+        }
+        const nextNum = maxNum + 1;
+        currentInvoiceNo = `${prefix}-${String(nextNum).padStart(3, "0")}`;
+
+        await sqlite.runAsync(`INSERT INTO invoices (id, invoice_no, invoice_type, party_id, party_name, status, subtotal, tax, total, created_at, currency_code, exchange_rate, payment_type, cashbox_id) VALUES (?, ?, 'purchase', ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`, [currentInvoiceId, currentInvoiceNo, supplier.id, supplier.name, paymentType === "cash" ? "paid" : "posted", total, total, now, currency.code, rate, paymentType, paymentType === "cash" && cashbox ? cashbox.id : null]);
+      } else {
+        const oldInv: any = await sqlite.getFirstAsync("SELECT * FROM invoices WHERE id = ?", [currentInvoiceId]);
+        const oldLines: any = await sqlite.getAllAsync("SELECT * FROM invoice_lines WHERE invoice_id = ?", [currentInvoiceId]);
+
+        for (const l of oldLines) await sqlite.runAsync("UPDATE items SET stock_quantity = stock_quantity - ?, updated_at = ? WHERE id = ?", [Number(l.quantity), Date.now(), l.item_id]);
+
+        const baseCur = currencies.find(c => c.isBase);
+        const oldRate = Number(oldInv.exchange_rate) || 1;
+        const oldBaseAmount = oldInv.currency_code === baseCur?.code ? Number(oldInv.total) : Number(oldInv.total) * oldRate;
+
+        if (oldInv.payment_type === "credit" && oldInv.party_id) await sqlite.runAsync("UPDATE suppliers SET balance = balance - ? WHERE id = ?", [oldBaseAmount, oldInv.party_id]);
+        else if (oldInv.payment_type === "cash" && oldInv.cashbox_id) await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [oldBaseAmount, oldInv.cashbox_id]);
+
+        await sqlite.runAsync("DELETE FROM invoice_lines WHERE invoice_id = ?", [currentInvoiceId]);
+        await sqlite.runAsync("DELETE FROM stock_movements WHERE source_type = 'purchase_invoice' AND source_id = ?", [currentInvoiceId]);
+
+        await sqlite.runAsync(`UPDATE invoices SET party_id=?, party_name=?, status=?, subtotal=?, total=?, created_at=?, currency_code=?, exchange_rate=?, payment_type=?, cashbox_id=? WHERE id=?`, [supplier.id, supplier.name, paymentType === "cash" ? "paid" : "posted", total, total, now, currency.code, rate, paymentType, paymentType === "cash" && cashbox ? cashbox.id : null, currentInvoiceId]);
+      }
 
       for (const l of lines) {
-        await sqlite.runAsync(`INSERT INTO invoice_lines (id, invoice_id, item_id, description, quantity, unit_price, line_total) VALUES (?, ?, ?, ?, ?, ?, ?)`, [newId(), invoiceId, l.itemId, l.itemName, l.quantity, l.unitPrice, l.quantity * l.unitPrice]);
+        await sqlite.runAsync(`INSERT INTO invoice_lines (id, invoice_id, item_id, description, quantity, unit_price, line_total) VALUES (?, ?, ?, ?, ?, ?, ?)`, [newId(), currentInvoiceId, l.itemId, l.itemName, l.quantity, l.unitPrice, l.quantity * l.unitPrice]);
         await sqlite.runAsync("UPDATE items SET stock_quantity = stock_quantity + ?, average_cost = ?, updated_at = ? WHERE id = ?", [l.quantity, l.unitPrice, now, l.itemId]);
-        await sqlite.runAsync(`INSERT INTO stock_movements (id, source_type, source_id, item_id, warehouse_id, movement_type, quantity_in, quantity_out, planned_quantity, waste_quantity, unit_cost, created_at) VALUES (?, 'purchase_invoice', ?, ?, 'wh-wip', 'purchase_in', ?, 0, 0, 0, ?, ?)`, [newId(), invoiceId, l.itemId, l.quantity, l.unitPrice, now]);
+        await sqlite.runAsync(`INSERT INTO stock_movements (id, source_type, source_id, item_id, warehouse_id, movement_type, quantity_in, quantity_out, planned_quantity, waste_quantity, unit_cost, created_at) VALUES (?, 'purchase_invoice', ?, ?, 'wh-wip', 'purchase_in', ?, 0, 0, 0, ?, ?)`, [newId(), currentInvoiceId, l.itemId, l.quantity, l.unitPrice, now]);
       }
 
       if (paymentType === "credit") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [baseAmount, supplier.id]);
       else if (cashbox) await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE id = ?", [baseAmount, cashbox.id]);
 
-      const currentData = buildCurrentInvoiceData(invoiceNo);
-      Alert.alert("تم الحفظ بنجاح", `رقم الفاتورة: ${invoiceNo}\n\nهل تريد طباعة الفاتورة؟`, [{ text: "لاحقاً", style: "cancel" }, { text: "طباعة", onPress: async () => { if (currentData) printHtml(await buildInvoiceHtml(currentData)); } }, { text: "مشاركة PDF", onPress: async () => { if (currentData) shareHtmlAsPdf(await buildInvoiceHtml(currentData), `فاتورة-شراء-${invoiceNo}.pdf`); } }]);
+      const currentData = buildCurrentInvoiceData(currentInvoiceNo || "—");
+      Alert.alert("تم الحفظ بنجاح", `رقم الفاتورة: ${currentInvoiceNo}`, [{ text: "لاحقاً", style: "cancel" }, { text: "طباعة", onPress: async () => { if (currentData) printHtml(await buildInvoiceHtml(currentData)); } }, { text: "مشاركة PDF", onPress: async () => { if (currentData) shareHtmlAsPdf(await buildInvoiceHtml(currentData), `فاتورة-شراء-${currentInvoiceNo}.pdf`); } }]);
 
       setSupplier(null); setSupplierSearch(""); setLines([]); setNotes(""); if (paymentType === "cash") setCashbox(null);
+      setEditingId(null); setEditingNo(null); setDateStr(new Date().toISOString().slice(0, 10));
       await loadItems(); await loadHistory();
     } catch (e) { Alert.alert("تعذر الحفظ", String(e)); } finally { setSaving(false); }
   };
@@ -207,6 +240,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
   const symbol = currency?.symbol || currency?.code || "";
 
   if (returnInvoiceId) return <PurchaseReturnScreen invoiceId={returnInvoiceId} onBack={() => setReturnInvoiceId(null)} />;
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
@@ -216,8 +250,13 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
         </Pressable>
 
         <BrandBanner />
-        <Text style={[styles.screenTitle, { color: colors.text }]}>فاتورة مشتريات جديدة</Text>
-        <Text style={[styles.hint, { color: colors.textMuted }]}>تُسجَّل من الموردين، وتضيف إلى مخزون تحت الإنتاج (مواد خام وعبوات).</Text>
+        <Text style={[styles.screenTitle, { color: colors.text }]}>{editingNo ? `تعديل الفاتورة ${editingNo}` : "فاتورة مشتريات جديدة"}</Text>
+
+        <Text style={[styles.label, { color: colors.textMuted }]}>التاريخ</Text>
+        <Pressable style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: "center", height: 42 }]} onPress={() => setShowDatePicker(true)}>
+          <Text style={{ textAlign: "right", color: colors.text, fontSize: 14 }}>{dateStr}</Text>
+        </Pressable>
+        {showDatePicker && <DateTimePicker value={dateStr ? new Date(dateStr) : new Date()} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(Platform.OS === 'ios'); if (d) setDateStr(d.toISOString().slice(0, 10)); }} />}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>المورد</Text>
         <TextInput
@@ -240,7 +279,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد نتائج مطابقة</Text>
             ) : (
               filteredSuppliers.map((s) => (
-                <Pressable key={s.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setSupplier(s); setSupplierSearch(s.name); setShowSupplierPicker(false); }}>
+                <Pressable key={s.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSupplier(s); setSupplierSearch(s.name); setShowSupplierPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{s.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{s.code} {s.phone ? `· ${s.phone}` : ""}</Text>
                 </Pressable>
@@ -257,7 +296,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
         {showCurrencyPicker && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {currencies.map((c) => (
-              <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setShowCurrencyPicker(false); }}>
+              <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}>
                 <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.symbol})</Text>
                 <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code}{c.isBase ? " · أساسية" : ` · 1 = ${Number(c.exchangeRate).toFixed(2)} YER`}</Text>
               </Pressable>
@@ -288,7 +327,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
                   <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد صناديق</Text>
                 ) : (
                   cashboxes.map((c) => (
-                    <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCashbox(c); setShowCashboxPicker(false); }}>
+                    <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}>
                       <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                       <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                     </Pressable>
@@ -331,7 +370,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد مواد — أضفها من شاشة الأصناف</Text>
             ) : (
               items.map((it) => (
-                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickItem(it); setPickPrice(String(it.average_cost ?? "")); setShowItemPicker(false); }}>
+                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPickItem(it); setPickPrice(String(it.average_cost ?? "")); setShowItemPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · {it.unit}</Text>
                 </Pressable>
@@ -346,7 +385,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
         <Text style={[styles.label, { color: colors.textMuted }]}>سعر الوحدة ({symbol})</Text>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickPrice} onChangeText={setPickPrice} keyboardType="decimal-pad" textAlign="right" placeholder="0" placeholderTextColor={colors.textMuted} />
 
-        <Pressable style={[styles.secondary, { backgroundColor: colors.blue }]} onPress={addLine}><Text style={styles.secondaryText}>+ إضافة المادة</Text></Pressable>
+        <Pressable style={[styles.secondary, { backgroundColor: colors.blue, marginTop: 12 }]} onPress={addLine}><Text style={styles.secondaryText}>+ إضافة المادة</Text></Pressable>
 
         <View style={[styles.totalBox, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}>
           <Text style={[styles.totalLabel, { color: colors.blue }]}>الإجمالي</Text>
@@ -358,7 +397,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
 
         <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 16 }}>
           <Pressable style={[styles.primary, { marginTop: 0, flex: 1, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
-            <Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : "حفظ الفاتورة"}</Text>
+            <Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : (editingId ? "تحديث الفاتورة" : "حفظ الفاتورة")}</Text>
           </Pressable>
           <Pressable style={{ borderWidth: 1, borderColor: colors.blue, paddingHorizontal: 16, borderRadius: 10, justifyContent: "center" }} onPress={async () => {
               const data = buildCurrentInvoiceData("—");
