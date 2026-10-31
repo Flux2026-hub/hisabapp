@@ -27,7 +27,6 @@ type Mode =
 
 type MenuItem = { mode: Mode; label: string; icon: string; section: string };
 
-// 🚀 تمت إزالة الألوان لتصبح جميع الأيقونات زرقاء
 const MENU: MenuItem[] = [
   { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-multiple" },
   { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck" },
@@ -119,9 +118,8 @@ export default function AccountingModule() {
               <Pressable 
                 key={item.mode} 
                 onPress={() => setMode(item.mode)} 
-                style={[styles.tile, { backgroundColor: colors.surface, borderColor: colors.border }]} 
+                style={[styles.tile, { backgroundColor: colors.surface }]} 
               >
-                {/* 🚀 أيقونة زرقاء موحدة داخل دائرة رمادية فاتحة */}
                 <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#E2E8F0" }]}>
                   <MaterialCommunityIcons name={item.icon as any} size={26} color={colors.blue} />
                 </View>
@@ -146,6 +144,7 @@ const styles = StyleSheet.create({
   sectionBlock: { width: "100%", marginTop: 20 },
   grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 10, marginBottom: 4 },
   
+  // 🚀 التعديل هنا: إزالة الحدود وضبط الظل ليكون فخماً مثل لوحة التحكم
   tile: { 
     flexDirection: "column", 
     alignItems: "center", 
@@ -156,12 +155,12 @@ const styles = StyleSheet.create({
     minWidth: "30%", 
     flexGrow: 1, 
     flexBasis: "30%",
-    borderWidth: 1, 
+    // borderWidth: 1,  <-- تم إزالة الحدود نهائياً
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03, 
+    shadowOpacity: 0.05, // زيادة الظل قليلاً ليعطي تأثير الطفو
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3, // مطابق للوحة التحكم
   },
   iconCircle: {
     width: 56,
