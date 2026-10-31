@@ -156,12 +156,12 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
         />
 
         {showFinishedPicker && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredFinished.length === 0 ? (
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد منتجات نهائية مطابقة</Text>
             ) : (
               filteredFinished.map((it) => (
-                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSelectedFinished(it); setFinishedSearch(it.name); setShowFinishedPicker(false); }}>
+                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setSelectedFinished(it); setFinishedSearch(it.name); setShowFinishedPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · {it.unit}</Text>
                 </Pressable>
@@ -226,12 +226,12 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
             />
 
             {showComponentPicker && (
-              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredComponents.length === 0 ? (
                   <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد مواد أو عبوات مطابقة</Text>
                 ) : (
                   filteredComponents.map((it) => (
-                    <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setNewComponent(it); setComponentSearch(it.name); setNewUnit(it.unit); setUnitSearch(it.unit); setShowComponentPicker(false); }}>
+                    <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setNewComponent(it); setComponentSearch(it.name); setNewUnit(it.unit); setUnitSearch(it.unit); setShowComponentPicker(false); }}>
                       <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
                       <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · {it.unit}</Text>
                     </Pressable>
@@ -255,9 +255,9 @@ export default function ProductRecipeScreen({ onBack }: { onBack: () => void }) 
               textAlign="right"
             />
             {showUnitPicker && (
-              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredUnits.map((u) => (
-                  <Pressable key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setNewUnit(u); setUnitSearch(u); setShowUnitPicker(false); }}>
+                  <Pressable key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setNewUnit(u); setUnitSearch(u); setShowUnitPicker(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{u}</Text>
                   </Pressable>
                 ))}

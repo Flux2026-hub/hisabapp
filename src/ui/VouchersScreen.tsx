@@ -294,7 +294,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
               textAlign="right"
             />
             {showParty && (
-              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredParties.length === 0 ? (
                   <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد نتائج مطابقة</Text>
                 ) : (
@@ -302,7 +302,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
                     const bal = Number(p.balance || 0);
                     const sarEq = bal / sarRate;
                     return (
-                      <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPartyRecord(p); setPartySearch(p.name); setShowParty(false); }}>
+                      <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPartyRecord(p); setPartySearch(p.name); setShowParty(false); }}>
                         <Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text>
                         <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code} · الرصيد: {bal.toFixed(2)} YER (≈ {sarEq.toFixed(2)} SAR)</Text>
                       </Pressable>
@@ -330,12 +330,12 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           textAlign="right"
         />
         {showCashbox && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredCashboxes.length === 0 ? (
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد صناديق تحليلية مطابقة</Text>
             ) : (
               filteredCashboxes.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setCashboxSearch(c.name); setShowCashbox(false); }}>                                                                                                                                                                 
+                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCashbox(c); setCashboxSearch(c.name); setShowCashbox(false); }}>                                                                                                                                                                 
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                 </Pressable>
@@ -350,9 +350,9 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
         </Pressable>
         {showCurrency && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {currencies.map((c) => (
-              <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCurrency(c); setShowCurrency(false); }}>
+              <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setShowCurrency(false); }}>
                 <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.symbol})</Text>
                 <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} {c.isBase ? " · أساسية" : " · 1 = " + Number(c.exchangeRate).toFixed(2) + " YER"}</Text>                                                                                                                                                       
               </Pressable>

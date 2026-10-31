@@ -144,12 +144,12 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={search} onChangeText={setSearch} onFocus={() => setSearchFocus(true)} onBlur={() => setTimeout(() => setSearchFocus(false), 200)} placeholder="ابحث بالرمز أو الاسم" placeholderTextColor={colors.textMuted} textAlign="right" />
         
         {searchFocus && search.trim().length > 0 && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredRows.length === 0 ? (
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text>
             ) : (
               filteredRows.slice(0, 8).map((r) => (
-                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
+                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.sku}</Text>
                 </Pressable>
@@ -180,9 +180,9 @@ export default function ItemsScreen({ onBack }: { onBack: () => void }) {
         </Pressable>
         
         {showUnitPicker && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {UNITS.map((u) => (
-              <Pressable key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setUnit(u); setShowUnitPicker(false); }}>
+              <Pressable key={u} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setUnit(u); setShowUnitPicker(false); }}>
                 <Text style={[styles.suggestName, { color: colors.text }]}>{u}</Text>
               </Pressable>
             ))}

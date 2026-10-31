@@ -161,12 +161,12 @@ export default function ProductionOrderScreen({ onBack }: { onBack: () => void }
           textAlign="right"
         />
         {showPicker && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredFinished.length === 0 ? (
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد منتجات مطابقة</Text>
             ) : (
               filteredFinished.map((it) => (
-                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSelectedFinished(it); setSearchFinished(it.name); setShowPicker(false); }}>
+                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setSelectedFinished(it); setSearchFinished(it.name); setShowPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · متوفر: {Number(it.stockQuantity || 0).toFixed(0)} {it.unit}</Text>
                 </Pressable>

@@ -277,12 +277,12 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           textAlign="right"
         />
         {showCustomerPicker && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredCustomers.length === 0 ? (
               <Text style={{ padding: 10, textAlign: "right", color: colors.textMuted }}>لا توجد نتائج مطابقة</Text>
             ) : (
               filteredCustomers.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCustomer(c); setCustomerSearch(c.name); setShowCustomerPicker(false); }}>
+                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCustomer(c); setCustomerSearch(c.name); setShowCustomerPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} {c.phone ? `· ${c.phone}` : ""}</Text>
                 </Pressable>
@@ -293,7 +293,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
         <Text style={[styles.label, { color: colors.textMuted }]}>العملة</Text>
         <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCurrencyPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{currency ? `${currency.name} (${currency.code})` : "اختر العملة"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
-        {showCurrencyPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>{currencies.map((c) => (<Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCurrency(c); setShowCurrencyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
+        {showCurrencyPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">{currencies.map((c) => (<Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setShowCurrencyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>نوع الدفع</Text>
         <View style={{ flexDirection: "row-reverse", gap: 8 }}>
@@ -305,7 +305,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
           <>
             <Text style={[styles.label, { color: colors.textMuted }]}>الصندوق المستلم</Text>
             <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowCashboxPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{cashbox ? cashbox.name : "اختر الصندوق"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
-            {showCashboxPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>{cashboxes.map((c) => (<Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCashbox(c); setShowCashboxPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
+            {showCashboxPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">{cashboxes.map((c) => (<Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCashbox(c); setShowCashboxPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text></Pressable>))}</ScrollView>)}
           </>
         )}
 
@@ -323,8 +323,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         {showItemPicker && (
           <View style={[styles.addBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowItemPicker(false)}><Text style={[styles.pickerText, { color: colors.text }]}>{pickItem ? pickItem.name : "اختر المنتج"}</Text></Pressable>
-            <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
-              {items.map((i) => (<Pressable key={i.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPickItem(i); setShowItemPicker(false); setPickPrice(String(i.average_cost || 0)); }}><Text style={[styles.suggestName, { color: colors.text }]}>{i.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>متوفر: {i.stock_quantity}</Text></Pressable>))}
+            <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
+              {items.map((i) => (<Pressable key={i.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickItem(i); setShowItemPicker(false); setPickPrice(String(i.average_cost || 0)); }}><Text style={[styles.suggestName, { color: colors.text }]}>{i.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>متوفر: {i.stock_quantity}</Text></Pressable>))}
             </ScrollView>
             <View style={styles.twoCols}>
               <View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textMuted }]}>الكمية</Text><TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickQty} onChangeText={setPickQty} keyboardType="decimal-pad" textAlign="right" placeholder="0" /></View>
@@ -336,7 +336,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
         <Text style={[styles.label, { color: colors.textMuted }]}>مندوب المبيعات (اختياري)</Text>
         <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowSalesRepPicker((v) => !v)}><Text style={[styles.pickerText, { color: colors.text }]}>{salesRep ? salesRep.name : "بدون مندوب"}</Text><Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text></Pressable>
-        {showSalesRepPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled><Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSalesRep(null); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>بدون مندوب</Text></Pressable>{salesReps.map((r) => (<Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setSalesRep(r); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>عمولة {r.commission_rate}%</Text></Pressable>))}</ScrollView>)}
+        {showSalesRepPicker && (<ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always"><Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setSalesRep(null); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>بدون مندوب</Text></Pressable>{salesReps.map((r) => (<Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setSalesRep(r); setShowSalesRepPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>عمولة {r.commission_rate}%</Text></Pressable>))}</ScrollView>)}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>الخصم (اختياري)</Text>
         <View style={styles.typeRow}>

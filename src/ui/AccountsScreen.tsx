@@ -140,12 +140,12 @@ export default function AccountsScreen({ onBack }: { onBack: () => void }) {
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={search} onChangeText={setSearch} onFocus={() => setSearchFocus(true)} onBlur={() => setTimeout(() => setSearchFocus(false), 200)} placeholder="ابحث بالرمز أو الاسم" placeholderTextColor={colors.textMuted} textAlign="right" />
         
         {searchFocus && search.trim().length > 0 && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredRows.length === 0 ? (
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text>
             ) : (
               filteredRows.slice(0, 8).map((r) => (
-                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
+                <Pressable key={r.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { edit(r); setSearch(""); setSearchFocus(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{r.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{r.code}</Text>
                 </Pressable>
@@ -176,15 +176,15 @@ export default function AccountsScreen({ onBack }: { onBack: () => void }) {
         </Pressable>
         
         {showParentPicker && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
-            <Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setParentCode(""); setParentLabel(""); setShowParentPicker(false); }}>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
+            <Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setParentCode(""); setParentLabel(""); setShowParentPicker(false); }}>
               <Text style={[styles.suggestName, { color: colors.text }]}>بدون أب (حساب رئيسي)</Text>
             </Pressable>
             {possibleParents.length === 0 ? (
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد حسابات مناسبة</Text>
             ) : (
               possibleParents.map((p) => (
-                <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setParentCode(p.code); setParentLabel(`${p.code} - ${p.name}`); setShowParentPicker(false); }}>
+                <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setParentCode(p.code); setParentLabel(`${p.code} - ${p.name}`); setShowParentPicker(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code}</Text>
                 </Pressable>

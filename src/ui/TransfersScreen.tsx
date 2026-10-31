@@ -221,10 +221,10 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
           textAlign="right"
         />
         {showFrom && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredFromBoxes.length === 0 ? <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text> : 
               filteredFromBoxes.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setFrom(c); setFromSearch(c.name); setShowFrom(false); }}>
+                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setFrom(c); setFromSearch(c.name); setShowFrom(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                 </Pressable>
@@ -245,10 +245,10 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
           textAlign="right"
         />
         {showTo && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredToBoxes.length === 0 ? <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text> : 
               filteredToBoxes.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setTo(c); setToSearch(c.name); setShowTo(false); }}>
+                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setTo(c); setToSearch(c.name); setShowTo(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                 </Pressable>
@@ -271,9 +271,9 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
               textAlign="right"
             />
             {showFromCur && (
-              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredFromCur.map((c) => (
-                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setFromCurrency(c); setFromCurSearch(c.name); setShowFromCur(false); }}>
+                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setFromCurrency(c); setFromCurSearch(c.name); setShowFromCur(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{c.code} - {c.name}</Text>
                   </Pressable>
                 ))}
@@ -293,9 +293,9 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
               textAlign="right"
             />
             {showToCur && (
-              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredToCur.map((c) => (
-                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setToCurrency(c); setToCurSearch(c.name); setShowToCur(false); }}>
+                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setToCurrency(c); setToCurSearch(c.name); setShowToCur(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{c.code} - {c.name}</Text>
                   </Pressable>
                 ))}

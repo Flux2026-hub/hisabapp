@@ -107,7 +107,7 @@ export default function PurchaseReturnScreen({ invoiceId, onBack }: { invoiceId:
       {refundType === "cash" && (
         <View style={{ marginTop: 8 }}>
           <Text style={styles.label}>اختر الصندوق</Text>
-          <View style={styles.suggestBox}>{cashboxes.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPress={() => setCashbox(c)}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</View>
+          <View style={styles.suggestBox}>{cashboxes.map((c) => (<Pressable key={c.id} style={styles.suggestItem} onPressIn={() => setCashbox(c)}><Text style={styles.suggestName}>{c.name}</Text></Pressable>))}</View>
         </View>
       )}
 

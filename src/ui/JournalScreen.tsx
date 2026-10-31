@@ -239,9 +239,9 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
               textAlign="right"
             />
             {showCurrency && (
-              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                 {filteredCurrencies.map((c) => (                                                                                                            
-                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setCurrency(c); setCurrencySearch(c.name); setExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowCurrency(false); }}>
+                  <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setCurrencySearch(c.name); setExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowCurrency(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.code})</Text>
                   </Pressable>
                 ))}
@@ -308,9 +308,9 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                 textAlign="right"
               />
               {showAccount && (
-                <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>                                                                                                    
+                <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">                                                                                                    
                   {filteredAccounts.map((a) => (
-                    <Pressable key={a.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPickAccount(a); setAccountSearch(a.name); setShowAccount(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{a.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{a.code}</Text></Pressable>
+                    <Pressable key={a.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickAccount(a); setAccountSearch(a.name); setShowAccount(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{a.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{a.code}</Text></Pressable>
                   ))}
                 </ScrollView>
               )}
@@ -328,9 +328,9 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                 textAlign="right"
               />
               {showPartyPicker && (
-                <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
+                <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                   {filteredParties.map((p) => (
-                    <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPickParty(p); setPartySearch(p.name); setShowPartyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code}</Text></Pressable>
+                    <Pressable key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickParty(p); setPartySearch(p.name); setShowPartyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code}</Text></Pressable>
                   ))}                                                                                                                             
                 </ScrollView>
               )}
@@ -352,12 +352,12 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
             textAlign="right"
           />
           {showLineCurrency && (
-            <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>
-              <Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setLineCurrency(null); setLineCurrencySearch(""); setShowLineCurrency(false); }}>                       
+            <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
+              <Pressable style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setLineCurrency(null); setLineCurrencySearch(""); setShowLineCurrency(false); }}>                       
                 <Text style={[styles.suggestName, { color: colors.text }]}>العملة الأساسية</Text>
               </Pressable>
               {filteredLineCurrencies.map((c) => (
-                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setLineCurrency(c); setLineCurrencySearch(c.name); setLineExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowLineCurrency(false); }}>
+                <Pressable key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setLineCurrency(c); setLineCurrencySearch(c.name); setLineExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowLineCurrency(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.code})</Text>
                 </Pressable>
               ))}
