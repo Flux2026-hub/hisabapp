@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../ThemeContext";
 
 type Item = any;
@@ -46,21 +45,14 @@ export default function SalesItemPicker({ items, onAddLine }: Props) {
 
   return (
     <View style={{ marginTop: 12 }}>
-      <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.secondary, { backgroundColor: colors.blue }]} onPress={() => setShowItemPicker(!showItemPicker)}>
+      <Pressable style={[styles.secondary, { backgroundColor: colors.blue }]} onPress={() => setShowItemPicker(!showItemPicker)}>
         <Text style={styles.secondaryText}>+ إضافة منتج</Text>
       </Pressable>
 
       {showItemPicker && (
         <View style={[styles.addBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           
-          <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <Text style={[styles.label, { color: colors.textMuted, marginTop: 0, width: "auto" }]}>المنتج</Text>
-            {/* 🚀 زر الباركود جاهز هنا (سيتم تفعيله في المرحلة القادمة) */}
-            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={{ padding: 4 }}>
-              <MaterialCommunityIcons name="barcode-scan" size={24} color={colors.blue} />
-            </Pressable>
-          </View>
-
+          <Text style={[styles.label, { color: colors.textMuted }]}>المنتج</Text>
           <TextInput
             style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
             value={searchItem}
@@ -76,7 +68,7 @@ export default function SalesItemPicker({ items, onAddLine }: Props) {
               <Text style={{ padding: 10, textAlign: "right", color: colors.textMuted }}>لا نتائج</Text>
             ) : (
               filteredItems.map((i) => (
-                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={i.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }, pickItem?.id === i.id && { backgroundColor: colors.bg }]} onPress={() => { setPickItem(i); setSearchItem(i.name); setPickPrice(String(i.average_cost || 0)); }}>
+                <Pressable key={i.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }, pickItem?.id === i.id && { backgroundColor: colors.bg }]} onPress={() => { setPickItem(i); setSearchItem(i.name); setPickPrice(String(i.average_cost || 0)); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{i.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>متوفر: {i.stock_quantity}</Text>
                 </Pressable>
@@ -95,7 +87,7 @@ export default function SalesItemPicker({ items, onAddLine }: Props) {
             </View>
           </View>
 
-          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange, marginTop: 12 }]} onPress={handleAdd}>
+          <Pressable style={[styles.primary, { backgroundColor: colors.orange, marginTop: 12 }]} onPress={handleAdd}>
             <Text style={styles.primaryText}>إضافة للسلة</Text>
           </Pressable>
         </View>

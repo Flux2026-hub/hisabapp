@@ -26,12 +26,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-sqlite',
     'expo-secure-store',
     [
-      'expo-camera',
-      {
-        cameraPermission: 'نحتاج صلاحية الكاميرا لمسح الباركود.'
-      }
-    ],
-    [
       'expo-contacts',
       {
         contactsPermission: 'نحتاج صلاحية الوصول لجهات الاتصال لاختيار أرقام الهواتف.'
