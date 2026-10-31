@@ -25,24 +25,25 @@ type Mode =
   | "recipe" | "production" | "salesInvoice" | "salesReps" | "purchaseInvoice" | "voucher"
   | "journal" | "transfer" | "reports";
 
-type MenuItem = { mode: Mode; label: string; icon: string; section: string };
+type MenuItem = { mode: Mode; label: string; icon: string; section: string; color: string; bgColor: string };
 
+// 🚀 توزيع ألوان احترافية لكل بطاقة
 const MENU: MenuItem[] = [
-  { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-multiple" },
-  { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck" },
-  { section: "البيانات الأساسية", mode: "cashboxes", label: "الصناديق", icon: "wallet" },
-  { section: "البيانات الأساسية", mode: "accounts", label: "الحسابات الرئيسية", icon: "file-tree" },
-  { section: "المخزون والإنتاج", mode: "items", label: "الأصناف", icon: "package-variant" },
-  { section: "المخزون والإنتاج", mode: "currencies", label: "العملات", icon: "cash" },
-  { section: "المخزون والإنتاج", mode: "recipe", label: "التركيبة", icon: "clipboard-list" },
-  { section: "المخزون والإنتاج", mode: "production", label: "أمر الإنتاج", icon: "factory" },
-  { section: "البيانات الأساسية", mode: "salesReps", label: "مناديب المبيعات", icon: "account-tie" },
-  { section: "العمليات", mode: "salesInvoice", label: "فاتورة مبيعات", icon: "receipt" },
-  { section: "العمليات", mode: "purchaseInvoice", label: "فاتورة مشتريات", icon: "file-document-multiple" },
-  { section: "العمليات", mode: "voucher", label: "سند قبض/دفع", icon: "swap-horizontal-bold" },
-  { section: "العمليات", mode: "journal", label: "قيد يومية", icon: "book-open-page-variant" },
-  { section: "العمليات", mode: "transfer", label: "تحويل بين الصناديق", icon: "bank-transfer" },
-  { section: "التقارير", mode: "reports", label: "التقارير", icon: "chart-box" },
+  { section: "البيانات الأساسية", mode: "customers", label: "العملاء", icon: "account-multiple", color: "#3B82F6", bgColor: "#EFF6FF" },
+  { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck", color: "#EF4444", bgColor: "#FEF2F2" },
+  { section: "البيانات الأساسية", mode: "cashboxes", label: "الصناديق", icon: "wallet", color: "#10B981", bgColor: "#ECFDF5" },
+  { section: "البيانات الأساسية", mode: "accounts", label: "الحسابات الرئيسية", icon: "file-tree", color: "#8B5CF6", bgColor: "#F5F3FF" },
+  { section: "المخزون والإنتاج", mode: "items", label: "الأصناف", icon: "package-variant", color: "#F97316", bgColor: "#FFF7ED" },
+  { section: "المخزون والإنتاج", mode: "currencies", label: "العملات", icon: "cash", color: "#F59E0B", bgColor: "#FFFBEB" },
+  { section: "المخزون والإنتاج", mode: "recipe", label: "التركيبة", icon: "clipboard-list", color: "#EC4899", bgColor: "#FDF2F8" },
+  { section: "المخزون والإنتاج", mode: "production", label: "أمر الإنتاج", icon: "factory", color: "#6366F1", bgColor: "#EEF2FF" },
+  { section: "البيانات الأساسية", mode: "salesReps", label: "مناديب المبيعات", icon: "account-tie", color: "#0EA5E9", bgColor: "#F0F9FF" },
+  { section: "العمليات", mode: "salesInvoice", label: "فاتورة مبيعات", icon: "receipt", color: "#059669", bgColor: "#ECFDF5" },
+  { section: "العمليات", mode: "purchaseInvoice", label: "فاتورة مشتريات", icon: "file-document-multiple", color: "#DC2626", bgColor: "#FEF2F2" },
+  { section: "العمليات", mode: "voucher", label: "سند قبض/دفع", icon: "swap-horizontal-bold", color: "#7C3AED", bgColor: "#F5F3FF" },
+  { section: "العمليات", mode: "journal", label: "قيد يومية", icon: "book-open-page-variant", color: "#14B8A6", bgColor: "#F0FDFA" },
+  { section: "العمليات", mode: "transfer", label: "تحويل بين الصناديق", icon: "bank-transfer", color: "#F43F5E", bgColor: "#FFF1F2" },
+  { section: "التقارير", mode: "reports", label: "التقارير", icon: "chart-box", color: "#475569", bgColor: "#F8FAFC" },
 ];
 
 export default function AccountingModule() {
@@ -99,7 +100,6 @@ export default function AccountingModule() {
           <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textMuted} />
           <Text style={[styles.pendingText, { color: colors.text }]}>عمليات معلقة: {pending}</Text>
         </View>
-        {/* 🚀 زر المزامنة أصبح أزرق */}
         <Pressable style={[styles.syncButton, { backgroundColor: colors.blue }]} onPress={syncNow}>
           <MaterialCommunityIcons name="sync" size={14} color="#FFF" />
           <Text style={styles.syncButtonText}>مزامنة الآن</Text>
@@ -121,8 +121,9 @@ export default function AccountingModule() {
                 onPress={() => setMode(item.mode)} 
                 style={[styles.tile, { backgroundColor: colors.surface, borderColor: colors.border }]} 
               >
-                <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#E2E8F0" }]}>
-                  <MaterialCommunityIcons name={item.icon as any} size={24} color={colors.isDark ? "#94A3B8" : "#475569"} />
+                {/* 🚀 تطبيق التصميم الجديد: دائرة ملونة وأيقونة بنفس اللون */}
+                <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : item.bgColor }]}>
+                  <MaterialCommunityIcons name={item.icon as any} size={26} color={item.color} />
                 </View>
                 <Text style={[styles.tileText, { color: colors.text }]}>{item.label}</Text>
               </Pressable>
@@ -144,9 +145,38 @@ const styles = StyleSheet.create({
   hint: { fontSize: 12, marginBottom: 14, lineHeight: 18, paddingHorizontal: 4, textAlign: "left", width: "100%" },
   sectionBlock: { width: "100%", marginTop: 20 },
   grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 10, marginBottom: 4 },
-  tile: { flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 16, paddingVertical: 20, paddingHorizontal: 10, minWidth: "30%", flexGrow: 1, flexBasis: "30%", borderWidth: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
-  iconCircle: { width: 48, height: 48, borderRadius: 24, justifyContent: "center", alignItems: "center", marginBottom: 12 },
-  tileText: { fontSize: 13, fontFamily: "CodecBold", textAlign: "center" },
+  
+  // التصميم الأنيق للبطاقات
+  tile: { 
+    flexDirection: "column", 
+    alignItems: "center", 
+    justifyContent: "center", 
+    borderRadius: 16,
+    paddingVertical: 20, 
+    paddingHorizontal: 10,
+    minWidth: "30%", 
+    flexGrow: 1, 
+    flexBasis: "30%",
+    borderWidth: 1, 
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03, 
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconCircle: {
+    width: 56, // حجم أكبر قليلاً ليتناسب مع التصميم
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  tileText: { 
+    fontSize: 13, 
+    fontFamily: "CodecBold", 
+    textAlign: "center" 
+  },
   sectionLabel: { fontSize: 13, fontFamily: "CodecBold", textAlign: "left", width: "100%", marginBottom: 8 },
   sectionDivider: { marginBottom: 15, height: 1, width: "100%" },
 });
