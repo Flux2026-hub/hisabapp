@@ -6,6 +6,7 @@ import PurchaseReturnScreen from "./PurchaseReturnScreen";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { buildInvoiceHtml, printHtml, shareHtmlAsPdf, type InvoicePrintData } from "../utils/printDocument";
 import { useTheme } from "./ThemeContext";
+import PurchaseItemPicker from "./components/PurchaseItemPicker"; // 🚀 استدعاء المكون الجديد
 
 type Row = any;
 type PaymentType = "cash" | "credit";
@@ -28,14 +29,10 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
   const [notes, setNotes] = useState("");
 
   const [lines, setLines] = useState<InvoiceLine[]>([]);
-  const [pickItem, setPickItem] = useState<Row | null>(null);
-  const [pickQty, setPickQty] = useState("");
-  const [pickPrice, setPickPrice] = useState("");
-
+  
   const [showSupplierPicker, setShowSupplierPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showCashboxPicker, setShowCashboxPicker] = useState(false);
-  const [showItemPicker, setShowItemPicker] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [returnInvoiceId, setReturnInvoiceId] = useState<string | null>(null);
@@ -83,14 +80,8 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
     return suppliers.filter(s => String(s.name).toLowerCase().includes(q) || String(s.code).toLowerCase().includes(q) || String(s.phone || "").includes(q));
   }, [suppliers, supplierSearch]);
 
-  const addLine = () => {
-    if (!pickItem) return Alert.alert("تنبيه", "اختر المادة/العبوة");
-    const qty = Number(pickQty); const price = Number(pickPrice);
-    if (!qty || qty <= 0) return Alert.alert("تنبيه", "أدخل كمية صحيحة");
-    if (price < 0 || Number.isNaN(price)) return Alert.alert("تنبيه", "أدخل سعراً صحيحاً");
-
-    setLines([...lines, { key: newId(), itemId: pickItem.id, itemName: pickItem.name, itemSku: pickItem.sku, unit: pickItem.unit, quantity: qty, unitPrice: price }]);
-    setPickItem(null); setPickQty(""); setPickPrice(""); setShowItemPicker(false);
+  const handleAddLine = (newLine: InvoiceLine) => {
+    setLines(prev => [...prev, newLine]);
   };
 
   const removeLine = (key: string) => setLines(lines.filter((l) => l.key !== key));
@@ -359,33 +350,8 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
           )}
         </View>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>إضافة مادة / عبوة</Text>
-        <Pressable style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowItemPicker((v) => !v)}>
-          <Text style={[styles.pickerText, { color: colors.text }]}>{pickItem ? pickItem.name : "اختر من الأصناف"}</Text>
-          <Text style={[styles.pickerArrow, { color: colors.textMuted }]}>▼</Text>
-        </Pressable>
-        {showItemPicker && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-            {items.length === 0 ? (
-              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد مواد — أضفها من شاشة الأصناف</Text>
-            ) : (
-              items.map((it) => (
-                <Pressable key={it.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setPickItem(it); setPickPrice(String(it.average_cost ?? "")); setShowItemPicker(false); }}>
-                  <Text style={[styles.suggestName, { color: colors.text }]}>{it.name}</Text>
-                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{it.sku} · {it.unit}</Text>
-                </Pressable>
-              ))
-            )}
-          </ScrollView>
-        )}
-
-        <Text style={[styles.label, { color: colors.textMuted }]}>الكمية</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickQty} onChangeText={setPickQty} keyboardType="decimal-pad" textAlign="right" placeholder="0" placeholderTextColor={colors.textMuted} />
-
-        <Text style={[styles.label, { color: colors.textMuted }]}>سعر الوحدة ({symbol})</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickPrice} onChangeText={setPickPrice} keyboardType="decimal-pad" textAlign="right" placeholder="0" placeholderTextColor={colors.textMuted} />
-
-        <Pressable style={[styles.secondary, { backgroundColor: colors.blue, marginTop: 12 }]} onPress={addLine}><Text style={styles.secondaryText}>+ إضافة المادة</Text></Pressable>
+        {/* 🚀 استخدام المكون الجديد هنا */}
+        <PurchaseItemPicker items={items} onAddLine={handleAddLine} />
 
         <View style={[styles.totalBox, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}>
           <Text style={[styles.totalLabel, { color: colors.blue }]}>الإجمالي</Text>
