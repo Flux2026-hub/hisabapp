@@ -1,4 +1,4 @@
-import { Stack, useNavigation } from "expo-router";
+import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { I18nManager, View, ActivityIndicator, Text } from "react-native";
 import { useFonts } from "expo-font";
@@ -25,10 +25,9 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
-  
+
   // حالة فتح نافذة البحث الشامل
   const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const navigation = useNavigation();
 
   useEffect(() => {
     (async () => {
@@ -72,21 +71,13 @@ export default function RootLayout() {
       <ToastProvider>
         <Stack
           screenOptions={{
-            // ✅ إضافة الهيدر المخصص لكل الشاشات
+            // ✅ الهيدر الأزرق يستقبل العنوان فقط الآن
             header: ({ options }) => (
-              <CustomHeader
-                title={options.title}
-                onMenuPress={() => {
-                  // إذا كان لديك قائمة جانبية (Drawer)، استخدم الكود التالي:
-                  // navigation.dispatch(DrawerActions.toggleDrawer());
-                }}
-                onSearchPress={() => setIsSearchVisible(true)}
-              />
+              <CustomHeader title={options.title} />
             ),
           }}
         >
-          {/* إخفاء الهيدر الافتراضي للتبويبات لأنها غالباً لها هيدرها الخاص أو تستخدم المخصص */}
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="index" options={{ title: 'فلوكس' }} />
         </Stack>
 
         {/* ✅ نافذة البحث الشامل */}

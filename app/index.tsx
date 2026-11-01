@@ -1,3 +1,4 @@
+import TelegramSettings from '../src/ui/components/TelegramSettings';
 import { useEffect, useState } from "react";
 import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions, useWindowDimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -245,6 +246,7 @@ export default function HomeScreen() {
           <View style={styles.transparentScreen}>
             <Text style={[styles.title, { color: colors.text, paddingHorizontal: 8, marginBottom: 16 }]}>الإعدادات</Text>
             <SettingsModule onBack={() => go("home")} />
+            <TelegramSettings />
           </View>
         )}
 
