@@ -1,5 +1,6 @@
-import * as FileSystem from 'expo-file-system/legacy'; // ✅ التعديل هنا للتوافق مع SDK 57
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 import { Alert } from 'react-native';
 
 const BACKUP_DIR = FileSystem.documentDirectory + 'backups/';
@@ -26,10 +27,7 @@ export const createBackup = async () => {
     const date = new Date().toISOString().replace(/[:.]/g, '-');
     const backupPath = `${BACKUP_DIR}backup_${date}.db`;
 
-    await FileSystem.copyAsync({
-      from: dbPath,
-      to: backupPath,
-    });
+    await FileSystem.copyAsync({ from: dbPath, to: backupPath });
 
     Alert.alert('نجاح', 'تم إنشاء النسخة الاحتياطية بنجاح!');
 
@@ -37,28 +35,46 @@ export const createBackup = async () => {
       await Sharing.shareAsync(backupPath, {
         mimeType: 'application/x-sqlite3',
         dialogTitle: 'مشاركة النسخة الاحتياطية',
-        UTI: 'public.database',
       });
     }
   } catch (error: any) {
-    console.error(error);
     Alert.alert('خطأ', 'حدث خطأ أثناء إنشاء النسخة: ' + error.message);
   }
 };
 
-export const listBackups = async () => {
+// ✅ دالة الاستعادة الجديدة (تفتح مدير الملفات)
+export const restoreBackup = async () => {
   try {
-    await ensureDirExists();
-    const files = await FileSystem.readDirectoryAsync(BACKUP_DIR);
-    return files.filter(f => f.endsWith('.db'));
-  } catch (error) {
-    console.error('خطأ في قراءة النسخ:', error);
-    return [];
+    // 1. فتح مدير الملفات لاختيار ملف
+    const result = await DocumentPicker.getDocumentAsync({
+      type: '*/*', // للسماح باختيار أي ملف (بما فيها db)
+      copyToCacheDirectory: true,
+    });
+
+    if (result.canceled) return;
+
+    const selectedFileUri = result.assets[0].uri;
+    const dbName = 'fluxx.db'; 
+    const dbPath = `${FileSystem.documentDirectory}SQLite/${dbName}`;
+
+    // 2. نسخ الملف المختار ليكون هو قاعدة البيانات الحالية
+    // (ملاحظة: يُفضل إغلاق التطبيق وإعادة فتحه بعد الاستعادة)
+    await FileSystem.copyAsync({
+      from: selectedFileUri,
+      to: dbPath,
+    });
+
+    Alert.alert(
+      'نجاح', 
+      'تمت استعادة النسخة بنجاح! يرجى إغلاق التطبيق وإعادة فتحه لكي تظهر البيانات.'
+    );
+
+  } catch (error: any) {
+    console.error(error);
+    Alert.alert('خطأ', 'فشل استعادة النسخة: ' + error.message);
   }
 };
 
-// ✅ إرجاع الدالة المفقودة لكي يعمل ملف _layout.tsx بدون أخطاء
 export const runAutoBackup = async () => {
-  console.log('Auto backup check triggered on startup');
-  // يمكنك هنا إضافة منطق النسخ التلقائي الصامت (بدون فتح نافذة المشاركة)
+  console.log('Auto backup check triggered');
 };
