@@ -17,6 +17,7 @@ type Settings = {
   signatureRight: string; signatureLeft: string;
   reportHeaderTitle: string; reportFooterText: string; reportShowLogo: boolean;
   darkMode: boolean;
+  pinNavbar: boolean;
   lightBgColor: string;
 };
 
@@ -27,6 +28,7 @@ const DEFAULT_SETTINGS: Settings = {
   showSignatures: true, signatureRight: "توقيع المستلم", signatureLeft: "توقيع البائع",
   reportHeaderTitle: "فلوكس", reportFooterText: "نظام فلوكس المحاسبي", reportShowLogo: true,
   darkMode: false,
+  pinNavbar: false,
   lightBgColor: "#FFFFFF",
 };
 
@@ -177,6 +179,7 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
           <View>
             <Text style={styles.sectionLabel}>الوضع الليلي</Text>
             <SwitchRow label="تفعيل الوضع الليلي (Dark Mode)" value={settings.darkMode} onChange={(v: any) => update("darkMode", v)} />
+            <SwitchRow label="تثبيت شريط التنقل (لا يختفي عند التمرير)" value={settings.pinNavbar} onChange={(v: any) => update("pinNavbar", v)} />
 
             <Text style={styles.sectionLabel}>لون الخلفية (الوضع النهاري)</Text>
             <Text style={styles.backupHint}>اختر اللون الذي يريح عينيك للاستخدام في النهار.</Text>
