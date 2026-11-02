@@ -129,11 +129,16 @@ export default function HomeScreen() {
           {sections.map(([key, label]) => {
             const active = tab === key;
             return (
-              <Pressable key={key} onPress={() => go(key)} style={styles.navItem}>
-                <Text style={active ? [styles.navTextActive, { color: colors.orange }] : [styles.navText, { color: colors.textMuted }]}>
+              <Pressable key={key} onPress={() => go(key)} style={[styles.navItem, active && { backgroundColor: colors.isDark ? 'rgba(249, 115, 22, 0.15)' : 'rgba(249, 115, 22, 0.08)' }]}>
+                <MaterialCommunityIcons 
+                  name={key === 'home' ? 'home-outline' : key === 'accounting' ? 'calculator-variant-outline' : 'cog-outline'} 
+                  size={18} // ✅ تصغير الأيقونة
+                  color={active ? colors.orange : colors.textMuted} 
+                  style={{ marginBottom: 2 }} // ✅ تقليل المسافة بين الأيقونة والنص
+                />
+                <Text style={active ? [styles.navTextActive, { color: colors.orange, fontSize: 12 }] : [styles.navText, { color: colors.textMuted, fontSize: 12 }]}>
                   {label}
                 </Text>
-                {active && <View style={[styles.activeIndicator, { backgroundColor: colors.orange }]} />}
               </Pressable>
             );
           })}
@@ -267,7 +272,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingVertical: 20, paddingTop: 35, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5 },
   brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", width: "100%" },
   brandTextWrap: { alignItems: "flex-end" },
-  brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 22, textAlign: "left" },
+  brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 20, textAlign: "left" },
   brandSub: { fontFamily: "Alexandria-Regular", color: "#94A3B8", fontSize: 11, textAlign: "left", marginTop: 2 },
   logo: { width: 100, height: 75 },
   searchBtn: { padding: 8, marginHorizontal: 10 },
@@ -293,7 +298,7 @@ const styles = StyleSheet.create({
   nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 8, alignItems: "center", paddingHorizontal: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, zIndex: 5 },
   navTabs: { flex: 1, flexDirection: "row-reverse", justifyContent: "space-around" },
   menuButton: { padding: 8, marginLeft: 8 },
-  navItem: { alignItems: "center", paddingVertical: 8, paddingHorizontal: 16, position: "relative" },
+  navItem: { alignItems: "center", justifyContent: "center", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12, marginHorizontal: 4, flexDirection: "column" },
   navText: { fontSize: 14, fontFamily: "Alexandria-Regular" },
   navTextActive: { fontSize: 14, fontFamily: "CodecBold" },
   activeIndicator: { position: "absolute", bottom: -8, height: 3, width: 30, borderRadius: 2 },
