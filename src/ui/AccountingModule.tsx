@@ -77,25 +77,36 @@ export default function AccountingModule() {
     return () => sub.remove();
   }, [mode]);
 
-  if (mode === "customers" || mode === "suppliers") return <CustomersScreen kind={mode} onBack={goMenu} />;
-  if (mode === "currencies") return <CurrenciesScreen onBack={goMenu} />;
-  if (mode === "items") return <ItemsScreen onBack={goMenu} />;
-  if (mode === "recipe") return <ProductRecipeScreen onBack={goMenu} />;
-  if (mode === "production") return <ProductionOrderScreen onBack={goMenu} />;
-  if (mode === "cashboxes") return <CashboxesScreen onBack={goMenu} />;
-  if (mode === "accounts") return <AccountsScreen onBack={goMenu} />;
-  if (mode === "salesReps") return <SalesRepsScreen onBack={goMenu} />;
-  if (mode === "salesInvoice") return <SalesInvoiceScreen onBack={goMenu} />;
-  if (mode === "purchaseInvoice") return <PurchaseInvoiceScreen onBack={goMenu} />;
-  if (mode === "voucher") return <VouchersScreen onBack={goMenu} />;
-  if (mode === "journal") return <JournalScreen onBack={goMenu} />;
-  if (mode === "transfer") return <TransfersScreen onBack={goMenu} />;
-  if (mode === "reports") return <ReportsIndex onBack={goMenu} />;
 
   const sections = Array.from(new Set(MENU.map((m) => m.section)));
 
   return (
-    <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.desktopContent]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
+    <View style={{ flex: 1 }}>
+      {/* 1. الشاشات التي نحتفظ بحالتها (لا يتم تدميرها) */}
+      <View style={{ flex: 1, display: mode === "salesInvoice" ? "flex" : "none" }}>
+        <SalesInvoiceScreen onBack={goMenu} />
+      </View>
+      <View style={{ flex: 1, display: mode === "purchaseInvoice" ? "flex" : "none" }}>
+        <PurchaseInvoiceScreen onBack={goMenu} />
+      </View>
+
+      {/* 2. الشاشات الأخرى (تظهر وتختفي لتوفير الذاكرة) */}
+      {mode === "customers" || mode === "suppliers" ? <CustomersScreen kind={mode} onBack={goMenu} /> : null}
+      {mode === "currencies" ? <CurrenciesScreen onBack={goMenu} /> : null}
+      {mode === "items" ? <ItemsScreen onBack={goMenu} /> : null}
+      {mode === "recipe" ? <ProductRecipeScreen onBack={goMenu} /> : null}
+      {mode === "production" ? <ProductionOrderScreen onBack={goMenu} /> : null}
+      {mode === "cashboxes" ? <CashboxesScreen onBack={goMenu} /> : null}
+      {mode === "accounts" ? <AccountsScreen onBack={goMenu} /> : null}
+      {mode === "salesReps" ? <SalesRepsScreen onBack={goMenu} /> : null}
+      {mode === "voucher" ? <VouchersScreen onBack={goMenu} /> : null}
+      {mode === "journal" ? <JournalScreen onBack={goMenu} /> : null}
+      {mode === "transfer" ? <TransfersScreen onBack={goMenu} /> : null}
+      {mode === "reports" ? <ReportsIndex onBack={goMenu} /> : null}
+
+      {/* 3. شاشة القائمة الرئيسية (تظهر فقط عند mode === "menu") */}
+      {mode === "menu" && (
+      <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.desktopContent]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
       
       <View style={[styles.syncBar, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC", borderColor: colors.border }]}>
         <View style={styles.syncLeft}>
@@ -134,6 +145,8 @@ export default function AccountingModule() {
         </View>
       ))}
     </ScrollView>
+      )}
+    </View>
   );
 }
 
