@@ -119,10 +119,7 @@ export default function HomeScreen() {
           <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
             <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
           </Pressable>
-          <View style={{ width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 8 }} />
-          <Pressable style={styles.menuButton} onPress={() => setMenuOpen((v) => !v)}>
-            <MaterialCommunityIcons name="menu" size={24} color={colors.text} />
-          </Pressable>
+
         </View>
         
         <View style={styles.navTabs}>
