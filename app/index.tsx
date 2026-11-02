@@ -1,5 +1,7 @@
 import TelegramSettings from '../src/ui/components/TelegramSettings';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Animated } from "react-native";
 import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions, useWindowDimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,6 +9,7 @@ import { LineChart } from "react-native-chart-kit";
 import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
 import GlobalSearchModal from "../src/ui/components/GlobalSearchModal";
+import PromoBanner from "../src/ui/components/PromoBanner";
 import { COLORS, FONTS } from "../src/ui/theme";
 import { sqlite } from "../src/db/local";
 import { useTheme } from "../src/ui/ThemeContext";
@@ -27,6 +30,8 @@ export default function HomeScreen() {
   const [tab, setTab] = useState<Tab>("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [pinNavbar, setPinNavbar] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
   const [sarRate, setSarRate] = useState(140);
 
   const [kpis, setKpis] = useState({
@@ -39,6 +44,16 @@ export default function HomeScreen() {
   });
 
   const go = (next: Tab) => { setTab(next); setMenuOpen(false); };
+
+  useEffect(() => {
+    // قراءة إعداد تثبيت الشريط
+    AsyncStorage.getItem("flux_settings_v1").then(raw => {
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.pinNavbar !== undefined) setPinNavbar(parsed.pinNavbar);
+      }
+    });
+  }, [tab]);
 
   useEffect(() => {
     const fetchKPIs = async () => {
@@ -99,6 +114,16 @@ export default function HomeScreen() {
     return () => sub.remove();
   }, [tab, menuOpen]);
 
+  // إعداد حركة الإخفاء (Clamp يمنع الشريط من الخروج عن الحدود)
+  const diffClamp = Animated.diffClamp(scrollY, 0, 80);
+  const translateY = diffClamp.interpolate({
+    inputRange: [0, 80],
+    outputRange: [0, -80], // يختفي للأعلى بمقدار 80 بكسل
+  });
+
+  // إذا كان الإعداد "تثبيت" فارغة (لا حركة)، وإلا نطبق الحركة
+  const navAnimatedStyle = pinNavbar ? {} : { transform: [{ translateY }] };
+
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
       <View style={[styles.header, { backgroundColor: colors.navy }]}>
@@ -114,7 +139,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }, navAnimatedStyle]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
             <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
@@ -140,7 +165,7 @@ export default function HomeScreen() {
             );
           })}
         </View>
-      </View>
+      </Animated.View>
 
       {menuOpen && <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />}
 
@@ -155,12 +180,20 @@ export default function HomeScreen() {
       )}
 
       {/* 🚀 تطبيق التصميم المتجاوب على المحتوى */}
-      <ScrollView contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent]} keyboardShouldPersistTaps="handled">
+      <Animated.ScrollView 
+        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent]} 
+        keyboardShouldPersistTaps="handled"
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
+      >
         
         {tab === "home" && (
           <View style={[styles.whiteCard, { backgroundColor: colors.surface }, isDesktop && { padding: 40 }]}>
             <Text style={[styles.title, { color: colors.text }]}>لوحة التحكم</Text>
             <Text style={[styles.hint, { color: colors.textMuted }]}>نظرة سريعة على أرصدة المصنع</Text>
+
+            {/* ✅ شاشة العرض (البانر الإعلاني) */}
+            <PromoBanner />
 
             <View style={[styles.chartContainer, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }]}>
               <Text style={[styles.chartTitle, { color: colors.text }]}>مبيعات آخر 7 أيام (YER)</Text>
@@ -257,7 +290,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-      </ScrollView>
+      </Animated.ScrollView>
 
       <GlobalSearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} />
     </SafeAreaView>
