@@ -8,6 +8,7 @@ import LockScreen, { isSessionActive } from "../src/ui/LockScreen";
 import { ThemeProvider } from "../src/ui/ThemeContext";
 import { ToastProvider } from "../src/ui/ToastContext";
 import { runAutoBackup } from "../src/utils/autoBackup";
+import { checkAndSendAutoBackup } from "../src/utils/telegramAutoBackup"; // ✅ استيراد الفحص التلقائي
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 I18nManager.allowRTL(true);
@@ -30,7 +31,13 @@ export default function RootLayout() {
         await initializeLocalDatabase();
         const session = await isSessionActive();
         setUnlocked(session);
+        
+        // النسخ الاحتياطي المحلي
         runAutoBackup().catch(console.error);
+        
+        // ✅ فحص وإرسال النسخة التلقائية لتليجرام كل 3 أيام
+        checkAndSendAutoBackup().catch(console.error);
+
       } catch (e: any) {
         console.error("DB Error:", e);
         setDbError(e.message || "حدث خطأ");
@@ -64,7 +71,6 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <ToastProvider>
-        {/* ✅ إخفاء الهيدر الافتراضي لأن index.tsx يحتوي على الهيدر الخاص به */}
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
         </Stack>

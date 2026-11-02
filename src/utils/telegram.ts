@@ -9,7 +9,6 @@ export const saveTelegramSettings = async (token: string, chatId: string) => {
     await SecureStore.setItemAsync(CHAT_ID_KEY, chatId);
     return true;
   } catch (error) {
-    console.error('خطأ في حفظ إعدادات تليجرام:', error);
     return false;
   }
 };
@@ -22,28 +21,44 @@ export const getTelegramSettings = async () => {
 
 export const sendTelegramMessage = async (message: string) => {
   const { token, chatId } = await getTelegramSettings();
-  
-  if (!token || !chatId) {
-    throw new Error('لم يتم إعداد التوكن أو Chat ID بعد.');
-  }
-
+  if (!token || !chatId) throw new Error('لم يتم إعداد التوكن أو Chat ID');
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
   });
-
   const data = await response.json();
-  if (!data.ok) throw new Error(data.description || 'فشل إرسال الرسالة');
+  if (!data.ok) throw new Error(data.description);
+  return true;
+};
+
+// ✅ دالة جديدة لإرسال الملفات (مثل النسخة الاحتياطية)
+export const sendTelegramDocument = async (fileUri: string, filename: string, caption: string) => {
+  const { token, chatId } = await getTelegramSettings();
+  if (!token || !chatId) throw new Error('لم يتم إعداد التوكن أو Chat ID');
+
+  const url = `https://api.telegram.org/bot${token}/sendDocument`;
+  const formData = new FormData();
+  formData.append('chat_id', chatId);
+  formData.append('caption', caption);
+  formData.append('document', {
+    uri: fileUri,
+    name: filename,
+    type: 'application/json',
+  } as any);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  const data = await response.json();
+  if (!data.ok) throw new Error(data.description);
   return true;
 };
 
 export const notifyLargeInvoice = async (invoiceData: any) => {
-  const msg = `🚨 <b>فاتورة كبيرة جديدة!</b>\n\n` +
-              `👤 العميل: ${invoiceData.customerName || 'غير محدد'}\n` +
-              `💰 المبلغ: ${invoiceData.total} ريال\n` +
-              `🧾 رقم الفاتورة: ${invoiceData.invoiceNumber || '---'}\n` +
-              `📅 التاريخ: ${new Date().toLocaleDateString('ar-YE')}`;
+  const msg = `🚨 <b>فاتورة كبيرة جديدة!</b>\n\n👤 العميل: ${invoiceData.customerName}\n💰 المبلغ: ${invoiceData.total} ريال\n🧾 رقم الفاتورة: ${invoiceData.invoiceNumber}`;
   return await sendTelegramMessage(msg);
 };
