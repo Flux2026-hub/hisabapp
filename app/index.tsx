@@ -104,9 +104,7 @@ export default function HomeScreen() {
         <View style={styles.brandRow}>
           <Image source={require("../assets/images/flux-logo.png")} style={styles.logo} resizeMode="contain" />
           
-          <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
-            <MaterialCommunityIcons name="magnify" size={26} color="#FFF" />
-          </Pressable>
+          
           
           <View style={styles.brandTextWrap}>
             <Text style={styles.brandName}>فلوكس</Text>
@@ -116,9 +114,15 @@ export default function HomeScreen() {
       </View>
 
       <View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Pressable style={styles.menuButton} onPress={() => setMenuOpen((v) => !v)}>
-          <MaterialCommunityIcons name="menu" size={26} color={colors.text} />
-        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
+            <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
+          </Pressable>
+          <View style={{ width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 8 }} />
+          <Pressable style={styles.menuButton} onPress={() => setMenuOpen((v) => !v)}>
+            <MaterialCommunityIcons name="menu" size={24} color={colors.text} />
+          </Pressable>
+        </View>
         
         <View style={styles.navTabs}>
           {sections.map(([key, label]) => {
@@ -260,7 +264,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   header: { paddingHorizontal: 18, paddingVertical: 20, paddingTop: 26 },
-  brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
+  brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "flex-start", gap: 15 },
   brandTextWrap: { alignItems: "flex-end", flex: 1 },
   brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 22, textAlign: "right" },
   brandSub: { fontFamily: "Alexandria-Regular", color: "#94A3B8", fontSize: 11, textAlign: "right", marginTop: -2 },
