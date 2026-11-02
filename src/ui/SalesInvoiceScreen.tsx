@@ -47,7 +47,6 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<Row[]>([]);
   const [returnInvoiceId, setReturnInvoiceId] = useState<string | null>(null);
-  const [selectedInvoice, setSelectedInvoice] = useState<Row | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -108,16 +107,6 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   };
 
 
-  const shareInvoiceById = async (id: string) => {
-    try {
-      const inv: any = await sqlite.getFirstAsync('SELECT * FROM invoices WHERE id = ?', [id]);
-      const invLines: any = await sqlite.getAllAsync('SELECT l.*, i.name as item_name, i.sku as item_sku, i.unit as item_unit FROM invoice_lines l LEFT JOIN items i ON i.id = l.item_id WHERE l.invoice_id = ?', [id]);
-      const cur: any = await sqlite.getFirstAsync('SELECT * FROM currencies WHERE code = ?', [inv.currency_code || '']);
-      let cashboxName; if (inv.cashbox_id) { const cb: any = await sqlite.getFirstAsync('SELECT name FROM cashboxes WHERE id = ?', [inv.cashbox_id]); cashboxName = cb?.name; }
-      const data = { type: 'sales' as const, invoiceNo: inv.invoice_no, createdAt: inv.created_at, partyLabel: 'العميل', partyName: inv.party_name || '', currencyCode: inv.currency_code || 'YER', currencySymbol: cur?.symbol || inv.currency_code || 'YER', exchangeRate: Number(inv.exchange_rate) || 1, isBase: !!(cur?.is_base ?? cur?.isBase), paymentType: inv.payment_type || 'cash', cashboxName, lines: (invLines || []).map((l: any) => ({ itemName: l.item_name || l.description || '—', itemSku: l.item_sku || '', unit: l.item_unit || '', quantity: Number(l.quantity) || 0, unitPrice: Number(l.unit_price) || 0 })), subtotal: Number(inv.subtotal) || Number(inv.total) || 0, discountType: inv.discount_type || null, discountValue: Number(inv.discount_value) || 0, discountAmount: Number(inv.discount_amount) || 0, total: Number(inv.total) || 0 };
-      await shareHtmlAsPdf(await buildInvoiceHtml(data), 'فاتورة-' + inv.invoice_no + '.pdf');
-    } catch (e) { Alert.alert('تعذر المشاركة', String(e)); }
-  };
 
   const printInvoiceById = async (invoiceId: string) => {
     try {
@@ -357,7 +346,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>آخر فواتير المبيعات</Text>
             <View style={styles.list}>
               {history.map((h) => (
-                <Pressable key={h.id} onPress={() => setSelectedInvoice(h)} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Pressable key={h.id}  style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.histActions}>
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setReturnInvoiceId(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => printInvoiceById(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
@@ -378,25 +367,6 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
         )}
       </ScrollView>
 
-      <Modal visible={!!selectedInvoice} transparent animationType='fade' onRequestClose={() => setSelectedInvoice(null)}>
-        <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.5)', justifyContent:'center', alignItems:'center', padding:20}}>
-          <View style={{backgroundColor: colors.surface, width:'100%', borderRadius:16, padding:20}}>
-            <Text style={{color: colors.text, fontSize:20, textAlign:'center', marginBottom:15, fontFamily:'CodecBold'}}>تفاصيل الفاتورة</Text>
-            {selectedInvoice && (
-              <View style={{marginBottom:20, gap:8}}>
-                <Text style={{color: colors.text, fontSize:16, textAlign:'right'}}>العميل: {selectedInvoice.party_name}</Text>
-                <Text style={{color: colors.text, fontSize:16, textAlign:'right'}}>رقم الفاتورة: {selectedInvoice.invoice_no}</Text>
-                <Text style={{color: colors.blue, fontSize:18, fontWeight:'bold', textAlign:'right', marginTop:10}}>الإجمالي: {Number(selectedInvoice.total).toFixed(2)} {selectedInvoice.currency_code}</Text>
-              </View>
-            )}
-            <View style={{flexDirection:'row-reverse', gap:10, marginBottom:15}}>
-              <TouchableOpacity style={{flex:1, backgroundColor: colors.blue, padding:12, borderRadius:10, alignItems:'center'}} onPress={() => { printInvoiceById(selectedInvoice.id); setSelectedInvoice(null); }}><Text style={{color:'#FFF', fontWeight:'bold'}}>🖨️ طباعة</Text></TouchableOpacity>
-              <TouchableOpacity style={{flex:1, backgroundColor: '#25D366', padding:12, borderRadius:10, alignItems:'center'}} onPress={() => { shareInvoiceById(selectedInvoice.id); setSelectedInvoice(null); }}><Text style={{color:'#FFF', fontWeight:'bold'}}>🟢 واتساب</Text></TouchableOpacity>
-            </View>
-            <TouchableOpacity style={{padding:10, alignItems:'center'}} onPress={() => setSelectedInvoice(null)}><Text style={{color: colors.textMuted, fontWeight:'bold'}}>إغلاق</Text></TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 }
