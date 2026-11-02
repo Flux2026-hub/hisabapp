@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Modal, TouchableOpacity } from "react-native";
 import BrandBanner from "./components/BrandBanner";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { sqlite } from "../db/local";
@@ -47,6 +47,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<Row[]>([]);
   const [returnInvoiceId, setReturnInvoiceId] = useState<string | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Row | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -103,7 +104,19 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
   const buildCurrentInvoiceData = (invoiceNo: string): InvoicePrintData | null => {
     if (!customer || !currency) return null;
-    return { type: "sales", invoiceNo, createdAt: dateStr ? new Date(dateStr).getTime() : Date.now(), partyLabel: "العميل", partyName: customer.name, partyPhone: customer.phone || undefined, currencyCode: currency.code, currencySymbol: currency.symbol || currency.code, exchangeRate: Number(currency.exchangeRate) || 1, isBase: !!currency.isBase, paymentType, cashboxName: cashbox?.name, lines: lines.map((l) => ({ itemName: l.itemName, itemSku: l.itemSku, unit: l.unit, quantity: l.quantity, unitPrice: l.unitPrice })), subtotal, discountType, discountValue: Number(discountValue) || 0, discountAmount, total, notes: notes.trim() || undefined };
+    return { type: "sales", invoiceNo, createdAt: dateStr ? new Date(dateStr).getTime() : Date.now(), partyLabel: "العميل", partyName: customer.name, partyPhone: customer.phone || undefined, currencyCode: currency.code, currencySymbol: currency.symbol || currency.code, exchangeRate: Number(currency.exchangeRate) || 1, isBase: !!currency.isBase, paymentType, cashboxName: cashbox?.name, lines: lines.map((l: any) => ({ itemName: l.itemName, itemSku: l.itemSku, unit: l.unit, quantity: l.quantity, unitPrice: l.unitPrice })), subtotal, discountType, discountValue: Number(discountValue) || 0, discountAmount, total, notes: notes.trim() || undefined };
+  };
+
+
+  const shareInvoiceById = async (id: string) => {
+    try {
+      const inv: any = await sqlite.getFirstAsync('SELECT * FROM invoices WHERE id = ?', [id]);
+      const invLines: any = await sqlite.getAllAsync('SELECT l.*, i.name as item_name, i.sku as item_sku, i.unit as item_unit FROM invoice_lines l LEFT JOIN items i ON i.id = l.item_id WHERE l.invoice_id = ?', [id]);
+      const cur: any = await sqlite.getFirstAsync('SELECT * FROM currencies WHERE code = ?', [inv.currency_code || '']);
+      let cashboxName; if (inv.cashbox_id) { const cb: any = await sqlite.getFirstAsync('SELECT name FROM cashboxes WHERE id = ?', [inv.cashbox_id]); cashboxName = cb?.name; }
+      const data = { type: 'sales' as const, invoiceNo: inv.invoice_no, createdAt: inv.created_at, partyLabel: 'العميل', partyName: inv.party_name || '', currencyCode: inv.currency_code || 'YER', currencySymbol: cur?.symbol || inv.currency_code || 'YER', exchangeRate: Number(inv.exchange_rate) || 1, isBase: !!(cur?.is_base ?? cur?.isBase), paymentType: inv.payment_type || 'cash', cashboxName, lines: (invLines || []).map((l: any) => ({ itemName: l.item_name || l.description || '—', itemSku: l.item_sku || '', unit: l.item_unit || '', quantity: Number(l.quantity) || 0, unitPrice: Number(l.unit_price) || 0 })), subtotal: Number(inv.subtotal) || Number(inv.total) || 0, discountType: inv.discount_type || null, discountValue: Number(inv.discount_value) || 0, discountAmount: Number(inv.discount_amount) || 0, total: Number(inv.total) || 0 };
+      await shareHtmlAsPdf(await buildInvoiceHtml(data), 'فاتورة-' + inv.invoice_no + '.pdf');
+    } catch (e) { Alert.alert('تعذر المشاركة', String(e)); }
   };
 
   const printInvoiceById = async (invoiceId: string) => {
@@ -307,7 +320,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>المنتجات ({lines.length})</Text>
         <View style={styles.list}>
-          {lines.map((l) => (
+          {lines.map((l: any) => (
             <View key={l.key} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.rowActions}><Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>حذف</Text></Pressable></View>
               <View style={styles.rowInfo}><Text style={[styles.rowName, { color: colors.text }]}>{l.itemName}</Text><Text style={[styles.rowMeta, { color: colors.textMuted }]}>{l.quantity} × {l.unitPrice} = {(l.quantity * l.unitPrice).toFixed(2)}</Text></View>
@@ -344,7 +357,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>آخر فواتير المبيعات</Text>
             <View style={styles.list}>
               {history.map((h) => (
-                <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Pressable key={h.id} onPress={() => setSelectedInvoice(h)} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.histActions}>
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setReturnInvoiceId(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => printInvoiceById(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
@@ -358,12 +371,32 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                     <Text style={[styles.histTotal, { color: colors.blue }]}>{Number(h.total).toFixed(2)} {h.currency_code}</Text>
                     <Text style={[styles.histType, { color: colors.textMuted }]}>{h.payment_type === "cash" ? "نقدي" : "أجل"}</Text>
                   </View>
-                </View>
+                </Pressable>
               ))}
             </View>
           </>
         )}
       </ScrollView>
+
+      <Modal visible={!!selectedInvoice} transparent animationType='fade' onRequestClose={() => setSelectedInvoice(null)}>
+        <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.5)', justifyContent:'center', alignItems:'center', padding:20}}>
+          <View style={{backgroundColor: colors.surface, width:'100%', borderRadius:16, padding:20}}>
+            <Text style={{color: colors.text, fontSize:20, textAlign:'center', marginBottom:15, fontFamily:'CodecBold'}}>تفاصيل الفاتورة</Text>
+            {selectedInvoice && (
+              <View style={{marginBottom:20, gap:8}}>
+                <Text style={{color: colors.text, fontSize:16, textAlign:'right'}}>العميل: {selectedInvoice.party_name}</Text>
+                <Text style={{color: colors.text, fontSize:16, textAlign:'right'}}>رقم الفاتورة: {selectedInvoice.invoice_no}</Text>
+                <Text style={{color: colors.blue, fontSize:18, fontWeight:'bold', textAlign:'right', marginTop:10}}>الإجمالي: {Number(selectedInvoice.total).toFixed(2)} {selectedInvoice.currency_code}</Text>
+              </View>
+            )}
+            <View style={{flexDirection:'row-reverse', gap:10, marginBottom:15}}>
+              <TouchableOpacity style={{flex:1, backgroundColor: colors.blue, padding:12, borderRadius:10, alignItems:'center'}} onPress={() => { printInvoiceById(selectedInvoice.id); setSelectedInvoice(null); }}><Text style={{color:'#FFF', fontWeight:'bold'}}>🖨️ طباعة</Text></TouchableOpacity>
+              <TouchableOpacity style={{flex:1, backgroundColor: '#25D366', padding:12, borderRadius:10, alignItems:'center'}} onPress={() => { shareInvoiceById(selectedInvoice.id); setSelectedInvoice(null); }}><Text style={{color:'#FFF', fontWeight:'bold'}}>🟢 واتساب</Text></TouchableOpacity>
+            </View>
+            <TouchableOpacity style={{padding:10, alignItems:'center'}} onPress={() => setSelectedInvoice(null)}><Text style={{color: colors.textMuted, fontWeight:'bold'}}>إغلاق</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }

@@ -41,7 +41,7 @@ export default function PromoCarousel() {
     }
   };
 
-  const renderItem = ({ item, index }: { item: string | null, index: number }) => (
+  const renderItem = ({ item, index }: { item: any, index: number }) => (
     <View style={styles.slide}>
       {item ? (
         <>
