@@ -2,6 +2,7 @@ import TelegramSettings from '../src/ui/components/TelegramSettings';
 import { useEffect, useState } from "react";
 import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions, useWindowDimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { LineChart } from "react-native-chart-kit";
 import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
@@ -100,17 +101,20 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
-      <View style={[styles.header, { backgroundColor: colors.navy }]}>
+      <LinearGradient
+        colors={['#051A34', '#0B2545', '#1A3B6B']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <View style={styles.brandRow}>
           <Image source={require("../assets/images/flux-logo.png")} style={styles.logo} resizeMode="contain" />
-          
-          
-          
           <View style={styles.brandTextWrap}>
             <Text style={styles.brandName}>فلوكس</Text>
             <Text style={styles.brandSub}>لأنابيب أكثر نظافة</Text>
           </View>
         </View>
+      </LinearGradient>
       </View>
 
       <View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
@@ -263,12 +267,12 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: 18, paddingVertical: 20, paddingTop: 26 },
-  brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "flex-start", gap: 15 },
-  brandTextWrap: { alignItems: "flex-end", flex: 1 },
-  brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 22, textAlign: "right" },
-  brandSub: { fontFamily: "Alexandria-Regular", color: "#94A3B8", fontSize: 11, textAlign: "right", marginTop: -2 },
-  logo: { width: 90, height: 70 },
+  header: { paddingHorizontal: 20, paddingVertical: 20, paddingTop: 35, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5 },
+  brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", width: "100%" },
+  brandTextWrap: { alignItems: "flex-end" },
+  brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 22, textAlign: "left" },
+  brandSub: { fontFamily: "Alexandria-Regular", color: "#94A3B8", fontSize: 11, textAlign: "left", marginTop: 2 },
+  logo: { width: 100, height: 75 },
   searchBtn: { padding: 8, marginHorizontal: 10 },
   scrollBackground: { paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 40 },
   desktopContent: { maxWidth: 1200, alignSelf: "center", width: "100%" }, // 🚀 تحديد أقصى عرض للتلفاز
