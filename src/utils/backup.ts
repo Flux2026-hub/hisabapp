@@ -1,9 +1,9 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sqlite } from "../db/local";
 
-// 🚀 إضافة جميع الجداول بما فيها المفقودة (الملاحظة 9)
 const TABLES = [
   "items", "warehouses", "product_boms", "product_bom_lines",
   "stock_receipts", "stock_receipt_lines", "stock_movements",
@@ -19,7 +19,7 @@ export type BackupFile = {
   createdAt: number;
   appName: string;
   data: Record<string, any[]>;
-  settings?: any; // 🚀 إضافة الإعدادات للملف
+  settings?: any;
 };
 
 export async function exportBackup(): Promise<{ success: boolean; uri?: string; error?: string }> {
@@ -34,7 +34,6 @@ export async function exportBackup(): Promise<{ success: boolean; uri?: string; 
       }
     }
 
-    // 🚀 جلب الإعدادات من الذاكرة (الملاحظة 9)
     let settings = null;
     try {
       const rawSettings = await AsyncStorage.getItem("flux_settings_v1");
@@ -48,17 +47,17 @@ export async function exportBackup(): Promise<{ success: boolean; uri?: string; 
       createdAt: Date.now(),
       appName: "فلوكس - مسلك مجاري",
       data,
-      settings, // 🚀 تضمين الإعدادات في الملف
+      settings,
     };
 
     const date = new Date().toISOString().slice(0, 10);
     const filename = `flux-backup-${date}.json`;
     const path = FileSystem.cacheDirectory + filename;
-    
+
     await FileSystem.writeAsStringAsync(path, JSON.stringify(backup, null, 2), {
       encoding: FileSystem.EncodingType.UTF8,
     });
-    
+
     const can = await Sharing.isAvailableAsync();
     if (can) {
       await Sharing.shareAsync(path, {
@@ -73,25 +72,20 @@ export async function exportBackup(): Promise<{ success: boolean; uri?: string; 
   }
 }
 
+// ✅ الدالة الجديدة التي تستخدم DocumentPicker (تفتح مدير الملفات مباشرة)
 export async function pickBackupFile(): Promise<{ success: boolean; backup?: BackupFile; error?: string }> {
   try {
-    const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+    const result = await DocumentPicker.getDocumentAsync({
+      type: 'application/json', // السماح فقط بملفات JSON
+      copyToCacheDirectory: true,
+    });
 
-    if (!permissions.granted) {
-      return { success: false, error: "لم يتم منح صلاحية الوصول للملفات" };
+    if (result.canceled) {
+      return { success: false, error: "تم الإلغاء" };
     }
 
-    const files = await FileSystem.StorageAccessFramework.readDirectoryAsync(
-      permissions.directoryUri
-    );
-
-    const jsonFile = files.find((f) => f.toLowerCase().endsWith(".json"));
-
-    if (!jsonFile) {
-      return { success: false, error: "لا يوجد ملف JSON في المجلد المحدد" };
-    }
-
-    const content = await FileSystem.readAsStringAsync(jsonFile, {
+    const fileUri = result.assets[0].uri;
+    const content = await FileSystem.readAsStringAsync(fileUri, {
       encoding: FileSystem.EncodingType.UTF8,
     });
 
@@ -110,8 +104,7 @@ export async function pickBackupFile(): Promise<{ success: boolean; backup?: Bac
 export async function restoreBackup(backup: BackupFile): Promise<{ success: boolean; restored?: number; error?: string }> {
   try {
     let restored = 0;
-    
-    // 🚀 استعادة الإعدادات أولاً (الملاحظة 9)
+
     if (backup.settings) {
       try {
         await AsyncStorage.setItem("flux_settings_v1", JSON.stringify(backup.settings));
@@ -123,7 +116,7 @@ export async function restoreBackup(backup: BackupFile): Promise<{ success: bool
     for (const table of TABLES) {
       const rows = backup.data[table];
       if (!rows || !Array.isArray(rows) || rows.length === 0) continue;
-      
+
       try {
         await sqlite.execAsync(`DELETE FROM ${table}`);
         for (const row of rows) {
@@ -131,7 +124,7 @@ export async function restoreBackup(backup: BackupFile): Promise<{ success: bool
           const values = keys.map((k) => row[k]);
           const placeholders = keys.map(() => "?").join(", ");
           const cols = keys.join(", ");
-          
+
           await sqlite.runAsync(
             `INSERT INTO ${table} (${cols}) VALUES (${placeholders})`,
             values

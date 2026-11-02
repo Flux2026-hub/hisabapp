@@ -8,8 +8,6 @@ import LockScreen, { isSessionActive } from "../src/ui/LockScreen";
 import { ThemeProvider } from "../src/ui/ThemeContext";
 import { ToastProvider } from "../src/ui/ToastContext";
 import { runAutoBackup } from "../src/utils/autoBackup";
-import CustomHeader from "../src/ui/components/CustomHeader";
-import GlobalSearchModal from "../src/ui/components/GlobalSearchModal";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 I18nManager.allowRTL(true);
@@ -25,9 +23,6 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
-
-  // حالة فتح نافذة البحث الشامل
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -69,22 +64,10 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <ToastProvider>
-        <Stack
-          screenOptions={{
-            // ✅ الهيدر الأزرق يستقبل العنوان فقط الآن
-            header: ({ options }) => (
-              <CustomHeader title={options.title} />
-            ),
-          }}
-        >
-          <Stack.Screen name="index" options={{ title: 'فلوكس' }} />
+        {/* ✅ إخفاء الهيدر الافتراضي لأن index.tsx يحتوي على الهيدر الخاص به */}
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
         </Stack>
-
-        {/* ✅ نافذة البحث الشامل */}
-        <GlobalSearchModal
-          visible={isSearchVisible}
-          onClose={() => setIsSearchVisible(false)}
-        />
       </ToastProvider>
     </ThemeProvider>
   );
