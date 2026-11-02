@@ -101,20 +101,17 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
-      <LinearGradient
-        colors={['#051A34', '#0B2545', '#1A3B6B']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
+      <View style={[styles.header, { backgroundColor: colors.navy }]}>
         <View style={styles.brandRow}>
           <Image source={require("../assets/images/flux-logo.png")} style={styles.logo} resizeMode="contain" />
+          
+          
+          
           <View style={styles.brandTextWrap}>
             <Text style={styles.brandName}>فلوكس</Text>
             <Text style={styles.brandSub}>لأنابيب أكثر نظافة</Text>
           </View>
         </View>
-      </LinearGradient>
       </View>
 
       <View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
