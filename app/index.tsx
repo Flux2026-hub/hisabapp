@@ -5,7 +5,6 @@ import { Animated } from "react-native";
 import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions, useWindowDimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { LineChart } from "react-native-chart-kit";
 import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
 import GlobalSearchModal from "../src/ui/components/GlobalSearchModal";
