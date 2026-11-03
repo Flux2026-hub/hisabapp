@@ -1,14 +1,12 @@
 import TelegramSettings from '../src/ui/components/TelegramSettings';
-import { useEffect, useState, useRef } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Animated } from "react-native";
+import { useEffect, useState } from "react";
 import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions, useWindowDimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { LineChart } from "react-native-chart-kit";
 import AccountingModule from "../src/ui/AccountingModule";
 import SettingsModule from "../src/ui/SettingsModule";
 import GlobalSearchModal from "../src/ui/components/GlobalSearchModal";
-import PromoCarousel from "../src/ui/components/PromoCarousel";
 import { COLORS, FONTS } from "../src/ui/theme";
 import { sqlite } from "../src/db/local";
 import { useTheme } from "../src/ui/ThemeContext";
@@ -29,8 +27,6 @@ export default function HomeScreen() {
   const [tab, setTab] = useState<Tab>("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [pinNavbar, setPinNavbar] = useState(false);
-  const scrollY = useRef(new Animated.Value(0)).current;
   const [sarRate, setSarRate] = useState(140);
 
   const [kpis, setKpis] = useState({
@@ -43,16 +39,6 @@ export default function HomeScreen() {
   });
 
   const go = (next: Tab) => { setTab(next); setMenuOpen(false); };
-
-  useEffect(() => {
-    // قراءة إعداد تثبيت الشريط
-    AsyncStorage.getItem("flux_settings_v1").then(raw => {
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.pinNavbar !== undefined) setPinNavbar(parsed.pinNavbar);
-      }
-    });
-  }, [tab]);
 
   useEffect(() => {
     const fetchKPIs = async () => {
@@ -113,16 +99,6 @@ export default function HomeScreen() {
     return () => sub.remove();
   }, [tab, menuOpen]);
 
-  // إعداد حركة الإخفاء (Clamp يمنع الشريط من الخروج عن الحدود)
-  const diffClamp = Animated.diffClamp(scrollY, 0, 80);
-  const translateY = diffClamp.interpolate({
-    inputRange: [0, 80],
-    outputRange: [0, -80], // يختفي للأعلى بمقدار 80 بكسل
-  });
-
-  // إذا كان الإعداد "تثبيت" فارغة (لا حركة)، وإلا نطبق الحركة
-  const navAnimatedStyle = pinNavbar ? {} : { transform: [{ translateY }] };
-
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
       <View style={[styles.header, { backgroundColor: colors.navy }]}>
@@ -138,12 +114,15 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 0, left: 0, right: 0, zIndex: 4 }, navAnimatedStyle]}>
+      <View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
             <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
           </Pressable>
-
+          <View style={{ width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 8 }} />
+          <Pressable style={styles.menuButton} onPress={() => setMenuOpen((v) => !v)}>
+            <MaterialCommunityIcons name="menu" size={24} color={colors.text} />
+          </Pressable>
         </View>
         
         <View style={styles.navTabs}>
@@ -164,7 +143,7 @@ export default function HomeScreen() {
             );
           })}
         </View>
-      </Animated.View>
+      </View>
 
       {menuOpen && <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />}
 
@@ -179,22 +158,74 @@ export default function HomeScreen() {
       )}
 
       {/* 🚀 تطبيق التصميم المتجاوب على المحتوى */}
-      <Animated.ScrollView 
-        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: 75 }]} 
-        keyboardShouldPersistTaps="handled"
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
-        scrollEventThrottle={16}
-      >
+      <ScrollView contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent]} keyboardShouldPersistTaps="handled">
         
         {tab === "home" && (
           <View style={[styles.whiteCard, { backgroundColor: colors.surface }, isDesktop && { padding: 40 }]}>
             <Text style={[styles.title, { color: colors.text }]}>لوحة التحكم</Text>
             <Text style={[styles.hint, { color: colors.textMuted }]}>نظرة سريعة على أرصدة المصنع</Text>
 
-            {/* ✅ شاشة العرض (البانر الإعلاني) */}
-            <PromoCarousel />
+            <View style={[styles.chartContainer, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }]}>
+              <Text style={[styles.chartTitle, { color: colors.text }]}>مبيعات آخر 7 أيام (YER)</Text>
+              <LineChart
+                data={chartData}
+                width={isDesktop ? width - 200 : width - 80} // 🚀 تكبير الرسم البياني في التلفاز
+                height={200}
+                yAxisLabel=""
+                yAxisSuffix=""
+                chartConfig={{
+                  backgroundColor: "transparent",
+                  backgroundGradientFrom: colors.isDark ? "#1E293B" : "#F8FAFC",
+                  backgroundGradientTo: colors.isDark ? "#1E293B" : "#F8FAFC",
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => colors.blue,
+                  labelColor: (opacity = 1) => colors.textMuted,
+                  style: { borderRadius: 16 },
+                  propsForDots: { r: "4", strokeWidth: "2", stroke: colors.blue }
+                }}
+                bezier
+                style={{ marginVertical: 8, borderRadius: 16, marginLeft: -10 }}
+              />
+            </View>
 
-            
+            {/* 🚀 البطاقات تصبح 4 في صف واحد عند العرض على تلفاز */}
+            <View style={styles.kpiGrid}>
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#064E3B" : "#F0FDF4" }, isDesktop && { width: "23.5%" }]}>
+                <View style={styles.kpiHeader}>
+                  <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#065F46" : "#DCFCE7" }]}><MaterialCommunityIcons name="account-group" size={22} color="#059669" /></View>
+                  <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>العملاء (مدينون)</Text>
+                </View>
+                <Text style={[styles.kpiValue, { color: colors.text }]}>{kpis.customers.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
+                <Text style={styles.kpiSub}>≈ {(kpis.customers / sarRate).toFixed(2)} SAR</Text>
+              </View>
+
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEF2F2" }, isDesktop && { width: "23.5%" }]}>
+                <View style={styles.kpiHeader}>
+                  <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#991B1B" : "#FEE2E2" }]}><MaterialCommunityIcons name="truck-delivery" size={22} color="#DC2626" /></View>
+                  <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>الموردون (دائنون)</Text>
+                </View>
+                <Text style={[styles.kpiValue, { color: colors.text }]}>{kpis.suppliers.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
+                <Text style={styles.kpiSub}>≈ {(kpis.suppliers / sarRate).toFixed(2)} SAR</Text>
+              </View>
+
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }, isDesktop && { width: "23.5%" }]}>
+                <View style={styles.kpiHeader}>
+                  <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#1D4ED8" : "#DBEAFE" }]}><MaterialCommunityIcons name="wallet" size={22} color="#2563EB" /></View>
+                  <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>إجمالي الصناديق</Text>
+                </View>
+                <Text style={[styles.kpiValue, { color: colors.text }]}>{kpis.cashboxes.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
+                <Text style={styles.kpiSub}>≈ {(kpis.cashboxes / sarRate).toFixed(2)} SAR</Text>
+              </View>
+
+              <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#7C2D12" : "#FFF7ED" }, isDesktop && { width: "23.5%" }]}>
+                <View style={styles.kpiHeader}>
+                  <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#9A3412" : "#FFEDD5" }]}><MaterialCommunityIcons name="package-variant" size={22} color="#F97316" /></View>
+                  <Text style={[styles.kpiTitle, { color: colors.textMuted }]}>قيمة المخزون</Text>
+                </View>
+                <Text style={[styles.kpiValue, { color: colors.text }]}>{kpis.inventory.toFixed(2)} <Text style={styles.kpiCur}>YER</Text></Text>
+                <Text style={styles.kpiSub}>≈ {(kpis.inventory / sarRate).toFixed(2)} SAR</Text>
+              </View>
+            </View>
 
             <View style={styles.quickActionsGrid}>
               <Pressable style={[styles.quickActionCard, { backgroundColor: colors.isDark ? "#1E293B" : "#EFF6FF" }, isDesktop && { width: "23.5%", aspectRatio: 1.5 }]} onPress={() => go("accounting")}>
@@ -229,7 +260,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-      </Animated.ScrollView>
+      </ScrollView>
 
       <GlobalSearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} />
     </SafeAreaView>
@@ -238,7 +269,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingVertical: 20, paddingTop: 35, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, zIndex: 10 },
+  header: { paddingHorizontal: 20, paddingVertical: 20, paddingTop: 35, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5 },
   brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", width: "100%" },
   brandTextWrap: { alignItems: "flex-end" },
   brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 20, textAlign: "left" },
