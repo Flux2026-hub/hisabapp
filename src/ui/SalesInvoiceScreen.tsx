@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Modal, TouchableOpacity } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import BrandBanner from "./components/BrandBanner";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { sqlite } from "../db/local";
@@ -103,10 +103,8 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
   const buildCurrentInvoiceData = (invoiceNo: string): InvoicePrintData | null => {
     if (!customer || !currency) return null;
-    return { type: "sales", invoiceNo, createdAt: dateStr ? new Date(dateStr).getTime() : Date.now(), partyLabel: "العميل", partyName: customer.name, partyPhone: customer.phone || undefined, currencyCode: currency.code, currencySymbol: currency.symbol || currency.code, exchangeRate: Number(currency.exchangeRate) || 1, isBase: !!currency.isBase, paymentType, cashboxName: cashbox?.name, lines: lines.map((l: any) => ({ itemName: l.itemName, itemSku: l.itemSku, unit: l.unit, quantity: l.quantity, unitPrice: l.unitPrice })), subtotal, discountType, discountValue: Number(discountValue) || 0, discountAmount, total, notes: notes.trim() || undefined };
+    return { type: "sales", invoiceNo, createdAt: dateStr ? new Date(dateStr).getTime() : Date.now(), partyLabel: "العميل", partyName: customer.name, partyPhone: customer.phone || undefined, currencyCode: currency.code, currencySymbol: currency.symbol || currency.code, exchangeRate: Number(currency.exchangeRate) || 1, isBase: !!currency.isBase, paymentType, cashboxName: cashbox?.name, lines: lines.map((l) => ({ itemName: l.itemName, itemSku: l.itemSku, unit: l.unit, quantity: l.quantity, unitPrice: l.unitPrice })), subtotal, discountType, discountValue: Number(discountValue) || 0, discountAmount, total, notes: notes.trim() || undefined };
   };
-
-
 
   const printInvoiceById = async (invoiceId: string) => {
     try {
@@ -309,7 +307,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>المنتجات ({lines.length})</Text>
         <View style={styles.list}>
-          {lines.map((l: any) => (
+          {lines.map((l) => (
             <View key={l.key} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.rowActions}><Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={styles.delText}>حذف</Text></Pressable></View>
               <View style={styles.rowInfo}><Text style={[styles.rowName, { color: colors.text }]}>{l.itemName}</Text><Text style={[styles.rowMeta, { color: colors.textMuted }]}>{l.quantity} × {l.unitPrice} = {(l.quantity * l.unitPrice).toFixed(2)}</Text></View>
@@ -346,7 +344,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>آخر فواتير المبيعات</Text>
             <View style={styles.list}>
               {history.map((h) => (
-                <Pressable key={h.id}  style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.histActions}>
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setReturnInvoiceId(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => printInvoiceById(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
@@ -360,13 +358,12 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
                     <Text style={[styles.histTotal, { color: colors.blue }]}>{Number(h.total).toFixed(2)} {h.currency_code}</Text>
                     <Text style={[styles.histType, { color: colors.textMuted }]}>{h.payment_type === "cash" ? "نقدي" : "أجل"}</Text>
                   </View>
-                </Pressable>
+                </View>
               ))}
             </View>
           </>
         )}
       </ScrollView>
-
     </KeyboardAvoidingView>
   );
 }
