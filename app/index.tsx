@@ -139,7 +139,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 0, left: 0, right: 0, zIndex: 4 }, navAnimatedStyle]}>
+      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 115, left: 0, right: 0, zIndex: 1 }, navAnimatedStyle]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
             <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
@@ -239,7 +239,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingVertical: 20, paddingTop: 35, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, zIndex: 10 },
+  header: { paddingHorizontal: 20, paddingVertical: 20, paddingTop: 35, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, zIndex: 10 },
   brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", width: "100%" },
   brandTextWrap: { alignItems: "flex-end" },
   brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 20, textAlign: "left" },
