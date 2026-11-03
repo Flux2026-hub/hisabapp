@@ -41,7 +41,7 @@ export default function PromoCarousel() {
     }
   };
 
-  const renderItem = ({ item, index }: { item: any, index: number }) => (
+  const renderItem = ({ item, index }: { item: string | null, index: number }) => (
     <View style={styles.slide}>
       {item ? (
         <>
@@ -63,7 +63,7 @@ export default function PromoCarousel() {
 
   return (
     <View style={styles.container}>
-      <FlatList ref={flatListRef} data={[0, 1]} renderItem={renderItem} keyExtractor={(_, i) => i.toString()} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setActiveIndex(Math.round(e.nativeEvent.contentOffset.x / width))} />
+      <FlatList ref={flatListRef} data={['0', '1']} renderItem={renderItem} keyExtractor={(_, i) => i.toString()} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setActiveIndex(Math.round(e.nativeEvent.contentOffset.x / width))} />
       <View style={styles.pagination}>{[0, 1].map(i => <View key={i} style={[styles.dot, activeIndex === i && styles.activeDot]} />)}</View>
     </View>
   );
