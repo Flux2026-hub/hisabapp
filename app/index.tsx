@@ -1,6 +1,7 @@
 import TelegramSettings from '../src/ui/components/TelegramSettings';
 import { useEffect, useState } from "react";
-import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions, useWindowDimensions } from "react-native";
+import { BackHandler, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Dimensions, useWindowDimensions, Animated } from "react-native";
+import { useRef } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { LineChart } from "react-native-chart-kit";
@@ -26,6 +27,10 @@ export default function HomeScreen() {
 
   const [tab, setTab] = useState<Tab>("home");
   const [menuOpen, setMenuOpen] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const diffClamp = Animated.diffClamp(scrollY, 0, 80);
+  const translateY = diffClamp.interpolate({ inputRange: [0, 80], outputRange: [0, -80] });
+  const navAnimatedStyle = { transform: [{ translateY }] };
   const [searchOpen, setSearchOpen] = useState(false);
   const [sarRate, setSarRate] = useState(140);
 
@@ -114,14 +119,10 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 0, left: 0, right: 0, zIndex: 4 }, navAnimatedStyle]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
             <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
-          </Pressable>
-          <View style={{ width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 8 }} />
-          <Pressable style={styles.menuButton} onPress={() => setMenuOpen((v) => !v)}>
-            <MaterialCommunityIcons name="menu" size={24} color={colors.text} />
           </Pressable>
         </View>
         
@@ -143,7 +144,7 @@ export default function HomeScreen() {
             );
           })}
         </View>
-      </View>
+      </Animated.View>
 
       {menuOpen && <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />}
 
@@ -158,7 +159,12 @@ export default function HomeScreen() {
       )}
 
       {/* 🚀 تطبيق التصميم المتجاوب على المحتوى */}
-      <ScrollView contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent]} keyboardShouldPersistTaps="handled">
+      <Animated.ScrollView 
+        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: 75 }]} 
+        keyboardShouldPersistTaps="handled"
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
+      >
         
         {tab === "home" && (
           <View style={[styles.whiteCard, { backgroundColor: colors.surface }, isDesktop && { padding: 40 }]}>
@@ -260,7 +266,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-      </ScrollView>
+      </Animated.ScrollView>
 
       <GlobalSearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} />
     </SafeAreaView>
@@ -295,7 +301,7 @@ const styles = StyleSheet.create({
   quickActionsGrid: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 10 },
   quickActionCard: { width: "48%", borderRadius: 16, padding: 20, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, aspectRatio: 1 },
   quickActionText: { fontSize: 16, fontFamily: "CodecBold" },
-  nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 8, alignItems: "center", paddingHorizontal: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, zIndex: 5 },
+  nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 8, alignItems: "center", paddingHorizontal: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, zIndex: 1 },
   navTabs: { flex: 1, flexDirection: "row-reverse", justifyContent: "space-around" },
   menuButton: { padding: 8, marginLeft: 8 },
   navItem: { alignItems: "center", justifyContent: "center", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12, marginHorizontal: 4, flexDirection: "column" },
