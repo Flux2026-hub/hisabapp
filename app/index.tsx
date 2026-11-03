@@ -28,8 +28,8 @@ export default function HomeScreen() {
   const [tab, setTab] = useState<Tab>("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
-  const diffClamp = Animated.diffClamp(scrollY, 0, 80);
-  const translateY = diffClamp.interpolate({ inputRange: [0, 80], outputRange: [0, -80] });
+  const diffClamp = Animated.diffClamp(scrollY, 0, 120);
+  const translateY = diffClamp.interpolate({ inputRange: [0, 120], outputRange: [0, -120] });
   const navAnimatedStyle = { transform: [{ translateY }] };
   const [searchOpen, setSearchOpen] = useState(false);
   const [sarRate, setSarRate] = useState(140);
@@ -119,7 +119,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 0, left: 0, right: 0, zIndex: 4 }, navAnimatedStyle]}>
+      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 120, left: 0, right: 0, zIndex: 4 }, navAnimatedStyle]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
             <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
@@ -160,7 +160,7 @@ export default function HomeScreen() {
 
       {/* 🚀 تطبيق التصميم المتجاوب على المحتوى */}
       <Animated.ScrollView 
-        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: 75 }]} 
+        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: 200 }]} 
         keyboardShouldPersistTaps="handled"
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
