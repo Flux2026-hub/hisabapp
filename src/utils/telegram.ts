@@ -73,6 +73,7 @@ export const checkTelegramCommands = async () => {
       const text = message.text.trim();
       const parsed = await parseArabicCommand(text);
 
+      // 1. تسجيل مصروف
       if (parsed.intent === "expense" && parsed.amount > 0) {
         const expenseId = `EXP-${Date.now()}`;
         const expenseNo = `EXP-${String(Date.now()).slice(-3)}`;
@@ -86,6 +87,8 @@ export const checkTelegramCommands = async () => {
 
         await sendTelegramMessage(`✅ تم تسجيل المصروف:\n💸 ${parsed.amount} YER\n📝 ${parsed.description}`);
       } 
+      
+      // 2. تسجيل إيراد
       else if (parsed.intent === "income" && parsed.amount > 0) {
         const incomeId = `INC-${Date.now()}`;
         const incomeNo = `INC-${String(Date.now()).slice(-3)}`;
@@ -99,8 +102,34 @@ export const checkTelegramCommands = async () => {
 
         await sendTelegramMessage(`✅ تم تسجيل الإيراد:\n💰 ${parsed.amount} YER\n📝 ${parsed.description}`);
       }
+
+      // 3. فتح حساب عميل جديد (الميزة الجديدة)
+      else if (parsed.intent === "create_customer" && parsed.partyName) {
+        try {
+          // توليد كود جديد للعميل (مثلاً CUS-001)
+          const lastCustomer: any = await sqlite.getFirstAsync("SELECT code FROM customers WHERE code LIKE 'CUS-%' ORDER BY code DESC LIMIT 1");
+          let nextCode = "CUS-001";
+          if (lastCustomer && lastCustomer.code) {
+            const lastNum = parseInt(lastCustomer.code.replace(/\D/g, ""), 10);
+            nextCode = `CUS-${String(lastNum + 1).padStart(3, "0")}`;
+          }
+
+          const customerId = `CUS-${Date.now()}`;
+          
+          await sqlite.runAsync(
+            `INSERT INTO customers (id, code, name, phone, balance) VALUES (?, ?, ?, ?, 0)`,
+            [customerId, nextCode, parsed.partyName, parsed.phone || ""]
+          );
+
+          await sendTelegramMessage(`✅ تم إضافة العميل بنجاح:\n👤 الاسم: ${parsed.partyName}\n🔢 الكود: ${nextCode}\n📞 الهاتف: ${parsed.phone || "غير مسجل"}`);
+        } catch (err) {
+          await sendTelegramMessage(`❌ تعذر إضافة العميل: ${String(err)}`);
+        }
+      }
+      
+      // 4. أمر غير معروف
       else {
-        await sendTelegramMessage("🤖 لم أفهم الأمر. جرب: \"صرفت 500 بنزين\" أو \"استلمت 1000 من أحمد\".");
+        await sendTelegramMessage("🤖 لم أفهم الأمر. جرب:\n- \"صرفت 500 بنزين\"\n- \"استلمت 1000 من أحمد\"\n- \"افتح حساب عميل جديد باسم أحمد ورقمه 777123456\"");
       }
 
       await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));

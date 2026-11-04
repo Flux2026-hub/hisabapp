@@ -1,14 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // ⚠️ ضع مفتاح API هنا (استبدل النص أدناه بمفتاحك)
-const API_KEY = "AIzaSyCs2OTLP67ndXGf9GZkREKPEFjwS6Bg6gg";
+const API_KEY = "ضع_مفتاح_API_هنا"; 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export type ParsedCommand = {
-  intent: "expense" | "income" | "invoice" | "unknown";
+  intent: "expense" | "income" | "invoice" | "create_customer" | "unknown";
   amount: number;
   description: string;
   partyName?: string;
+  phone?: string;
   items?: { name: string; qty: number; price: number }[];
 };
 
@@ -20,15 +21,17 @@ export const parseArabicCommand = async (text: string): Promise<ParsedCommand> =
       أنت مساعد محاسبي ذكي. قم بتحليل النص التالي واستخرج منه البيانات المطلوبة بصيغة JSON فقط، دون أي نص إضافي.
       النص: "${text}"
 
-      إذا كان النص يتحدث عن دفع أو صرف (مثل: "صرفت 500 بنزين")، اجعل intent = "expense".
-      إذا كان يتحدث عن استلام أو قبض (مثل: "استلمت 1000 من أحمد")، اجعل intent = "income".
-      إذا كان يتحدث عن بيع أو شراء أصناف (مثل: "بعت 3 كراتين بـ 200"), اجعل intent = "invoice".
-      وإلا اجعل intent = "unknown".
+      النوايا المتاحة (intent):
+      1. "expense": إذا كان النص يتحدث عن دفع أو صرف (مثل: "صرفت 500 بنزين").
+      2. "income": إذا كان يتحدث عن استلام أو قبض (مثل: "استلمت 1000 من أحمد").
+      3. "invoice": إذا كان يتحدث عن بيع أو شراء أصناف (مثل: "بعت 3 كراتين بـ 200").
+      4. "create_customer": إذا كان النص يطلب إضافة عميل جديد (مثل: "افتح حساب عميل جديد باسم أحمد علي ورقمه 777123456").
+      5. "unknown": إذا لم تفهم النص.
 
       أمثلة على JSON المطلوب:
       { "intent": "expense", "amount": 500, "description": "بنزين" }
       { "intent": "income", "amount": 1000, "description": "دفعة من العميل", "partyName": "أحمد" }
-      { "intent": "invoice", "amount": 200, "description": "مبيعات", "items": [{ "name": "كرتون", "qty": 3, "price": 66.6 }] }
+      { "intent": "create_customer", "partyName": "أحمد علي", "phone": "777123456", "amount": 0, "description": "إضافة عميل" }
     `;
 
     const result = await model.generateContent(prompt);
