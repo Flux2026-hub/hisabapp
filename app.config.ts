@@ -14,7 +14,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: 'com.flux.hisabapp'
   },
   android: {
-    package: 'com.flux.hisabapp'
+    package: 'com.flux.hisabapp.v2'
   },
   web: {
     bundler: 'metro',
