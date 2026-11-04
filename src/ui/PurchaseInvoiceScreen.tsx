@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Modal } from "react-native";
 import BrandBanner from "./components/BrandBanner";
 import { sqlite } from "../db/local";
 import PurchaseReturnScreen from "./PurchaseReturnScreen";
@@ -22,14 +22,14 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
   const [items, setItems] = useState<Row[]>([]);
 
   const [supplier, setSupplier] = useState<Row | null>(null);
-  const [supplierSearch, setSupplierSearch] = useState(""); 
+  const [supplierSearch, setSupplierSearch] = useState("");
   const [currency, setCurrency] = useState<Row | null>(null);
   const [paymentType, setPaymentType] = useState<PaymentType>("cash");
   const [cashbox, setCashbox] = useState<Row | null>(null);
   const [notes, setNotes] = useState("");
 
   const [lines, setLines] = useState<InvoiceLine[]>([]);
-  
+
   const [showSupplierPicker, setShowSupplierPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showCashboxPicker, setShowCashboxPicker] = useState(false);
@@ -41,6 +41,9 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
   const [editingNo, setEditingNo] = useState<string | null>(null);
   const [dateStr, setDateStr] = useState(new Date().toISOString().slice(0, 10));
   const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  // ✅ حالة لعرض تفاصيل الفاتورة
+  const [selectedInvoice, setSelectedInvoice] = useState<Row | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -105,6 +108,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
 
       const data: InvoicePrintData = { type: "purchase", invoiceNo: inv.invoice_no, createdAt: inv.created_at, partyLabel: "المورد", partyName: inv.party_name || "", currencyCode: inv.currency_code || "YER", currencySymbol: cur?.symbol || inv.currency_code || "YER", exchangeRate: Number(inv.exchange_rate) || 1, isBase: !!(cur?.is_base ?? cur?.isBase), paymentType: (inv.payment_type as "cash" | "credit") || "cash", cashboxName, lines: (invLines || []).map((l: any) => ({ itemName: l.item_name || l.description || "—", itemSku: l.item_sku || "", unit: l.item_unit || "", quantity: Number(l.quantity) || 0, unitPrice: Number(l.unit_price) || 0 })), total: Number(inv.total) || 0 };
       await printHtml(await buildInvoiceHtml(data));
+      setSelectedInvoice(null);
     } catch (e) { Alert.alert("تعذر الطباعة", String(e)); }
   };
 
@@ -154,6 +158,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
           if (oldCashbox) setCashbox(oldCashbox);
           setPaymentType(oldPaymentType);
           setLines((invLines || []).map((l: any) => ({ key: newId(), itemId: l.item_id, itemName: l.item_name || l.description || "—", itemSku: l.item_sku || "", unit: l.item_unit || "", quantity: Number(l.quantity), unitPrice: Number(l.unit_price) })));
+          setSelectedInvoice(null); // إغلاق النافذة عند التعديل
         } catch (e) { Alert.alert("تعذر التعديل", String(e)); }
     }}]);
   };
@@ -235,7 +240,7 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        
+
         <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
@@ -379,12 +384,12 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>آخر فواتير المشتريات</Text>
             <View style={styles.list}>
               {history.map((h) => (
-                <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Pressable key={h.id} onPress={() => setSelectedInvoice(h)} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.histActions}>
-                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setReturnInvoiceId(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
-                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => printInvoiceById(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
-                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => editInvoice(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
-                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => confirmDelete(h.id, h.invoice_no)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={(e) => { e.stopPropagation(); setReturnInvoiceId(h.id); }} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>↩️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={(e) => { e.stopPropagation(); printInvoiceById(h.id); }} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={(e) => { e.stopPropagation(); editInvoice(h.id); }} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
+                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={(e) => { e.stopPropagation(); confirmDelete(h.id, h.invoice_no); }} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
                   </View>
                   <View style={styles.histDetails}>
                     <Text style={[styles.histName, { color: colors.text }]}>{h.party_name}</Text>
@@ -393,12 +398,41 @@ export default function PurchaseInv({ onBack }: { onBack: () => void }) {
                     <Text style={[styles.histTotal, { color: colors.blue }]}>{Number(h.total).toFixed(2)} {h.currency_code}</Text>
                     <Text style={[styles.histType, { color: colors.textMuted }]}>{h.payment_type === "cash" ? "نقدي" : "أجل"}</Text>
                   </View>
-                </View>
+                </Pressable>
               ))}
             </View>
           </>
         )}
       </ScrollView>
+
+      {/* ✅ نافذة تفاصيل الفاتورة */}
+      <Modal visible={!!selectedInvoice} transparent animationType="fade" onRequestClose={() => setSelectedInvoice(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>تفاصيل الفاتورة</Text>
+
+            {selectedInvoice && (
+              <View style={styles.modalDetails}>
+                <Text style={[styles.modalText, { color: colors.text }]}>المورد: {selectedInvoice.party_name}</Text>
+                <Text style={[styles.modalText, { color: colors.text }]}>رقم الفاتورة: {selectedInvoice.invoice_no}</Text>
+                <Text style={[styles.modalText, { color: colors.text }]}>التاريخ: {new Date(selectedInvoice.created_at).toLocaleDateString("ar-EG")}</Text>
+                <Text style={[styles.modalText, { color: colors.text }]}>نوع الدفع: {selectedInvoice.payment_type === "cash" ? "نقدي" : "أجل"}</Text>
+                <Text style={[styles.modalTotal, { color: colors.blue }]}>الإجمالي: {Number(selectedInvoice.total).toFixed(2)} {selectedInvoice.currency_code}</Text>
+              </View>
+            )}
+
+            <View style={styles.modalActions}>
+              <Pressable style={[styles.modalBtn, { backgroundColor: colors.blue }]} onPress={() => printInvoiceById(selectedInvoice.id)}>
+                <Text style={styles.modalBtnText}>🖨️ طباعة</Text>
+              </Pressable>
+              <Pressable style={[styles.modalBtn, { backgroundColor: colors.textMuted }]} onPress={() => setSelectedInvoice(null)}>
+                <Text style={styles.modalBtnText}>إغلاق</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </KeyboardAvoidingView>
   );
 }
@@ -451,4 +485,15 @@ const styles = StyleSheet.create({
   histDate: { fontSize: 10, marginTop: 2, textAlign: "right" },
   histTotal: { fontWeight: "800", fontSize: 16, marginTop: 6, textAlign: "right" },
   histType: { fontSize: 11, marginTop: 2, textAlign: "right" },
+  
+  // ✅ تنسيقات النافذة المنبثقة
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 20 },
+  modalContent: { width: "100%", borderRadius: 16, padding: 20, elevation: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5 },
+  modalTitle: { fontSize: 20, fontFamily: "CodecBold", textAlign: "center", marginBottom: 15 },
+  modalDetails: { marginBottom: 20, gap: 8 },
+  modalText: { fontSize: 16, textAlign: "right" },
+  modalTotal: { fontSize: 18, fontWeight: "bold", textAlign: "right", marginTop: 10 },
+  modalActions: { flexDirection: "row-reverse", gap: 10, marginBottom: 10 },
+  modalBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: "center" },
+  modalBtnText: { color: "#FFF", fontWeight: "bold", fontSize: 14 },
 });
