@@ -36,13 +36,19 @@ export default function PromoCarousel({ refreshTrigger }: { refreshTrigger?: any
     return () => clearInterval(timer);
   }, []);
 
-  const renderItem = ({ item }: { item: string | null }) => (
+  const renderItem = ({ item, index }: { item: string | null, index: number }) => (
     <View style={styles.slide}>
       {item ? (
-        <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
+        <Image 
+          key={item} // ✅ إجبار الصورة على إعادة التحميل عند تغيير المسار
+          source={{ uri: item }} 
+          style={styles.image} 
+          resizeMode="cover" 
+        />
       ) : (
         <View style={styles.placeholder}>
           <Image source={require('../../../assets/images/flux-logo.png')} style={{ width: 100, height: 75, opacity: 0.2 }} resizeMode="contain" />
+          <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 10 }}>لا توجد صورة {index + 1}</Text>
         </View>
       )}
     </View>

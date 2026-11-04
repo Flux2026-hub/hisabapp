@@ -71,12 +71,10 @@ export default function HomeScreen() {
         style={styles.header}
       >
         <View style={styles.brandRow}>
-          <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 15 }}>
-            <Image source={require("../assets/images/flux-logo.png")} style={styles.logo} resizeMode="contain" />
-            <View style={styles.brandTextWrap}>
-              <Text style={styles.brandName}>فلوكس</Text>
-              <Text style={styles.brandSub}>لأنابيب أكثر نظافة</Text>
-            </View>
+          <Image source={require("../assets/images/flux-logo.png")} style={styles.logo} resizeMode="contain" />
+          <View style={styles.brandTextWrap}>
+            <Text style={styles.brandName}>فلوكس</Text>
+            <Text style={styles.brandSub}>لأنابيب أكثر نظافة</Text>
           </View>
         </View>
       </LinearGradient>
@@ -209,7 +207,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   header: { paddingHorizontal: 20, paddingVertical: 15, paddingTop: 40, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, zIndex: 10, marginBottom: 10 },
   brandRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", width: "100%" },
-  brandTextWrap: { alignItems: "flex-end" },
+  brandTextWrap: { alignItems: "flex-end", flex: 1 },
   brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 22, textAlign: "left" },
   brandSub: { fontFamily: "Alexandria-Regular", color: "#94A3B8", fontSize: 13, textAlign: "left", marginTop: 2 },
   logo: { width: 90, height: 65 },
