@@ -83,7 +83,7 @@ export default function HomeScreen() {
 
       {/* 2. المحتوى (ScrollView) */}
       <ScrollView
-        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingBottom: 100 }]}
+        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingBottom: 160 }]}
         keyboardShouldPersistTaps="handled"
       >
         {tab === "home" && (

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Image, StyleSheet, Dimensions, FlatList } from 'react-native';
+import { View, Image, Text, StyleSheet, Dimensions, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
@@ -11,13 +11,14 @@ export default function PromoCarousel({ refreshTrigger }: { refreshTrigger?: any
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
-  // ✅ دالة لقراءة الصور (يتم استدعاؤها عند فتح الشاشة)
   const loadImages = async () => {
-    const [img1, img2] = await Promise.all([
-      AsyncStorage.getItem(BANNER_IMAGE_KEY_1),
-      AsyncStorage.getItem(BANNER_IMAGE_KEY_2)
-    ]);
-    setImages([img1, img2]);
+    try {
+      const [img1, img2] = await Promise.all([
+        AsyncStorage.getItem(BANNER_IMAGE_KEY_1),
+        AsyncStorage.getItem(BANNER_IMAGE_KEY_2)
+      ]);
+      setImages([img1, img2]);
+    } catch (e) { console.log("Error loading banners", e); }
   };
 
   useEffect(() => {

@@ -57,21 +57,23 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
   const update = <K extends keyof Settings>(key: K, value: Settings[K]) => { setSettings((prev) => ({ ...prev, [key]: value })); };
 
   
+  
+
+  
   const pickBanner = async (index: number) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [16, 9],
-      quality: 0.8,
-      base64: true, // ✅ الطريقة المضمونة
+      quality: 0.6,
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0].base64) {
-      const dest = FileSystem.documentDirectory + `banner_${index}_${Date.now()}.jpg`;
       try {
-        await FileSystem.writeAsStringAsync(dest, result.assets[0].base64, { encoding: FileSystem.EncodingType.Base64 });
-        await AsyncStorage.setItem(index === 0 ? BANNER_IMAGE_KEY_1 : BANNER_IMAGE_KEY_2, dest);
-        Alert.alert("نجاح", "تم حفظ صورة البانر بنجاح!");
+        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        await AsyncStorage.setItem(index === 0 ? BANNER_IMAGE_KEY_1 : BANNER_IMAGE_KEY_2, base64Image);
+        Alert.alert("نجاح", "تم حفظ صورة البانر بنجاح! اذهب للرئيسية لتشاهدها.");
       } catch (e) {
         Alert.alert("خطأ", "تعذر حفظ الصورة: " + String(e));
       }
