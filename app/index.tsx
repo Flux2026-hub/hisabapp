@@ -80,7 +80,6 @@ export default function HomeScreen() {
     return () => sub.remove();
   }, [tab, menuOpen]);
 
-  // ✅ حركة الشريط السلسة (Native Driver)
   const diffClamp = Animated.diffClamp(scrollY, 0, 120);
   const translateY = diffClamp.interpolate({
     inputRange: [0, 120],
@@ -109,8 +108,8 @@ export default function HomeScreen() {
       </LinearGradient>
 
       <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 120, left: 0, right: 0, zIndex: 1 }, navAnimatedStyle]}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
+        <View style={{ paddingHorizontal: 15, paddingVertical: 10 }}>
+          <Pressable onPress={() => setSearchOpen(true)}>
             <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
           </Pressable>
         </View>
@@ -124,9 +123,8 @@ export default function HomeScreen() {
                   name={key === 'home' ? 'home-outline' : key === 'accounting' ? 'calculator-variant-outline' : 'cog-outline'}
                   size={18}
                   color={active ? colors.orange : colors.textMuted}
-                  style={{ marginBottom: 2 }}
                 />
-                <Text style={active ? [styles.navTextActive, { color: colors.orange, fontSize: 12 }] : [styles.navText, { color: colors.textMuted, fontSize: 12 }]}>
+                <Text style={active ? [styles.navTextActive, { color: colors.orange, fontSize: 13 }] : [styles.navText, { color: colors.textMuted, fontSize: 13 }]}>
                   {label}
                 </Text>
               </Pressable>
@@ -138,7 +136,8 @@ export default function HomeScreen() {
       {menuOpen && <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />}
 
       <Animated.ScrollView
-        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: 195 }]} // ✅ مسافة كافية لعدم تداخل البانر
+        // ✅ مسافة ذكية: 195 للرئيسية (بسبب البانر)، و 130 لشاشات المحاسبة والإعدادات
+        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: tab === "home" ? 195 : 130 }]}
         keyboardShouldPersistTaps="handled"
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
@@ -234,7 +233,6 @@ const styles = StyleSheet.create({
   brandName: { fontFamily: FONTS.heading, color: "#FFF", fontSize: 22, textAlign: "left" },
   brandSub: { fontFamily: "Alexandria-Regular", color: "#94A3B8", fontSize: 13, textAlign: "left", marginTop: 2 },
   logo: { width: 100, height: 75 },
-  searchBtn: { padding: 8, marginHorizontal: 10 },
   scrollBackground: { paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 40 },
   desktopContent: { maxWidth: 1200, alignSelf: "center", width: "100%" }, 
   transparentScreen: { backgroundColor: "transparent", paddingHorizontal: 4 },
@@ -251,9 +249,9 @@ const styles = StyleSheet.create({
   quickActionsGrid: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 10 },
   quickActionCard: { width: "48%", borderRadius: 16, padding: 20, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, aspectRatio: 1 },
   quickActionText: { fontSize: 16, fontFamily: "CodecBold" },
-  nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 8, alignItems: "center", paddingHorizontal: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, zIndex: 1 },
+  nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 6, alignItems: "center", paddingHorizontal: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, zIndex: 1 },
   navTabs: { flex: 1, flexDirection: "row-reverse", justifyContent: "space-around" },
-  navItem: { alignItems: "center", justifyContent: "center", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12, marginHorizontal: 4, flexDirection: "column" },
+  navItem: { alignItems: "center", justifyContent: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, marginHorizontal: 2, flexDirection: "row", gap: 6 },
   navText: { fontSize: 14, fontFamily: "Alexandria-Regular" },
   navTextActive: { fontSize: 14, fontFamily: "CodecBold" },
   overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, elevation: 10, backgroundColor: "transparent" },
