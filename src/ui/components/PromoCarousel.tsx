@@ -1,22 +1,27 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Image, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity, Alert } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import { View, Image, StyleSheet, Dimensions, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
-const BANNER_IMAGE_KEY_1 = '@flux_banner_1';
-const BANNER_IMAGE_KEY_2 = '@flux_banner_2';
+export const BANNER_IMAGE_KEY_1 = '@flux_banner_1';
+export const BANNER_IMAGE_KEY_2 = '@flux_banner_2';
 
 export default function PromoCarousel() {
   const [images, setImages] = useState<(string | null)[]>([null, null]);
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
+  // ✅ دالة لقراءة الصور (يتم استدعاؤها عند فتح الشاشة)
+  const loadImages = async () => {
+    const [img1, img2] = await Promise.all([
+      AsyncStorage.getItem(BANNER_IMAGE_KEY_1),
+      AsyncStorage.getItem(BANNER_IMAGE_KEY_2)
+    ]);
+    setImages([img1, img2]);
+  };
+
   useEffect(() => {
-    Promise.all([AsyncStorage.getItem(BANNER_IMAGE_KEY_1), AsyncStorage.getItem(BANNER_IMAGE_KEY_2)])
-      .then(([img1, img2]) => setImages([img1, img2]));
+    loadImages();
   }, []);
 
   useEffect(() => {
@@ -30,44 +35,15 @@ export default function PromoCarousel() {
     return () => clearInterval(timer);
   }, []);
 
-  const pickImage = async (index: number) => {
-    let result = await ImagePicker.launchImageLibraryAsync({ 
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
-      allowsEditing: true, 
-      aspect: [16, 9], 
-      quality: 0.8 
-    });
-
-    if (!result.canceled) {
-      const sourceUri = result.assets[0].uri;
-      const destUri = FileSystem.documentDirectory + `banner_${index}_${Date.now()}.jpg`;
-      
-      try {
-        // حفظ الصورة بشكل دائم في مجلد التطبيق
-        await FileSystem.copyAsync({ from: sourceUri, to: destUri });
-        await AsyncStorage.setItem(index === 0 ? BANNER_IMAGE_KEY_1 : BANNER_IMAGE_KEY_2, destUri);
-        const newImgs = [...images]; 
-        newImgs[index] = destUri; 
-        setImages(newImgs);
-      } catch (e) {
-        Alert.alert("خطأ", "تعذر حفظ الصورة.");
-      }
-    }
-  };
-
-  const renderItem = ({ item, index }: { item: string | null, index: number }) => (
+  const renderItem = ({ item }: { item: string | null }) => (
     <View style={styles.slide}>
       {item ? (
         <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
       ) : (
-        <TouchableOpacity style={styles.placeholder} onPress={() => pickImage(index)}>
-          <MaterialCommunityIcons name="image-plus" size={40} color="#38BDF8" />
-          <Text style={styles.placeholderText}>اضغط لاختيار الصورة {index + 1}</Text>
-        </TouchableOpacity>
+        <View style={styles.placeholder}>
+          <Image source={require('../../../assets/images/flux-logo.png')} style={{ width: 100, height: 75, opacity: 0.2 }} resizeMode="contain" />
+        </View>
       )}
-      <TouchableOpacity style={styles.editBtn} onPress={() => pickImage(index)}>
-        <MaterialCommunityIcons name="camera" size={20} color="#FFF" />
-      </TouchableOpacity>
     </View>
   );
 
@@ -95,8 +71,6 @@ const styles = StyleSheet.create({
   slide: { width: width, height: 200, paddingHorizontal: 16 },
   image: { width: '100%', height: '100%', borderRadius: 16 },
   placeholder: { width: '100%', height: '100%', backgroundColor: '#F8FAFC', borderRadius: 16, borderWidth: 2, borderColor: '#BAE6FD', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
-  placeholderText: { color: '#0284C7', fontSize: 14, marginTop: 8, fontFamily: 'Cairo' },
-  editBtn: { position: 'absolute', top: 12, right: 28, backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 20 },
   pagination: { flexDirection: 'row', position: 'absolute', bottom: 8, alignSelf: 'center', gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.8)' },
   activeDot: { backgroundColor: '#F97316', width: 24 },

@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import BrandBanner from "./components/BrandBanner";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
+import { BANNER_IMAGE_KEY_1, BANNER_IMAGE_KEY_2 } from "./components/PromoCarousel";
 import { COLORS } from "./theme";
 import { clearSettingsCache } from "../utils/getSettings";
 import { exportBackup, pickBackupFile, restoreBackup } from "../utils/backup";
@@ -52,6 +55,28 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
   }, []);
 
   const update = <K extends keyof Settings>(key: K, value: Settings[K]) => { setSettings((prev) => ({ ...prev, [key]: value })); };
+
+  
+  const pickBanner = async (index: number) => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+      base64: true, // ✅ الطريقة المضمونة
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      const dest = FileSystem.documentDirectory + `banner_${index}_${Date.now()}.jpg`;
+      try {
+        await FileSystem.writeAsStringAsync(dest, result.assets[0].base64, { encoding: FileSystem.EncodingType.Base64 });
+        await AsyncStorage.setItem(index === 0 ? BANNER_IMAGE_KEY_1 : BANNER_IMAGE_KEY_2, dest);
+        Alert.alert("نجاح", "تم حفظ صورة البانر بنجاح!");
+      } catch (e) {
+        Alert.alert("خطأ", "تعذر حفظ الصورة: " + String(e));
+      }
+    }
+  };
 
   const save = async () => {
     setSaving(true);
@@ -181,7 +206,18 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
             <SwitchRow label="تفعيل الوضع الليلي (Dark Mode)" value={settings.darkMode} onChange={(v: any) => update("darkMode", v)} />
             <SwitchRow label="تثبيت شريط التنقل (لا يختفي عند التمرير)" value={settings.pinNavbar} onChange={(v: any) => update("pinNavbar", v)} />
 
+            
+            <Text style={styles.sectionLabel}>إعلانات لوحة التحكم (البانر)</Text>
+            <Text style={styles.backupHint}>اختر صورتين تظهران في أعلى الشاشة الرئيسية.</Text>
+            <Pressable style={styles.backupBtn} onPress={() => pickBanner(0)}>
+              <Text style={styles.backupBtnText}>🖼️ اختيار الصورة الأولى</Text>
+            </Pressable>
+            <Pressable style={[styles.backupBtn, { backgroundColor: COLORS.textMuted, marginTop: 8 }]} onPress={() => pickBanner(1)}>
+              <Text style={styles.backupBtnText}>🖼️ اختيار الصورة الثانية</Text>
+            </Pressable>
+
             <Text style={styles.sectionLabel}>لون الخلفية (الوضع النهاري)</Text>
+
             <Text style={styles.backupHint}>اختر اللون الذي يريح عينيك للاستخدام في النهار.</Text>
             <View style={{ flexDirection: "row-reverse", flexWrap: "wrap", gap: 12, marginTop: 10 }}>
               {[

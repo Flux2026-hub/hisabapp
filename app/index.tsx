@@ -136,14 +136,19 @@ export default function HomeScreen() {
       {menuOpen && <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />}
 
       <Animated.ScrollView
-        // ✅ مسافة ذكية: 195 للرئيسية (بسبب البانر)، و 130 لشاشات المحاسبة والإعدادات
-        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: tab === "home" ? 195 : 130 }]}
+        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: tab === "home" ? 190 : 130 }]}
         keyboardShouldPersistTaps="handled"
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
       >
         {tab === "home" && (
-          <View style={{ marginHorizontal: -16, marginTop: -10 }}> 
+          <View style={{ marginHorizontal: -16, marginTop: 10 }}> 
+            {/* ✅ إعادة العنوان والوصف */}
+            <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
+              <Text style={[styles.title, { color: colors.text }]}>لوحة التحكم</Text>
+              <Text style={[styles.hint, { color: colors.textMuted }]}>نظرة سريعة على أرصدة المصنع</Text>
+            </View>
+
             <PromoCarousel />
 
             <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
@@ -249,7 +254,7 @@ const styles = StyleSheet.create({
   quickActionsGrid: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 12 },
   quickActionCard: { width: "48%", borderRadius: 16, padding: 20, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, aspectRatio: 1 },
   quickActionText: { fontSize: 16, fontFamily: "CodecBold" },
-  nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 6, alignItems: "center", paddingHorizontal: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, zIndex: 1 },
+  nav: { flexDirection: "row", borderBottomWidth: 1, paddingVertical: 4, alignItems: "center", paddingHorizontal: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, zIndex: 1, paddingTop: 10 },
   navTabs: { flex: 1, flexDirection: "row-reverse", justifyContent: "space-around" },
   navItem: { alignItems: "center", justifyContent: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, marginHorizontal: 2, flexDirection: "row", gap: 6 },
   navText: { fontSize: 14, fontFamily: "Alexandria-Regular" },
