@@ -47,11 +47,20 @@ const MENU: MenuItem[] = [
 
 export default function AccountingModule() {
   const { colors } = useTheme();
-  const { width } = useWindowDimensions(); // 🚀 مراقبة الشاشة
+  const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
   const [mode, setMode] = useState<Mode>("menu");
   const [pending, setPending] = useState(0);
+  
+  // ✅ حالة للاحتفاظ بالشاشات المفتوحة (الفواتير فقط)
+  const [mountedScreens, setMountedScreens] = useState<string[]>([]);
+
+  useEffect(() => {
+    if ((mode === "salesInvoice" || mode === "purchaseInvoice") && !mountedScreens.includes(mode)) {
+      setMountedScreens((prev) => [...prev, mode]);
+    }
+  }, [mode]);
 
   useEffect(() => {
     getPendingSyncCount().then(setPending).catch(() => {});
@@ -77,69 +86,85 @@ export default function AccountingModule() {
     return () => sub.remove();
   }, [mode]);
 
-  if (mode === "customers" || mode === "suppliers") return <CustomersScreen kind={mode} onBack={goMenu} />;
-  if (mode === "currencies") return <CurrenciesScreen onBack={goMenu} />;
-  if (mode === "items") return <ItemsScreen onBack={goMenu} />;
-  if (mode === "recipe") return <ProductRecipeScreen onBack={goMenu} />;
-  if (mode === "production") return <ProductionOrderScreen onBack={goMenu} />;
-  if (mode === "cashboxes") return <CashboxesScreen onBack={goMenu} />;
-  if (mode === "accounts") return <AccountsScreen onBack={goMenu} />;
-  if (mode === "salesReps") return <SalesRepsScreen onBack={goMenu} />;
-  if (mode === "salesInvoice") return <SalesInvoiceScreen onBack={goMenu} />;
-  if (mode === "purchaseInvoice") return <PurchaseInvoiceScreen onBack={goMenu} />;
-  if (mode === "voucher") return <VouchersScreen onBack={goMenu} />;
-  if (mode === "journal") return <JournalScreen onBack={goMenu} />;
-  if (mode === "transfer") return <TransfersScreen onBack={goMenu} />;
-  if (mode === "reports") return <ReportsIndex onBack={goMenu} />;
-
   const sections = Array.from(new Set(MENU.map((m) => m.section)));
 
   return (
-    <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.desktopContent]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
+    <View style={{ flex: 1 }}>
       
-      <View style={[styles.syncBar, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC", borderColor: colors.border }]}>
-        <View style={styles.syncLeft}>
-          <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textMuted} />
-          <Text style={[styles.pendingText, { color: colors.text }]}>عمليات معلقة: {pending}</Text>
+      {/* ✅ الشاشات التي نحتفظ بحالتها (لا تغلق عند الخروج) */}
+      {mountedScreens.includes("salesInvoice") && (
+        <View style={{ flex: 1, display: mode === "salesInvoice" ? "flex" : "none" }}>
+          <SalesInvoiceScreen onBack={goMenu} />
         </View>
-        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.syncButton, { backgroundColor: colors.blue }]} onPress={syncNow}>
-          <MaterialCommunityIcons name="sync" size={14} color="#FFF" />
-          <Text style={styles.syncButtonText}>مزامنة الآن</Text>
-        </Pressable>
-      </View>
-
-      <Text style={[styles.hint, { color: colors.textMuted }]}>اختر الشاشة المطلوبة من القائمة أدناه. جميع العمليات تُحفظ محلياً وتعمل بدون إنترنت.</Text>
-
-      {sections.map((sectionName) => (
-        <View key={sectionName} style={styles.sectionBlock}>
-          <View style={{ width: "100%" }}>
-            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{sectionName}</Text>
-          </View>
-          <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.grid}>
-            {MENU.filter((m) => m.section === sectionName).map((item) => (
-              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} 
-                key={item.mode} 
-                onPress={() => setMode(item.mode)} 
-                // 🚀 تعديل العرض في التلفاز ليكون 5 أعمدة
-                style={[styles.tile, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }, isDesktop && { flexBasis: "18%" }]} 
-              >
-                <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#E2E8F0" }]}>
-                  <MaterialCommunityIcons name={item.icon as any} size={26} color={colors.blue} />
-                </View>
-                <Text style={[styles.tileText, { color: colors.text }]}>{item.label}</Text>
-              </Pressable>
-            ))}
-          </View>
+      )}
+      {mountedScreens.includes("purchaseInvoice") && (
+        <View style={{ flex: 1, display: mode === "purchaseInvoice" ? "flex" : "none" }}>
+          <PurchaseInvoiceScreen onBack={goMenu} />
         </View>
-      ))}
-    </ScrollView>
+      )}
+
+      {/* ✅ الشاشات العادية (تغلق وتفتح لتوفير الذاكرة) */}
+      {mode === "customers" || mode === "suppliers" ? <CustomersScreen kind={mode} onBack={goMenu} /> : null}
+      {mode === "currencies" ? <CurrenciesScreen onBack={goMenu} /> : null}
+      {mode === "items" ? <ItemsScreen onBack={goMenu} /> : null}
+      {mode === "recipe" ? <ProductRecipeScreen onBack={goMenu} /> : null}
+      {mode === "production" ? <ProductionOrderScreen onBack={goMenu} /> : null}
+      {mode === "cashboxes" ? <CashboxesScreen onBack={goMenu} /> : null}
+      {mode === "accounts" ? <AccountsScreen onBack={goMenu} /> : null}
+      {mode === "salesReps" ? <SalesRepsScreen onBack={goMenu} /> : null}
+      {mode === "voucher" ? <VouchersScreen onBack={goMenu} /> : null}
+      {mode === "journal" ? <JournalScreen onBack={goMenu} /> : null}
+      {mode === "transfer" ? <TransfersScreen onBack={goMenu} /> : null}
+      {mode === "reports" ? <ReportsIndex onBack={goMenu} /> : null}
+
+      {/* ✅ القائمة الرئيسية (تظهر فقط عندما mode === "menu") */}
+      {mode === "menu" && (
+        <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.desktopContent]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
+
+          <View style={[styles.syncBar, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC", borderColor: colors.border }]}>
+            <View style={styles.syncLeft}>
+              <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textMuted} />
+              <Text style={[styles.pendingText, { color: colors.text }]}>عمليات معلقة: {pending}</Text>
+            </View>
+            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.syncButton, { backgroundColor: colors.blue }]} onPress={syncNow}>
+              <MaterialCommunityIcons name="sync" size={14} color="#FFF" />
+              <Text style={styles.syncButtonText}>مزامنة الآن</Text>
+            </Pressable>
+          </View>
+
+          <Text style={[styles.hint, { color: colors.textMuted }]}>اختر الشاشة المطلوبة من القائمة أدناه. جميع العمليات تُحفظ محلياً وتعمل بدون إنترنت.</Text>
+
+          {sections.map((sectionName) => (
+            <View key={sectionName} style={styles.sectionBlock}>
+              <View style={{ width: "100%" }}>
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{sectionName}</Text>
+              </View>
+              <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
+              <View style={styles.grid}>
+                {MENU.filter((m) => m.section === sectionName).map((item) => (
+                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+                    key={item.mode}
+                    onPress={() => setMode(item.mode)}
+                    style={[styles.tile, { backgroundColor: colors.isDark ? "#1E293B" : "#F8FAFC" }, isDesktop && { flexBasis: "18%" }]}
+                  >
+                    <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#E2E8F0" }]}>
+                      <MaterialCommunityIcons name={item.icon as any} size={26} color={colors.blue} />
+                    </View>
+                    <Text style={[styles.tileText, { color: colors.text }]}>{item.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 40, paddingHorizontal: 12 },
-  desktopContent: { maxWidth: 1200, alignSelf: "center", width: "100%" }, // 🚀 تحديد أقصى عرض للتلفاز
+  desktopContent: { maxWidth: 1200, alignSelf: "center", width: "100%" },
   syncBar: { flexDirection: "row-reverse", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, marginBottom: 12, gap: 8, borderWidth: 1 },
   syncLeft: { flex: 1, flexDirection: "row-reverse", alignItems: "center", gap: 6 },
   pendingText: { fontSize: 12, fontWeight: "700" },
