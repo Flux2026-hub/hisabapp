@@ -80,17 +80,43 @@ export default function HomeScreen() {
     return () => sub.remove();
   }, [tab, menuOpen]);
 
-  const diffClamp = Animated.diffClamp(scrollY, 0, 80);
-  const translateY = diffClamp.interpolate({
-    inputRange: [0, 80],
-    outputRange: [0, -130], // يختفي بالكامل
-  });
-  const navAnimatedStyle = pinNavbar ? {} : { transform: [{ translateY }] };
+  // ✅ استخدام متغير حركة مستقل بدلاً من diffClamp
+  const navTranslateY = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: true,
+      listener: (event: any) => {
+        const currentY = event.nativeEvent.contentOffset.y;
+        const diff = currentY - lastScrollY.current;
+
+        if (pinNavbar) {
+          navTranslateY.setValue(0);
+          return;
+        }
+
+        // إذا كنا في أعلى الصفحة، أظهر الشريط دائماً
+        if (currentY <= 0) {
+          Animated.timing(navTranslateY, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+        } 
+        // التمرير للأسفل (النزول)
+        else if (diff > 10 && currentY > 60) {
+          Animated.timing(navTranslateY, { toValue: -130, duration: 200, useNativeDriver: true }).start();
+        } 
+        // التمرير للأعلى (الصعود)
+        else if (diff < -10) {
+          Animated.timing(navTranslateY, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+        }
+        lastScrollY.current = currentY;
+      }
+    }
+  );
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
       
-      {/* 1. الهيدر الأزرق المتدرج */}
       <LinearGradient
         colors={['#051A34', '#0B2545', '#133A68', '#0B2545']}
         start={{ x: 0, y: 0 }}
@@ -106,8 +132,8 @@ export default function HomeScreen() {
         </View>
       </LinearGradient>
 
-      {/* 2. شريط التنقل (يختفي خلف الهيدر) */}
-      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 120, left: 0, right: 0, zIndex: 1 }, navAnimatedStyle]}>
+      {/* شريط التنقل */}
+      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 120, left: 0, right: 0, zIndex: 1, transform: [{ translateY: navTranslateY }] }]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
             <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
@@ -136,21 +162,17 @@ export default function HomeScreen() {
 
       {menuOpen && <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />}
 
-      {/* 3. محتوى الشاشات */}
       <Animated.ScrollView
-        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: 185 }]}
+        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: 70 }]}
         keyboardShouldPersistTaps="handled"
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
       >
         {tab === "home" && (
           <View style={{ marginHorizontal: -16, marginTop: -16 }}> 
-            
-            {/* ✅ البانر مباشرة في الأعلى وبدون عناوين */}
             <PromoCarousel />
 
             <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
-              {/* بطاقات الأرصدة */}
               <View style={styles.kpiGrid}>
                 <View style={[styles.kpiCard, { backgroundColor: colors.isDark ? "#064E3B" : "#F0FDF4" }, isDesktop && { width: "23.5%" }]}>
                   <View style={styles.kpiHeader}>
@@ -189,7 +211,6 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              {/* بطاقات الإجراءات السريعة */}
               <View style={styles.quickActionsGrid}>
                 <Pressable style={[styles.quickActionCard, { backgroundColor: colors.isDark ? "#1E293B" : "#EFF6FF" }, isDesktop && { width: "23.5%", aspectRatio: 1.5 }]} onPress={() => go("accounting")}>
                   <View style={[styles.iconCircle, { backgroundColor: colors.isDark ? "#334155" : "#DBEAFE", width: 56, height: 56, borderRadius: 28, marginBottom: 12 }]}>
@@ -240,7 +261,8 @@ const styles = StyleSheet.create({
   logo: { width: 100, height: 75 },
   searchBtn: { padding: 8, marginHorizontal: 10 },
   scrollBackground: { paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 40 },
-  desktopContent: { maxWidth: 1200, alignSelf: "center", width: "100%" }, transparentScreen: { backgroundColor: "transparent", paddingHorizontal: 4 },
+  desktopContent: { maxWidth: 1200, alignSelf: "center", width: "100%" }, 
+  transparentScreen: { backgroundColor: "transparent", paddingHorizontal: 4 },
   title: { fontSize: 24, textAlign: "left", marginTop: 7, fontFamily: "CodecBold", width: "100%" },
   hint: { fontSize: 12, textAlign: "left", marginVertical: 8, width: "100%" },
   kpiGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between", marginTop: 10, marginBottom: 20 },
