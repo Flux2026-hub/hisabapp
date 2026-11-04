@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Dimensions, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -32,16 +31,19 @@ export default function PromoCarousel() {
   }, []);
 
   const pickImage = async (index: number) => {
-    let result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [16, 9], quality: 0.8 });
+    let result = await ImagePicker.launchImageLibraryAsync({ 
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+      allowsEditing: true, 
+      aspect: [16, 9], 
+      quality: 0.8 
+    });
+
     if (!result.canceled) {
-      const dest = FileSystem.documentDirectory + `promo_${index}_${Date.now()}.jpg`;
-      try {
-        await FileSystem.copyAsync({ from: result.assets[0].uri, to: dest });
-        await AsyncStorage.setItem(index === 0 ? BANNER_IMAGE_KEY_1 : BANNER_IMAGE_KEY_2, dest);
-        const newImgs = [...images]; newImgs[index] = dest; setImages(newImgs);
-      } catch (e) {
-        Alert.alert("خطأ", "تعذر حفظ الصورة");
-      }
+      const uri = result.assets[0].uri;
+      await AsyncStorage.setItem(index === 0 ? BANNER_IMAGE_KEY_1 : BANNER_IMAGE_KEY_2, uri);
+      const newImgs = [...images]; 
+      newImgs[index] = uri; 
+      setImages(newImgs);
     }
   };
 
@@ -61,7 +63,6 @@ export default function PromoCarousel() {
           <Text style={styles.placeholderText}>اضغط لاختيار الصورة {index + 1}</Text>
         </TouchableOpacity>
       )}
-      {/* ✅ أيقونة الكاميرا الشفافة */}
       <TouchableOpacity style={styles.editBtn} onPress={() => pickImage(index)}>
         <MaterialCommunityIcons name="camera" size={20} color="#FFF" />
       </TouchableOpacity>
@@ -86,7 +87,6 @@ const styles = StyleSheet.create({
   btnText: { color: '#FFF', fontSize: 12, fontWeight: 'bold', fontFamily: 'Cairo' },
   placeholder: { width: '100%', height: '100%', backgroundColor: '#F8FAFC', borderRadius: 16, borderWidth: 2, borderColor: '#BAE6FD', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
   placeholderText: { color: '#0284C7', fontSize: 14, marginTop: 8, fontFamily: 'Cairo' },
-  // ✅ تصميم الكاميرا الشفاف
   editBtn: { position: 'absolute', top: 12, right: 28, backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 20 },
   pagination: { flexDirection: 'row', position: 'absolute', bottom: 8, alignSelf: 'center', gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.5)' },

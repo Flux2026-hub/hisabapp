@@ -80,39 +80,15 @@ export default function HomeScreen() {
     return () => sub.remove();
   }, [tab, menuOpen]);
 
-  // ✅ استخدام متغير حركة مستقل بدلاً من diffClamp
-  const navTranslateY = useRef(new Animated.Value(0)).current;
-  const lastScrollY = useRef(0);
-
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: true,
-      listener: (event: any) => {
-        const currentY = event.nativeEvent.contentOffset.y;
-        const diff = currentY - lastScrollY.current;
-
-        if (pinNavbar) {
-          navTranslateY.setValue(0);
-          return;
-        }
-
-        // إذا كنا في أعلى الصفحة، أظهر الشريط دائماً
-        if (currentY <= 0) {
-          Animated.timing(navTranslateY, { toValue: 0, duration: 200, useNativeDriver: true }).start();
-        } 
-        // التمرير للأسفل (النزول)
-        else if (diff > 10 && currentY > 60) {
-          Animated.timing(navTranslateY, { toValue: -130, duration: 200, useNativeDriver: true }).start();
-        } 
-        // التمرير للأعلى (الصعود)
-        else if (diff < -10) {
-          Animated.timing(navTranslateY, { toValue: 0, duration: 200, useNativeDriver: true }).start();
-        }
-        lastScrollY.current = currentY;
-      }
-    }
-  );
+  // ✅ حركة الشريط السلسة (Native Driver)
+  const diffClamp = Animated.diffClamp(scrollY, 0, 120);
+  const translateY = diffClamp.interpolate({
+    inputRange: [0, 120],
+    outputRange: [0, -120],
+    extrapolate: 'clamp',
+  });
+  
+  const navAnimatedStyle = pinNavbar ? {} : { transform: [{ translateY }] };
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
@@ -132,8 +108,7 @@ export default function HomeScreen() {
         </View>
       </LinearGradient>
 
-      {/* شريط التنقل */}
-      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 120, left: 0, right: 0, zIndex: 1, transform: [{ translateY: navTranslateY }] }]}>
+      <Animated.View style={[styles.nav, { backgroundColor: colors.surface, borderBottomColor: colors.border, position: "absolute", top: 120, left: 0, right: 0, zIndex: 1 }, navAnimatedStyle]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)}>
             <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
@@ -163,13 +138,13 @@ export default function HomeScreen() {
       {menuOpen && <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)} />}
 
       <Animated.ScrollView
-        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: 70 }]}
+        contentContainerStyle={[styles.scrollBackground, isDesktop && styles.desktopContent, { paddingTop: 195 }]} // ✅ مسافة كافية لعدم تداخل البانر
         keyboardShouldPersistTaps="handled"
-        onScroll={handleScroll}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
       >
         {tab === "home" && (
-          <View style={{ marginHorizontal: -16, marginTop: -16 }}> 
+          <View style={{ marginHorizontal: -16, marginTop: -10 }}> 
             <PromoCarousel />
 
             <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
