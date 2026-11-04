@@ -40,7 +40,7 @@ export default function PromoCarousel({ refreshTrigger }: { refreshTrigger?: any
     <View style={styles.slide}>
       {item ? (
         <Image 
-          key={item} // ✅ إجبار الصورة على إعادة التحميل عند تغيير المسار
+          key={item} // إجبار الصورة على إعادة التحميل
           source={{ uri: item }} 
           style={styles.image} 
           resizeMode="cover" 
