@@ -6,7 +6,7 @@ const { width } = Dimensions.get('window');
 export const BANNER_IMAGE_KEY_1 = '@flux_banner_1';
 export const BANNER_IMAGE_KEY_2 = '@flux_banner_2';
 
-export default function PromoCarousel() {
+export default function PromoCarousel({ refreshTrigger }: { refreshTrigger?: any }) {
   const [images, setImages] = useState<(string | null)[]>([null, null]);
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -22,7 +22,7 @@ export default function PromoCarousel() {
 
   useEffect(() => {
     loadImages();
-  }, []);
+  }, [refreshTrigger]);
 
   useEffect(() => {
     const timer = setInterval(() => {
