@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // ⚠️ ضع مفتاح API هنا (استبدل النص أدناه بمفتاحك)
-const API_KEY = "ضع_مفتاح_API_هنا"; 
+const API_KEY = "AQ.Ab8RN6Jyd_dcQutaZBaYwd8dUmbp5xHFEc9J9pp9afB8kQxrHQ"; 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export type ParsedCommand = {
@@ -15,7 +15,7 @@ export type ParsedCommand = {
 
 export const parseArabicCommand = async (text: string): Promise<ParsedCommand> => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
     const prompt = `
       أنت مساعد محاسبي ذكي. قم بتحليل النص التالي واستخرج منه البيانات المطلوبة بصيغة JSON فقط، دون أي نص إضافي.
