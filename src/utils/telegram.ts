@@ -121,7 +121,7 @@ const processVoiceCommand = async (voice: any, token: string) => {
     
     // 4. إرسال الصوت إلى Gemini لتحويله لنص
     const { GoogleGenerativeAI } = require("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI(AQ.Ab8RN6Jyd_dcQutaZBaYwd8dUmbp5xHFEc9J9pp9afB8kQxrHQ);
+    const genAI = new GoogleGenerativeAI("AQ.Ab8RN6Jyd_dcQutaZBaYwd8dUmbp5xHFEc9J9pp9afB8kQxrHQ");
     const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
     
     const result = await model.generateContent([
@@ -149,6 +149,7 @@ export const checkTelegramCommands = async () => {
     const { token, chatId } = await getTelegramSettings();
     if (!token || !chatId) return;
 
+    await sendTelegramMessage("🔄 جاري فحص رسائلك الجديدة...");
     const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
     const offset = lastUpdateId ? parseInt(lastUpdateId, 10) + 1 : 0;
 
