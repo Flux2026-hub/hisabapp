@@ -1,12 +1,15 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { View, Image, Text, StyleSheet, Dimensions, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system/legacy';
+import { useFocusEffect } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 export const BANNER_IMAGE_KEY_1 = '@flux_banner_1';
 export const BANNER_IMAGE_KEY_2 = '@flux_banner_2';
 
-export default function PromoCarousel({ refreshTrigger }: { refreshTrigger?: any }) {
+export default function PromoCarousel() {
+  // الحالة الافتراضية: صورتين فارغتين
   const [images, setImages] = useState<(string | null)[]>([null, null]);
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -17,30 +20,47 @@ export default function PromoCarousel({ refreshTrigger }: { refreshTrigger?: any
         AsyncStorage.getItem(BANNER_IMAGE_KEY_1),
         AsyncStorage.getItem(BANNER_IMAGE_KEY_2)
       ]);
-      setImages([img1, img2]);
+      
+      let validImg1 = null;
+      let validImg2 = null;
+      
+      if (img1) {
+        const info = await FileSystem.getInfoAsync(img1);
+        if (info.exists) validImg1 = img1;
+      }
+      if (img2) {
+        const info = await FileSystem.getInfoAsync(img2);
+        if (info.exists) validImg2 = img2;
+      }
+      
+      setImages([validImg1, validImg2]);
     } catch (e) { console.log("Error loading banners", e); }
   };
 
-  useEffect(() => {
-    loadImages();
-  }, [refreshTrigger]);
+  useFocusEffect(
+    useCallback(() => {
+      loadImages();
+    }, [])
+  );
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveIndex((prev) => {
-        const next = (prev + 1) % 2;
-        flatListRef.current?.scrollToOffset({ offset: next * width, animated: true });
-        return next;
-      });
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setInterval(() => {
+        setActiveIndex((prev) => {
+          const next = (prev + 1) % 2;
+          flatListRef.current?.scrollToOffset({ offset: next * width, animated: true });
+          return next;
+        });
+      }, 4000);
+      return () => clearInterval(timer);
+    }, [])
+  );
 
   const renderItem = ({ item, index }: { item: string | null, index: number }) => (
     <View style={styles.slide}>
       {item ? (
         <Image 
-          key={item} // إجبار الصورة على إعادة التحميل
+          key={item} // إجبار التحديث
           source={{ uri: item }} 
           style={styles.image} 
           resizeMode="cover" 
@@ -58,7 +78,8 @@ export default function PromoCarousel({ refreshTrigger }: { refreshTrigger?: any
     <View style={styles.container}>
       <FlatList 
         ref={flatListRef} 
-        data={['0', '1']} 
+        // ✅ هذا هو الإصلاح الجوهري: تمرير المصفوفة الحقيقية بدلاً من الأرقام
+        data={images} 
         renderItem={renderItem} 
         keyExtractor={(_, i) => i.toString()} 
         horizontal 

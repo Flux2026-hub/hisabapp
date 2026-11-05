@@ -91,7 +91,7 @@ export default function HomeScreen() {
               <Text style={[styles.hint, { color: colors.textMuted }]}>نظرة سريعة على أرصدة المصنع</Text>
             </View>
 
-            <PromoCarousel refreshTrigger={tab} />
+            <PromoCarousel />
 
             <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
               <View style={styles.kpiGrid}>
