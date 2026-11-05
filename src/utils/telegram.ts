@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Contacts from "expo-contacts/legacy";
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Contacts from "expo-contacts/legacy";
 import { sqlite } from "../db/local";
 import { parseArabicCommand } from "./gemini";
 
@@ -52,7 +52,6 @@ export const notifyLargeInvoice = async (invoiceData: any) => {
   return await sendTelegramMessage(msg);
 };
 
-// ✅ دالة مساعدة لمعالجة الرد النصي
 const processTextCommand = async (text: string) => {
   const parsed = await parseArabicCommand(text);
   
@@ -82,7 +81,7 @@ const processTextCommand = async (text: string) => {
     try {
       let phoneNumber = parsed.phone || "";
       
-      // ✅ البحث في جهات الاتصال إذا طلب المستخدم
+      // ✅ البحث في جهات الاتصال
       if (parsed.useContact || (!parsed.phone && parsed.partyName)) {
         try {
           const { status } = await Contacts.requestPermissionsAsync();
@@ -106,10 +105,12 @@ const processTextCommand = async (text: string) => {
       }
       const customerId = `CUS-${Date.now()}`;
       const now = Date.now();
+      
       await sqlite.runAsync(
         `INSERT INTO customers (id, code, name, phone, balance, created_at, updated_at) VALUES (?, ?, ?, ?, 0, ?, ?)`,
         [customerId, nextCode, parsed.partyName, phoneNumber, now, now]
       );
+      
       await sendTelegramMessage(`✅ تم إضافة العميل بنجاح:\n👤 الاسم: ${parsed.partyName}\n🔢 الكود: ${nextCode}\n📞 الهاتف: ${phoneNumber || "غير مسجل"}`);
     } catch (err) {
       await sendTelegramMessage(`❌ تعذر إضافة العميل: ${String(err)}`);
@@ -120,28 +121,23 @@ const processTextCommand = async (text: string) => {
   }
 };
 
-// ✅ دالة تحميل ومعالجة الرسائل الصوتية
 const processVoiceCommand = async (voice: any, token: string) => {
   try {
     await sendTelegramMessage("🎤 جاري تحليل الرسالة الصوتية...");
 
-    // 1. الحصول على رابط الملف من تليجرام
     const fileRes = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${voice.file_id}`);
     const fileData = await fileRes.json();
     if (!fileData.ok) throw new Error("تعذر الحصول على الملف من تليجرام");
 
-    // 2. تحميل الملف الصوتي
     const filePath = fileData.result.file_path;
     const audioUrl = `https://api.telegram.org/file/bot${token}/${filePath}`;
     
-    // 3. حفظ الملف الصوتي ثم قراءته كـ Base64
     const localPath = FileSystem.cacheDirectory + `voice_${Date.now()}.ogg`;
     await FileSystem.downloadAsync(audioUrl, localPath);
     const base64Audio = await FileSystem.readAsStringAsync(localPath, { encoding: FileSystem.EncodingType.Base64 });
     
-    // 4. إرسال الصوت إلى Gemini لتحويله لنص
     const { GoogleGenerativeAI } = require("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI("AQ.Ab8RN6Jyd_dcQutaZBaYwd8dUmbp5xHFEc9J9pp9afB8kQxrHQ");
+    const genAI = new GoogleGenerativeAI("AQ.Ab8RN6J44E1VOEus_it_hFS8fxm9ze4iCFEPuq2HptrK2PcQVA"); // سيتم استبداله لاحقاً
     const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
     
     const result = await model.generateContent([
@@ -156,7 +152,6 @@ const processVoiceCommand = async (voice: any, token: string) => {
     
     await sendTelegramMessage(`📝 سمعتك تقول: "${transcribedText}"\n⏳ جاري التنفيذ...`);
     
-    // 5. معالجة النص المستخرج كما لو كان نصاً عادياً
     await processTextCommand(transcribedText);
     
   } catch (error) {
@@ -169,7 +164,6 @@ export const checkTelegramCommands = async () => {
     const { token, chatId } = await getTelegramSettings();
     if (!token || !chatId) return;
 
-    await sendTelegramMessage("🔄 جاري فحص رسائلك الجديدة...");
     const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
     const offset = lastUpdateId ? parseInt(lastUpdateId, 10) + 1 : 0;
 
@@ -184,11 +178,9 @@ export const checkTelegramCommands = async () => {
       if (!message) continue;
       if (String(message.chat.id) !== String(chatId)) continue;
 
-      // معالجة الرسائل النصية
       if (message.text) {
         await processTextCommand(message.text.trim());
       }
-      // ✅ معالجة الرسائل الصوتية
       else if (message.voice) {
         await processVoiceCommand(message.voice, token);
       }
