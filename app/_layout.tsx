@@ -8,7 +8,8 @@ import LockScreen, { isSessionActive } from "../src/ui/LockScreen";
 import { ThemeProvider } from "../src/ui/ThemeContext";
 import { ToastProvider } from "../src/ui/ToastContext";
 import { runAutoBackup } from "../src/utils/autoBackup";
-import { checkAndSendAutoBackup } from "../src/utils/telegramAutoBackup"; // ✅ استيراد الفحص التلقائي
+import { checkAndSendAutoBackup } from "../src/utils/telegramAutoBackup";
+import { checkTelegramCommands } from "../src/utils/telegram"; // ✅ استيراد الفحص التلقائي
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 I18nManager.allowRTL(true);
@@ -37,6 +38,7 @@ export default function RootLayout() {
         
         // ✅ فحص وإرسال النسخة التلقائية لتليجرام كل 3 أيام
         checkAndSendAutoBackup().catch(console.error);
+        checkTelegramCommands().catch(console.error);
 
       } catch (e: any) {
         console.error("DB Error:", e);
