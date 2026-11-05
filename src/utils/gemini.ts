@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// ⚠️ ضع مفتاح API هنا (استبدل النص أدناه بمفتاحك)
-const API_KEY = "AQ.Ab8RN6Jyd_dcQutaZBaYwd8dUmbp5xHFEc9J9pp9afB8kQxrHQ"; 
+const API_KEY = "AQ.Ab8RN6J44E1VOEus_it_hFS8fxm9ze4iCFEPuq2HptrK2PcQVA"; // سيتم وضعه لاحقاً
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export type ParsedCommand = {
@@ -19,28 +18,29 @@ export const parseArabicCommand = async (text: string): Promise<ParsedCommand> =
     const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
     const prompt = `
-      أنت مساعد محاسبي ذكي. قم بتحليل النص التالي واستخرج منه البيانات المطلوبة بصيغة JSON فقط، دون أي نص إضافي.
+      أنت مساعد محاسبي ذكي جداً وتفهم كل اللهجات العربية (خاصة اليمنية). مهمتك هي تحليل النص التالي واستخراج البيانات منه بدقة.
       النص: "${text}"
 
-      النوايا المتاحة (intent):
-      1. "expense": إذا كان النص يتحدث عن دفع أو صرف (مثل: "صرفت 500 بنزين").
-      2. "income": إذا كان يتحدث عن استلام أو قبض (مثل: "استلمت 1000 من أحمد").
-      3. "invoice": إذا كان يتحدث عن بيع أو شراء أصناف (مثل: "بعت 3 كراتين بـ 200").
-      4. "create_customer": إذا كان النص يطلب إضافة عميل جديد (مثل: "افتح حساب عميل جديد باسم أحمد علي ورقمه 777123456").
-      5. "unknown": إذا لم تفهم النص.
+      قواعد صارمة:
+      1. إذا كان النص يتحدث عن دفع أو صرف أو شراء (مثل: "صرفت"، "دفعت"، "اشتريت")، اجعل intent = "expense".
+      2. إذا كان النص يتحدث عن استلام أو قبض أو دخل (مثل: "استلمت"، "قبضت")، اجعل intent = "income".
+      3. إذا كان النص يطلب فتح حساب أو إضافة عميل (مثل: "افتح حساب"، "أضف عميل"، "سجل زبون")، اجعل intent = "create_customer".
+      4. إذا قال المستخدم أن الرقم موجود في جهات الاتصال، أو لم يذكر رقماً وطلب البحث، اجعل useContact = true.
+      5. استخرج اسم العميل في حقل partyName، ورقم الهاتف في حقل phone (إذا وجد).
+      6. استخرج المبلغ في حقل amount.
+      7. أي كلام إضافي أو وصف للعملية ضعه في description.
 
-      أمثلة على JSON المطلوب:
+      أمثلة على المخرجات المطلوبة (JSON فقط):
+      { "intent": "create_customer", "partyName": "حسان العشاري", "phone": "777696688", "amount": 0, "description": "إضافة عميل" }
+      { "intent": "create_customer", "partyName": "وليد الوثلي", "useContact": true, "amount": 0, "description": "من جهات الاتصال" }
       { "intent": "expense", "amount": 500, "description": "بنزين" }
-      { "intent": "income", "amount": 1000, "description": "دفعة من العميل", "partyName": "أحمد" }
-      { "intent": "create_customer", "partyName": "أحمد علي", "phone": "777123456", "amount": 0, "description": "إضافة عميل" }
-      { "intent": "create_customer", "partyName": "وليد الوثلي", "useContact": true, "amount": 0, "description": "إضافة عميل من جهات الاتصال" }
-
-      ملاحظة هامة: إذا قال المستخدم "رقمه في جهات الاتصال" أو "من جهات الاتصال" أو "ابحث عنه في الاتصالات"، اجعل useContact = true ولا تضع phone.
+      { "intent": "income", "amount": 1000, "description": "دفعة", "partyName": "أحمد" }
     `;
 
     const result = await model.generateContent(prompt);
     const response = result.response.text();
     
+    // تنظيف الرد لضمان أنه JSON صالح
     const cleanJson = response.replace(/```json/g, "").replace(/```/g, "").trim();
     return JSON.parse(cleanJson) as ParsedCommand;
 
