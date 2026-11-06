@@ -157,7 +157,7 @@ export async function restoreBackup(backup: BackupFile): Promise<{ success: bool
           const cols = keys.join(", ");
 
           await sqlite.runAsync(
-            `INSERT INTO ${table} (${cols}) VALUES (${placeholders})`,
+            `INSERT OR REPLACE INTO ${table} (${cols}) VALUES (${placeholders})`,
             values
           );
           restored++;

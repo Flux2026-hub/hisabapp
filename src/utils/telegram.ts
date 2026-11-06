@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Contacts from "expo-contacts/legacy";
 import { sqlite } from "../db/local";
@@ -164,9 +165,12 @@ const processVoiceCommand = async (voice: any, token: string) => {
 };
 
 export const checkTelegramCommands = async () => {
+  try { Alert.alert("تصحيح 1", "بدء فحص أوامر تليجرام..."); } catch(e){}
+  try { Alert.alert("تصحيح", "بدء فحص أوامر تليجرام..."); } catch(e){}
+
   try {
     const { token, chatId } = await getTelegramSettings();
-    if (!token || !chatId) return;
+    if (!token || !chatId) { Alert.alert("تصحيح", "لم يتم العثور على التوكن أو Chat ID"); return; }
 
     try { await sqlite.execAsync("ALTER TABLE vouchers ADD COLUMN party_amount REAL;"); } catch (e) {}
     const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
