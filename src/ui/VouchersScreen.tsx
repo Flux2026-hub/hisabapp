@@ -9,7 +9,7 @@ import { useTheme } from "./ThemeContext";
 
 type Row = any;
 type VType = "receipt" | "payment";
-type PartyType = "none" | "customer" | "supplier" | "account";                  
+type PartyType = "none" | "customer" | "supplier" | "account";
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
@@ -23,7 +23,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
   const [partyRecord, setPartyRecord] = useState<Row | null>(null);
   const [partySearch, setPartySearch] = useState("");
 
-  const [cashboxes, setCashboxes] = useState<Row[]>([]);                                                                                                        
+  const [cashboxes, setCashboxes] = useState<Row[]>([]);
   const [currencies, setCurrencies] = useState<Row[]>([]);
   const [customers, setCustomers] = useState<Row[]>([]);
   const [suppliers, setSuppliers] = useState<Row[]>([]);
@@ -34,22 +34,25 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
   const [currency, setCurrency] = useState<Row | null>(null);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [partyAmountStr, setPartyAmountStr] = useState("");
 
   const [showCashbox, setShowCashbox] = useState(false);
   const [showCurrency, setShowCurrency] = useState(false);
-  const [showParty, setShowParty] = useState(false);                            
+  const [showParty, setShowParty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<Row[]>([]);
-  
-  // ✅ حالة لعرض تفاصيل السند
+
   const [selectedVoucher, setSelectedVoucher] = useState<Row | null>(null);
 
   const [filterVType, setFilterVType] = useState<"all" | "receipt" | "payment">("all");
   const [filterParty, setFilterParty] = useState<"all" | "customer" | "supplier">("all");
-                                                                                                                                                                
+
   useEffect(() => {
     (async () => {
       try {
+        // إنشاء العمود الجديد في قاعدة البيانات إذا لم يكن موجوداً
+        try { await sqlite.execAsync("ALTER TABLE vouchers ADD COLUMN party_amount REAL;"); } catch (e) {}
+
         const cb: any = await sqlite.getAllAsync("SELECT id, code, name, balance, cashbox_type FROM cashboxes ORDER BY name");
         const cur: any = await sqlite.getAllAsync("SELECT id, code, name, symbol, exchange_rate, is_base FROM currencies ORDER BY is_base DESC, code");
         const cust: any = await sqlite.getAllAsync("SELECT id, code, name, phone, balance FROM customers ORDER BY name");
@@ -67,7 +70,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
           isBase: !!(x.is_base ?? x.isBase),
         }));
         setCurrencies(normalized);
-        const baseCur = normalized.find((x: any) => x.isBase);                                                                                                  
+        const baseCur = normalized.find((x: any) => x.isBase);
         if (baseCur) setCurrency(baseCur);
       } catch (e) { Alert.alert("تعذر التحميل", String(e)); }
     })();
@@ -77,13 +80,13 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
   const loadHistory = async () => {
     try {
-      let query = "SELECT id, voucher_no, voucher_type, party_name, amount, currency_code, created_at, party_type, cashbox_id, description, exchange_rate FROM vouchers WHERE 1=1";
+      let query = "SELECT id, voucher_no, voucher_type, party_name, amount, currency_code, created_at, party_type, cashbox_id, description, exchange_rate, party_amount FROM vouchers WHERE 1=1";
       const params: any[] = [];
       if (filterVType !== "all") { query += " AND voucher_type = ?"; params.push(filterVType); }
       if (filterParty !== "all") { query += " AND party_type = ?"; params.push(filterParty); }
       query += " ORDER BY created_at DESC LIMIT 30";
       const rows: any = await sqlite.getAllAsync(query, params);
-      setHistory(rows || []);                                                                                                                                   
+      setHistory(rows || []);
     } catch (e) { console.log("History error", e); }
   };
 
@@ -117,63 +120,86 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
       [{ text: "إلغاء", style: "cancel" }, { text: "حفظ", onPress: doSave }]
     );
   };
-                                                                                                                                                                
+
   const doSave = async () => {
     if (!cashbox || !currency) return;
     setSaving(true);
     try {
-      const now = dateStr ? new Date(dateStr).getTime() : Date.now();                                                                                           
+      const now = dateStr ? new Date(dateStr).getTime() : Date.now();
       const amt = Number(amount);
       const rate = Number(currency.exchangeRate) || 1;
       const isBase = !!currency.isBase;
+      
+      // مبلغ الصندوق (بالعملة الأساسية)
       const baseAmount = isBase ? amt : amt * rate;
+      
+      // المبلغ الذي سيخصم/يضاف من حساب الطرف (إذا تُرك فارغاً، سيأخذ مبلغ الصندوق)
+      const finalPartyAmount = partyAmountStr.trim() !== "" ? Number(partyAmountStr) : baseAmount;
 
       if (editingId) {
         const oldV: any = await sqlite.getFirstAsync("SELECT * FROM vouchers WHERE id = ?", [editingId]);
         if (oldV) {
           const oldRate = Number(oldV.exchange_rate) || 1;
           const oldBaseAmount = Number(oldV.amount) * oldRate;
-          const oldDelta = oldV.voucher_type === "receipt" ? -oldBaseAmount : oldBaseAmount;
-          await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [oldDelta, oldV.cashbox_id]);
+          const oldPartyAmount = oldV.party_amount !== undefined && oldV.party_amount !== null ? Number(oldV.party_amount) : oldBaseAmount;
+          
+          // عكس تأثير الصندوق القديم
+          const oldCashboxDelta = oldV.voucher_type === "receipt" ? -oldBaseAmount : oldBaseAmount;
+          await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [oldCashboxDelta, oldV.cashbox_id]);
+          
+          // عكس تأثير الطرف القديم
           if (oldV.party_id && oldV.party_type !== "none") {
             let oldPDelta = 0;
-            if (oldV.party_type === "customer") oldPDelta = oldV.voucher_type === "receipt" ? oldBaseAmount : -oldBaseAmount;
-            else if (oldV.party_type === "supplier") oldPDelta = oldV.voucher_type === "payment" ? oldBaseAmount : -oldBaseAmount;
-            else if (oldV.party_type === "account") oldPDelta = oldV.voucher_type === "receipt" ? -oldBaseAmount : oldBaseAmount;
+            if (oldV.party_type === "customer") oldPDelta = oldV.voucher_type === "receipt" ? oldPartyAmount : -oldPartyAmount;
+            else if (oldV.party_type === "supplier") oldPDelta = oldV.voucher_type === "payment" ? oldPartyAmount : -oldPartyAmount;
+            else if (oldV.party_type === "account") oldPDelta = oldV.voucher_type === "receipt" ? -oldPartyAmount : oldPartyAmount;
+            
             if (oldV.party_type === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
             else if (oldV.party_type === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
             else if (oldV.party_type === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [oldPDelta, oldV.party_id]);
           }
-        }                                                                       
-        await sqlite.runAsync("UPDATE vouchers SET voucher_type=?, cashbox_id=?, party_name=?, amount=?, description=?, created_at=?, party_type=?, party_id=?, currency_code=?, exchange_rate=? WHERE id=?", [vType, cashbox.id, partyRecord?.name || "", amt, description.trim(), now, partyType, partyRecord?.id || null, currency.code, rate, editingId]);
-        const newDelta = vType === "receipt" ? baseAmount : -baseAmount;
-        await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [newDelta, cashbox.id]);
-        if (partyRecord && partyType !== "none") {                                                                                                              
+        }
+        
+        // تحديث السند
+        await sqlite.runAsync("UPDATE vouchers SET voucher_type=?, cashbox_id=?, party_name=?, amount=?, description=?, created_at=?, party_type=?, party_id=?, currency_code=?, exchange_rate=?, party_amount=? WHERE id=?", [vType, cashbox.id, partyRecord?.name || "", amt, description.trim(), now, partyType, partyRecord?.id || null, currency.code, rate, finalPartyAmount, editingId]);
+        
+        // تطبيق تأثير الصندوق الجديد
+        const newCashboxDelta = vType === "receipt" ? baseAmount : -baseAmount;
+        await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [newCashboxDelta, cashbox.id]);
+        
+        // تطبيق تأثير الطرف الجديد
+        if (partyRecord && partyType !== "none") {
            let newPDelta = 0;
-           if (partyType === "customer") newPDelta = vType === "receipt" ? -baseAmount : baseAmount;
-           else if (partyType === "supplier") newPDelta = vType === "payment" ? -baseAmount : baseAmount;
-           else if (partyType === "account") newPDelta = vType === "receipt" ? baseAmount : -baseAmount;
+           if (partyType === "customer") newPDelta = vType === "receipt" ? -finalPartyAmount : finalPartyAmount;
+           else if (partyType === "supplier") newPDelta = vType === "payment" ? -finalPartyAmount : finalPartyAmount;
+           else if (partyType === "account") newPDelta = vType === "receipt" ? finalPartyAmount : -finalPartyAmount;
+           
            if (partyType === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
            else if (partyType === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
            else if (partyType === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
         }
-        Alert.alert("تم التعديل", "تم تحديث السند وتعديل الأرصدة بنجاح");                                                                                               cancelEdit();
+        Alert.alert("تم التعديل", "تم تحديث السند وتعديل الأرصدة بنجاح");
+        cancelEdit();
       } else {
         const prefix = vType === "receipt" ? "RCP" : "PAY";
-        const last: any = await sqlite.getAllAsync(`SELECT voucher_no FROM vouchers WHERE voucher_no LIKE ? ORDER BY created_at DESC LIMIT 1`, [`${prefix}-%`]);
-        let nextNum = 1;
-        if (last && last.length > 0) nextNum = parseInt(String(last[0].voucher_no).replace(/\D/g, ""), 10) + 1;
-        const voucherNo = `${prefix}-${String(nextNum).padStart(3, "0")}`;
-        await sqlite.runAsync(`INSERT INTO vouchers (id, voucher_no, voucher_type, cashbox_id, party_name, amount, description, created_at, party_type, party_id, currency_code, exchange_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [newId(), voucherNo, vType, cashbox.id, partyRecord?.name || "", amt, description.trim(), now, partyType, partyRecord?.id || null, currency.code, rate]);
+        const voucherNo = `${prefix}-${Date.now().toString().slice(-6)}`;
+        
+        // إضافة السند
+        await sqlite.runAsync(`INSERT INTO vouchers (id, voucher_no, voucher_type, cashbox_id, party_name, amount, description, created_at, party_type, party_id, currency_code, exchange_rate, party_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [newId(), voucherNo, vType, cashbox.id, partyRecord?.name || "", amt, description.trim(), now, partyType, partyRecord?.id || null, currency.code, rate, finalPartyAmount]);
+        
+        // تأثير الصندوق
         const delta = vType === "receipt" ? baseAmount : -baseAmount;
         await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [delta, cashbox.id]);
+        
+        // تأثير الطرف
         if (partyRecord && partyType !== "none") {
-          let partyDelta = 0;                                                                                                                                   
-          if (partyType === "customer") { partyDelta = vType === "receipt" ? -baseAmount : baseAmount; await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
-          } else if (partyType === "supplier") { partyDelta = vType === "payment" ? -baseAmount : baseAmount; await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
-          } else if (partyType === "account") { partyDelta = vType === "receipt" ? baseAmount : -baseAmount; await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          let partyDelta = 0;
+          if (partyType === "customer") { partyDelta = vType === "receipt" ? -finalPartyAmount : finalPartyAmount; await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          } else if (partyType === "supplier") { partyDelta = vType === "payment" ? -finalPartyAmount : finalPartyAmount; await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          } else if (partyType === "account") { partyDelta = vType === "receipt" ? finalPartyAmount : -finalPartyAmount; await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
           }
-        }                                                                       
+        }
+        
         Alert.alert("تم الحفظ بنجاح", "رقم السند: " + voucherNo + "\n\nهل تريد طباعة السند؟",
           [{ text: "لاحقاً", style: "cancel" }, { text: "طباعة", onPress: async () => {
                 const html = await buildVoucherHtml({ voucherNo, voucherType: vType, createdAt: now, partyName: partyRecord?.name || "—", cashboxName: cashbox.name, amount: amt, currencySymbol: currency.symbol || currency.code, description: description.trim() || undefined });
@@ -182,59 +208,63 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         );
       }
 
-      setAmount(""); setDescription(""); setCashbox(null); setCashboxSearch(""); setPartyRecord(null); setPartyType("none"); setPartySearch(""); setEditingId(null);
+      setAmount(""); setDescription(""); setCashbox(null); setCashboxSearch(""); setPartyRecord(null); setPartyType("none"); setPartySearch(""); setEditingId(null); setPartyAmountStr("");
       const refreshed: any = await sqlite.getAllAsync("SELECT id, code, name, balance, cashbox_type FROM cashboxes ORDER BY name");
       setCashboxes(refreshed || []);
       await loadHistory();
     } catch (e) {
-      Alert.alert("تعذر الحفظ", String(e));
+      Alert.alert("تعذر الحفظ", String(e) + "\n\n(ملاحظة: إذا استمرت المشكلة، أرسل هذه الرسالة للمطور)");
     } finally {
       setSaving(false);
-    }                                                                                                                                                           
+    }
   };
 
   const printVoucher = async (h: any) => {
-    try {                                                                                                                                                       
+    try {
       const html = await buildVoucherHtml({ voucherNo: h.voucher_no, voucherType: h.voucher_type, createdAt: h.created_at, partyName: h.party_name || "—", cashboxName: cashboxes.find(c=>c.id === h.cashbox_id)?.name || "—", amount: Number(h.amount), currencySymbol: h.currency_code || "YER", description: h.description });
       printHtml(html);
     } catch (e) { Alert.alert("تعذر الطباعة", String(e)); }
   };
 
   const editVoucher = async (h: any) => {
-    setEditingId(h.id); setVType(h.voucher_type); setAmount(String(h.amount)); setDescription(h.description || ""); setDateStr(h.created_at ? new Date(h.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
+    setEditingId(h.id); setVType(h.voucher_type); setAmount(String(h.amount)); setDescription(h.description || ""); setPartyAmountStr(h.party_amount !== undefined && h.party_amount !== null ? String(h.party_amount) : ""); setDateStr(h.created_at ? new Date(h.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
     setPartyType(h.party_type || "none");
     if (h.party_id && h.party_type !== "none") {
       let p = null;
       if (h.party_type === "customer") p = customers.find((c:any) => c.id === h.party_id);
       else if (h.party_type === "supplier") p = suppliers.find((s:any) => s.id === h.party_id);
       else if (h.party_type === "account") p = accounts.find((a:any) => a.id === h.party_id);
-      setPartyRecord(p || null); setPartySearch(p ? p.name : "");                                                                                               
+      setPartyRecord(p || null); setPartySearch(p ? p.name : "");
     } else { setPartyRecord(null); setPartySearch(""); }
     if (h.cashbox_id) { const cb = cashboxes.find((c:any) => c.id === h.cashbox_id); setCashbox(cb || null); setCashboxSearch(cb ? cb.name : ""); }
     if (h.currency_code) { const cur = currencies.find((c:any) => c.code === h.currency_code); if (cur) setCurrency(cur); }
-    setSelectedVoucher(null); // إغلاق النافذة عند التعديل
+    setSelectedVoucher(null);
   };
 
   const cancelEdit = () => {
-    setEditingId(null); setVType("receipt"); setAmount(""); setDescription(""); setDateStr(new Date().toISOString().slice(0, 10)); setPartyType("none"); setPartyRecord(null); setPartySearch(""); setCashbox(null); setCashboxSearch("");
+    setEditingId(null); setVType("receipt"); setAmount(""); setDescription(""); setDateStr(new Date().toISOString().slice(0, 10)); setPartyType("none"); setPartyRecord(null); setPartySearch(""); setCashbox(null); setCashboxSearch(""); setPartyAmountStr("");
   };
 
   const deleteVoucher = (id: string) => {
     Alert.alert("تأكيد الحذف", "هل أنت متأكد من حذف هذا السند؟ سيتم عكس تأثيره على الصندوق والطرف.", [
-      { text: "إلغاء", style: "cancel" },                                                                                                                       
+      { text: "إلغاء", style: "cancel" },
       { text: "حذف", style: "destructive", onPress: async () => {
           try {
             const v: any = await sqlite.getFirstAsync("SELECT * FROM vouchers WHERE id = ?", [id]);
             if (!v) return;
-            const rate = Number(v.exchange_rate) || 1;                                                                                                          
+            const rate = Number(v.exchange_rate) || 1;
             const baseAmount = Number(v.amount) * rate;
+            const partyAmount = v.party_amount !== undefined && v.party_amount !== null ? Number(v.party_amount) : baseAmount;
+            
             const delta = v.voucher_type === "receipt" ? -baseAmount : baseAmount;
             await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [delta, v.cashbox_id]);
+            
             if (v.party_id && v.party_type !== "none") {
                let pDelta = 0;
-               if (v.party_type === "customer") pDelta = v.voucher_type === "receipt" ? baseAmount : -baseAmount;
-               else if (v.party_type === "supplier") pDelta = v.voucher_type === "payment" ? baseAmount : -baseAmount;
-               else if (v.party_type === "account") pDelta = v.voucher_type === "receipt" ? -baseAmount : baseAmount;
+               if (v.party_type === "customer") pDelta = v.voucher_type === "receipt" ? partyAmount : -partyAmount;
+               else if (v.party_type === "supplier") pDelta = v.voucher_type === "payment" ? partyAmount : -partyAmount;
+               else if (v.party_type === "account") pDelta = v.voucher_type === "receipt" ? -partyAmount : partyAmount;
+               
                if (v.party_type === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [pDelta, v.party_id]);
                else if (v.party_type === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [pDelta, v.party_id]);
                else if (v.party_type === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [pDelta, v.party_id]);
@@ -265,7 +295,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
             <Text style={[styles.toggleText, { color: colors.text }, isReceipt && { color: "#FFF", fontWeight: "800" }]}>قبض</Text>
           </Pressable>
           <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.toggleBtn, { backgroundColor: colors.surface, borderColor: colors.border }, !isReceipt && { backgroundColor: colors.orange, borderColor: colors.orange }]} onPress={() => setVType("payment")}>
-            <Text style={[styles.toggleText, { color: colors.text }, !isReceipt && { color: "#FFF", fontWeight: "800" }]}>دفع</Text>                            
+            <Text style={[styles.toggleText, { color: colors.text }, !isReceipt && { color: "#FFF", fontWeight: "800" }]}>دفع</Text>
           </Pressable>
         </View>
 
@@ -282,7 +312,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
         {partyType !== "none" && (
           <>
-            <Text style={[styles.label, { color: colors.textMuted }]}>{partyType === "customer" ? "اختر العميل" : partyType === "supplier" ? "اختر المورد" : "اختر الحساب"}</Text>                                                                                                                                              
+            <Text style={[styles.label, { color: colors.textMuted }]}>{partyType === "customer" ? "اختر العميل" : partyType === "supplier" ? "اختر المورد" : "اختر الحساب"}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
               value={partySearch}
@@ -313,12 +343,12 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
                     );
                   })
                 )}
-              </ScrollView>                                                                                                                                     
+              </ScrollView>
             )}
           </>
         )}
 
-        <Text style={[styles.label, { color: colors.textMuted }]}>الصندوق (تحليلي فقط)</Text>                                                                   
+        <Text style={[styles.label, { color: colors.textMuted }]}>الصندوق (تحليلي فقط)</Text>
         <TextInput
           style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
           value={cashboxSearch}
@@ -339,7 +369,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد صناديق تحليلية مطابقة</Text>
             ) : (
               filteredCashboxes.map((c) => (
-                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCashbox(c); setCashboxSearch(c.name); setShowCashbox(false); }}>                                                                                       
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCashbox(c); setCashboxSearch(c.name); setShowCashbox(false); }}>
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
                 </Pressable>
@@ -358,23 +388,30 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
             {currencies.map((c) => (
               <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setShowCurrency(false); }}>
                 <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.symbol})</Text>
-                <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} {c.isBase ? " · أساسية" : " · 1 = " + Number(c.exchangeRate).toFixed(2) + " YER"}</Text>                                                                                                                                               
+                <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} {c.isBase ? " · أساسية" : " · 1 = " + Number(c.exchangeRate).toFixed(2) + " YER"}</Text>
               </Pressable>
             ))}
           </ScrollView>
         )}
-                                                                                                                                                                
+
         <Text style={[styles.label, { color: colors.textMuted }]}>التاريخ</Text>
         <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
           <Text style={[styles.pickerText, { color: colors.text }]}>{dateStr}</Text>
           <MaterialCommunityIcons name="calendar" size={20} color={colors.textMuted} />
         </Pressable>
-        {showDatePicker && (                                                                                                                                    
+        {showDatePicker && (
           <DateTimePicker value={dateStr ? new Date(dateStr) : new Date()} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(Platform.OS === "ios"); if (d) setDateStr(d.toISOString().slice(0, 10)); }} />
         )}
-                                                                                                                                                                
-        <Text style={[styles.label, { color: colors.textMuted }]}>المبلغ ({symbol})</Text>
+
+        <Text style={[styles.label, { color: colors.textMuted }]}>المبلغ المدفوع/المستلم ({symbol})</Text>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={amount} onChangeText={setAmount} placeholder="0" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" textAlign="right" />
+        
+        {partyType !== "none" && (
+          <View style={{ marginTop: 10 }}>
+            <Text style={[styles.label, { color: colors.textMuted }]}>المبلغ المخصوم من حساب الطرف (اختياري - بالعملة الأساسية)</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={partyAmountStr} onChangeText={setPartyAmountStr} placeholder="يُحسب تلقائياً إذا تُرك فارغاً" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" textAlign="right" />
+          </View>
+        )}
 
         <Text style={[styles.label, { color: colors.textMuted }]}>البيان (اختياري)</Text>
         <TextInput style={[styles.input, { minHeight: 60, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={description} onChangeText={setDescription} placeholder="سبب العملية" placeholderTextColor={colors.textMuted} textAlign="right" multiline />
@@ -397,7 +434,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
                 <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterVType("all")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "all" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "all" && { color: "#FFF" }]}>الكل</Text></Pressable>
                 <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterVType("receipt")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "receipt" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "receipt" && { color: "#FFF" }]}>قبض</Text></Pressable>
                 <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterVType("payment")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterVType === "payment" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterVType === "payment" && { color: "#FFF" }]}>دفع</Text></Pressable>
-              </View>                                                                                                                                           
+              </View>
               <View style={styles.filterRow}>
                 <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterParty("all")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterParty === "all" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterParty === "all" && { color: "#FFF" }]}>الكل</Text></Pressable>
                 <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => setFilterParty("customer")} style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }, filterParty === "customer" && { backgroundColor: colors.blue, borderColor: colors.blue }]}><Text style={[styles.filterText, { color: colors.textMuted }, filterParty === "customer" && { color: "#FFF" }]}>عملاء</Text></Pressable>
@@ -407,7 +444,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
             {history.map((h) => (
               <Pressable key={h.id} onPress={() => setSelectedVoucher(h)} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={styles.histActions}>                                                                                                               
+                <View style={styles.histActions}>
                   <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={(e) => { e.stopPropagation(); printVoucher(h); }} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>🖨️</Text></Pressable>
                   <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={(e) => { e.stopPropagation(); editVoucher(h); }} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
                   <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={(e) => { e.stopPropagation(); deleteVoucher(h.id); }} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
@@ -417,9 +454,16 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
                   <Text style={[styles.histMeta, { color: colors.blue }]}>{h.voucher_no} {h.currency_code ? `(${h.currency_code})` : ""}</Text>
                   <Text style={[styles.histDate, { color: colors.textMuted }]}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>
                 </View>
-                <Text style={[styles.histAmount, { color: h.voucher_type === "receipt" ? colors.success : colors.danger }]}>
-                  {h.voucher_type === "receipt" ? "+" : "-"}{Number(h.amount).toFixed(2)}
-                </Text>
+                <View style={{ alignItems: "flex-start" }}>
+                  <Text style={[styles.histAmount, { color: h.voucher_type === "receipt" ? colors.success : colors.danger }]}>
+                    {h.voucher_type === "receipt" ? "+" : "-"}{Number(h.amount).toFixed(2)}
+                  </Text>
+                  {h.party_amount !== undefined && h.party_amount !== null && Number(h.party_amount) !== Number(h.amount) && (
+                    <Text style={{ fontSize: 10, color: colors.textMuted, textAlign: "left", marginTop: 2 }}>
+                      الطرف: {Number(h.party_amount).toFixed(2)}
+                    </Text>
+                  )}
+                </View>
               </Pressable>
             ))}
           </>
@@ -431,7 +475,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>تفاصيل السند</Text>
-            
+
             {selectedVoucher && (
               <View style={styles.modalDetails}>
                 <Text style={[styles.modalText, { color: colors.text }]}>نوع السند: {selectedVoucher.voucher_type === "receipt" ? "قبض" : "دفع"}</Text>
@@ -443,6 +487,11 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
                 <Text style={[styles.modalTotal, { color: selectedVoucher.voucher_type === "receipt" ? colors.success : colors.danger }]}>
                   المبلغ: {Number(selectedVoucher.amount).toFixed(2)} {selectedVoucher.currency_code}
                 </Text>
+                {selectedVoucher.party_amount !== undefined && selectedVoucher.party_amount !== null && Number(selectedVoucher.party_amount) !== Number(selectedVoucher.amount) && (
+                  <Text style={[styles.modalText, { color: colors.textMuted, marginTop: 5, fontSize: 14 }]}>
+                    المخصوم من الطرف: {Number(selectedVoucher.party_amount).toFixed(2)}
+                  </Text>
+                )}
               </View>
             )}
 
@@ -484,11 +533,11 @@ const styles = StyleSheet.create({
   cancelBtn: { padding: 14, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   cancelBtnText: { fontWeight: '700' },
   suggestBox: { marginTop: 6, borderWidth: 1.2, borderRadius: 12, overflow: "hidden", maxHeight: 200 },
-  suggestItem: { padding: 12, borderBottomWidth: 1 },                           
+  suggestItem: { padding: 12, borderBottomWidth: 1 },
   suggestName: { fontWeight: "700", textAlign: "right", fontSize: 13 },
   suggestMeta: { fontSize: 11, textAlign: "right", marginTop: 2 },
   suggestEmpty: { padding: 12, textAlign: "right", fontSize: 12 },
-  histRow: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },                                                                                     
+  histRow: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   histInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   histName: { fontWeight: "700", fontSize: 14, textAlign: "right" },
   histMeta: { fontSize: 11, marginTop: 2, textAlign: "right", fontWeight: "600" },

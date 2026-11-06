@@ -113,7 +113,7 @@ export default function SettingsModule({ onBack }: { onBack?: () => void }) {
               return;
             }
             const result = await restoreBackup(picked.backup);
-            if (result.success) Alert.alert("تمت الاستعادة", "تم استيراد " + result.restored + " سجلاً بنجاح");
+            if (result.success) Alert.alert("تمت الاستعادة", "تم استيراد " + result.restored + " سجلاً بنجاح.\n\n⚠️ يرجى إغلاق التطبيق وفتحه مرة أخرى لكي تظهر إعدادات الشركة وتليجرام.");
             else Alert.alert("خطأ", result.error || "تعذر الاستعادة");
           } catch (e) { Alert.alert("خطأ", String(e)); }
       }},

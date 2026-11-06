@@ -168,6 +168,7 @@ export const checkTelegramCommands = async () => {
     const { token, chatId } = await getTelegramSettings();
     if (!token || !chatId) return;
 
+    try { await sqlite.execAsync("ALTER TABLE vouchers ADD COLUMN party_amount REAL;"); } catch (e) {}
     const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
     const offset = lastUpdateId ? parseInt(lastUpdateId, 10) + 1 : 0;
 
