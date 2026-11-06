@@ -11,6 +11,7 @@ export type ParsedCommand = {
   phone?: string;
   useContact?: boolean;
   items?: { name: string; qty: number; price: number }[];
+  error?: string; // ✅ حقل جديد لرسالة الخطأ
 };
 
 export const parseArabicCommand = async (text: string): Promise<ParsedCommand> => {
@@ -32,20 +33,17 @@ export const parseArabicCommand = async (text: string): Promise<ParsedCommand> =
 
       أمثلة على المخرجات المطلوبة (JSON فقط):
       { "intent": "create_customer", "partyName": "حسان العشاري", "phone": "777696688", "amount": 0, "description": "إضافة عميل" }
-      { "intent": "create_customer", "partyName": "وليد الوثلي", "useContact": true, "amount": 0, "description": "من جهات الاتصال" }
       { "intent": "expense", "amount": 500, "description": "بنزين" }
-      { "intent": "income", "amount": 1000, "description": "دفعة", "partyName": "أحمد" }
     `;
 
     const result = await model.generateContent(prompt);
     const response = result.response.text();
     
-    // تنظيف الرد لضمان أنه JSON صالح
     const cleanJson = response.replace(/```json/g, "").replace(/```/g, "").trim();
     return JSON.parse(cleanJson) as ParsedCommand;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini parsing error:", error);
-    return { intent: "unknown", amount: 0, description: "" };
+    return { intent: "unknown", amount: 0, description: "", error: String(error.message || error) };
   }
 };

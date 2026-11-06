@@ -107,8 +107,8 @@ const processTextCommand = async (text: string) => {
       const now = Date.now();
       
       await sqlite.runAsync(
-        `INSERT INTO customers (id, code, name, phone, balance, created_at, updated_at) VALUES (?, ?, ?, ?, 0, ?, ?)`,
-        [customerId, nextCode, parsed.partyName, phoneNumber, now, now]
+        `INSERT INTO customers (id, code, name, phone, balance, created_at) VALUES (?, ?, ?, ?, 0, ?)`,
+        [customerId, nextCode, parsed.partyName, phoneNumber, now]
       );
       
       await sendTelegramMessage(`✅ تم إضافة العميل بنجاح:\n👤 الاسم: ${parsed.partyName}\n🔢 الكود: ${nextCode}\n📞 الهاتف: ${phoneNumber || "غير مسجل"}`);
@@ -117,7 +117,11 @@ const processTextCommand = async (text: string) => {
     }
   }
   else {
-    await sendTelegramMessage("🤖 لم أفهم الأمر. جرب:\n- \"صرفت 500 بنزين\"\n- \"استلمت 1000 من أحمد\"\n- \"افتح حساب عميل جديد باسم...\"\n- أو أرسل رسالة صوتية");
+    if (parsed.error) {
+      await sendTelegramMessage(`❌ خطأ في الاتصال بالذكاء الاصطناعي:\n${parsed.error}`);
+    } else {
+      await sendTelegramMessage("🤖 لم أفهم الأمر. جرب:\n- \"صرفت 500 بنزين\"\n- \"استلمت 1000 من أحمد\"\n- \"افتح حساب عميل جديد باسم...\"\n- أو أرسل رسالة صوتية");
+    }
   }
 };
 

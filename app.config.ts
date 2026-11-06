@@ -5,8 +5,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'hisabapp',
   slug: 'hisabapp',
   version: '1.0.0',
-  orientation: 'portrait',
-  icon: './assets/images/icon.png', // ✅ الأيقونة المربعة الرئيسية
+  orientation: 'default',
+  icon: './assets/images/icon.png',
   scheme: 'myapp',
   userInterfaceStyle: 'automatic',
   assetBundlePatterns: ['**/*'],
@@ -17,7 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: 'com.flux.hisabapp.v2',
     adaptiveIcon: {
-      foregroundImage: './assets/images/android-icon-foreground.png', // ✅ أيقونة أندرويد التكيفية
+      foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundColor: '#0B2545',
       monochromeImage: './assets/images/android-icon-monochrome.png'
     }
@@ -40,13 +40,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        image: './assets/images/splash-icon.png', // ✅ شعار شاشة البداية
+        image: './assets/images/splash-icon.png',
         resizeMode: 'contain',
-        backgroundColor: '#0B2545' // ✅ خلفية زرقاء داكنة
+        backgroundColor: '#0B2545'
       }
     ]
   ],
   experiments: {
     typedRoutes: true
+  },
+  extra: {
+    eas: {
+      projectId: '187ad966-f690-427d-9ca2-a02f29af2606'
+    }
   }
 });
