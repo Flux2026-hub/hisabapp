@@ -1,6 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Alert } from "react-native";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Contacts from "expo-contacts/legacy";
 import { sqlite } from "../db/local";
@@ -26,7 +25,7 @@ export const getTelegramSettings = async () => {
 
 export const sendTelegramMessage = async (message: string) => {
   const { token, chatId } = await getTelegramSettings();
-  if (!token || !chatId) throw new Error('لم يتم إعداد التوكن أو Chat ID');
+  if (!token || !chatId) return;
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
   const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }) });
   const data = await response.json();
@@ -54,35 +53,53 @@ export const notifyLargeInvoice = async (invoiceData: any) => {
 };
 
 const processTextCommand = async (text: string) => {
-  const parsed = await parseArabicCommand(text);
-  
-  if (parsed.intent === "expense" && parsed.amount > 0) {
-    const expenseId = `EXP-${Date.now()}`;
-    const expenseNo = `EXP-${String(Date.now()).slice(-3)}`;
-    const now = Date.now();
-    await sqlite.runAsync(
-      `INSERT INTO vouchers (id, voucher_no, voucher_type, party_name, amount, description, created_at, party_type, currency_code, exchange_rate) VALUES (?, ?, 'payment', 'مصروف ذكي', ?, ?, ?, 'none', 'YER', 1)`,
-      [expenseId, expenseNo, parsed.amount, parsed.description || text, now]
-    );
-    await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE id = 'cash-main'", [parsed.amount]);
-    await sendTelegramMessage(`✅ تم تسجيل المصروف:\n💸 ${parsed.amount} YER\n📝 ${parsed.description}`);
-  } 
-  else if (parsed.intent === "income" && parsed.amount > 0) {
-    const incomeId = `INC-${Date.now()}`;
-    const incomeNo = `INC-${String(Date.now()).slice(-3)}`;
-    const now = Date.now();
-    await sqlite.runAsync(
-      `INSERT INTO vouchers (id, voucher_no, voucher_type, party_name, amount, description, created_at, party_type, currency_code, exchange_rate) VALUES (?, ?, 'receipt', 'إيراد ذكي', ?, ?, ?, 'none', 'YER', 1)`,
-      [incomeId, incomeNo, parsed.amount, parsed.description || text, now]
-    );
-    await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = 'cash-main'", [parsed.amount]);
-    await sendTelegramMessage(`✅ تم تسجيل الإيراد:\n💰 ${parsed.amount} YER\n📝 ${parsed.description}`);
-  }
-  else if (parsed.intent === "create_customer" && parsed.partyName) {
-    try {
+  try {
+    const parsed = await parseArabicCommand(text);
+    
+    if (parsed.intent === "expense" && parsed.amount > 0) {
+      const expenseId = `EXP-${Date.now()}`;
+      const expenseNo = `EXP-${String(Date.now()).slice(-6)}`;
+      const now = Date.now();
+      
+      // جلب أول صندوق متاح من قاعدة البيانات
+      const cashbox: any = await sqlite.getFirstAsync("SELECT id FROM cashboxes WHERE cashbox_type = 'analytical' LIMIT 1");
+      const cashboxId = cashbox ? cashbox.id : null;
+
+      if (!cashboxId) {
+        await sendTelegramMessage("❌ لا يوجد صندوق تحليلي مسجل في التطبيق لخصم المصروف منه.");
+        return;
+      }
+
+      await sqlite.runAsync(
+        `INSERT INTO vouchers (id, voucher_no, voucher_type, cashbox_id, party_name, amount, description, created_at, party_type, currency_code, exchange_rate, party_amount) VALUES (?, ?, 'payment', ?, 'مصروف ذكي', ?, ?, ?, 'none', 'YER', 1, ?)`,
+        [expenseId, expenseNo, cashboxId, parsed.amount, parsed.description || text, now, parsed.amount]
+      );
+      await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE id = ?", [parsed.amount, cashboxId]);
+      await sendTelegramMessage(`✅ تم تسجيل المصروف:\n💸 ${parsed.amount} YER\n📝 ${parsed.description}`);
+    } 
+    else if (parsed.intent === "income" && parsed.amount > 0) {
+      const incomeId = `INC-${Date.now()}`;
+      const incomeNo = `INC-${String(Date.now()).slice(-6)}`;
+      const now = Date.now();
+      
+      const cashbox: any = await sqlite.getFirstAsync("SELECT id FROM cashboxes WHERE cashbox_type = 'analytical' LIMIT 1");
+      const cashboxId = cashbox ? cashbox.id : null;
+
+      if (!cashboxId) {
+        await sendTelegramMessage("❌ لا يوجد صندوق تحليلي مسجل في التطبيق لإضافة الإيراد إليه.");
+        return;
+      }
+
+      await sqlite.runAsync(
+        `INSERT INTO vouchers (id, voucher_no, voucher_type, cashbox_id, party_name, amount, description, created_at, party_type, currency_code, exchange_rate, party_amount) VALUES (?, ?, 'receipt', ?, 'إيراد ذكي', ?, ?, ?, 'none', 'YER', 1, ?)`,
+        [incomeId, incomeNo, cashboxId, parsed.amount, parsed.description || text, now, parsed.amount]
+      );
+      await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [parsed.amount, cashboxId]);
+      await sendTelegramMessage(`✅ تم تسجيل الإيراد:\n💰 ${parsed.amount} YER\n📝 ${parsed.description}`);
+    }
+    else if (parsed.intent === "create_customer" && parsed.partyName) {
       let phoneNumber = parsed.phone || "";
       
-      // ✅ البحث في جهات الاتصال
       if (parsed.useContact || (!parsed.phone && parsed.partyName)) {
         try {
           const { status } = await Contacts.requestPermissionsAsync();
@@ -104,6 +121,7 @@ const processTextCommand = async (text: string) => {
         const lastNum = parseInt(lastCustomer.code.replace(/\D/g, ""), 10);
         nextCode = `CUS-${String(lastNum + 1).padStart(3, "0")}`;
       }
+      
       const customerId = `CUS-${Date.now()}`;
       const now = Date.now();
       
@@ -113,16 +131,13 @@ const processTextCommand = async (text: string) => {
       );
       
       await sendTelegramMessage(`✅ تم إضافة العميل بنجاح:\n👤 الاسم: ${parsed.partyName}\n🔢 الكود: ${nextCode}\n📞 الهاتف: ${phoneNumber || "غير مسجل"}`);
-    } catch (err) {
-      await sendTelegramMessage(`❌ تعذر إضافة العميل: ${String(err)}`);
     }
-  }
-  else {
-    if (parsed.error) {
-      await sendTelegramMessage(`❌ خطأ في الاتصال بالذكاء الاصطناعي:\n${parsed.error}`);
-    } else {
-      await sendTelegramMessage("🤖 لم أفهم الأمر. جرب:\n- \"صرفت 500 بنزين\"\n- \"استلمت 1000 من أحمد\"\n- \"افتح حساب عميل جديد باسم...\"\n- أو أرسل رسالة صوتية");
+    else {
+      await sendTelegramMessage("🤖 لم أفهم الأمر. جرب:\n- \"صرفت 500 بنزين\"\n- \"استلمت 1000 من أحمد\"\n- \"افتح حساب عميل جديد باسم...\"");
     }
+  } catch (error) {
+    console.log("Error processing text command:", error);
+    await sendTelegramMessage("❌ حدث خطأ أثناء تنفيذ الأمر.");
   }
 };
 
@@ -160,38 +175,27 @@ const processVoiceCommand = async (voice: any, token: string) => {
     await processTextCommand(transcribedText);
     
   } catch (error) {
-    await sendTelegramMessage(`❌ تعذر معالجة الصوت: ${String(error)}`);
+    await sendTelegramMessage(`❌ تعذر معالجة الصوت.`);
   }
 };
 
 export const checkTelegramCommands = async () => {
-  try { Alert.alert("تصحيح 1", "بدء فحص أوامر تليجرام..."); } catch(e){}
-  
   try {
     const { token, chatId } = await getTelegramSettings();
-    if (!token || !chatId) { 
-      Alert.alert("تصحيح 2", "لم يتم العثور على التوكن أو Chat ID!"); 
-      return; 
-    }
+    if (!token || !chatId) return;
 
-    // ✅ تجاهل الرقم القديم واقرأ كل الرسائل
-    await AsyncStorage.removeItem(LAST_UPDATE_ID_KEY);
-    
-    // ✅ طلب كل الرسائل بدون Offset
-    const url = `https://api.telegram.org/bot${token}/getUpdates?timeout=5`;
+    const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
+    const offset = lastUpdateId ? parseInt(lastUpdateId, 10) + 1 : 0;
+
+    const url = `https://api.telegram.org/bot${token}/getUpdates?offset=${offset}&timeout=5`;
     const response = await fetch(url);
     const data = await response.json();
-
-    // ✅ إظهار عدد الرسائل التي وصلت
-    Alert.alert("تصحيح 3", "عدد الرسائل التي تم جلبها: " + (data.result ? data.result.length : "خطأ"));
 
     if (!data.ok || !data.result || data.result.length === 0) return;
 
     for (const update of data.result) {
       const message = update.message;
       if (!message) continue;
-      
-      // التحقق من الـ Chat ID
       if (String(message.chat.id) !== String(chatId)) continue;
 
       if (message.text) {
@@ -201,10 +205,9 @@ export const checkTelegramCommands = async () => {
         await processVoiceCommand(message.voice, token);
       }
 
-      // حفظ رقم الرسالة الحالية
       await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));
     }
-  } catch (error: any) {
-    Alert.alert("خطأ في الفحص", String(error.message || error));
+  } catch (error) {
+    console.log("Error checking Telegram commands:", error);
   }
 };
