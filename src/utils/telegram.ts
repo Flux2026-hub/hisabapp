@@ -173,7 +173,7 @@ const processVoiceCommand = async (voice: any, token: string) => {
     const base64Audio = await FileSystem.readAsStringAsync(localPath, { encoding: FileSystem.EncodingType.Base64 });
     
     const { GoogleGenerativeAI } = require("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI("uSfZSdq53GYrRI2BFwjCmrpBEYZlo6BT10jhltzv eas whoami"); // سيتم استبداله لاحقاً
+    const genAI = new GoogleGenerativeAI("AQ.Ab8RN6J7bRV7yGwhk6NI9mp3W4Giaa5iOxz_4S2sj7_-nFLRsg"); // سيتم استبداله لاحقاً
     const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
     
     const result = await model.generateContent([
