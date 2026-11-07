@@ -137,7 +137,7 @@ const processTextCommand = async (text: string) => {
     }
   } catch (error) {
     console.log("Error processing text command:", error);
-    await sendTelegramMessage("❌ حدث خطأ أثناء تنفيذ الأمر.");
+    await sendTelegramMessage(`❌ حدث خطأ: ${error.message || error}`);
   }
 };
 
@@ -180,6 +180,8 @@ const processVoiceCommand = async (voice: any, token: string) => {
 };
 
 export const checkTelegramCommands = async () => {
+  try { await sqlite.execAsync("ALTER TABLE vouchers ADD COLUMN party_amount REAL;"); } catch(e) {}
+
   try {
     const { token, chatId } = await getTelegramSettings();
     if (!token || !chatId) return;
