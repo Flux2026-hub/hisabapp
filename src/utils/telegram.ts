@@ -61,7 +61,6 @@ const processTextCommand = async (text: string) => {
       const expenseNo = `EXP-${String(Date.now()).slice(-6)}`;
       const now = Date.now();
       
-      // جلب أول صندوق متاح من قاعدة البيانات
       const cashbox: any = await sqlite.getFirstAsync("SELECT id FROM cashboxes WHERE cashbox_type = 'analytical' LIMIT 1");
       const cashboxId = cashbox ? cashbox.id : null;
 
@@ -144,8 +143,8 @@ const processTextCommand = async (text: string) => {
       const now = Date.now();
       
       await sqlite.runAsync(
-        `INSERT INTO customers (id, code, name, phone, balance, created_at) VALUES (?, ?, ?, ?, 0, ?)`,
-        [customerId, nextCode, parsed.partyName, phoneNumber, now]
+        `INSERT INTO customers (id, code, name, phone, balance, created_at, updated_at) VALUES (?, ?, ?, ?, 0, ?, ?)`,
+        [customerId, nextCode, parsed.partyName, phoneNumber, now, now]
       );
       
       await sendTelegramMessage(`✅ تم إضافة العميل بنجاح:\n👤 الاسم: ${parsed.partyName}\n🔢 الكود: ${nextCode}\n📞 الهاتف: ${phoneNumber || "غير مسجل"}`);
@@ -155,14 +154,13 @@ const processTextCommand = async (text: string) => {
     }
   } catch (error) {
     console.log("Error processing text command:", error);
-    await sendTelegramMessage(`❌ حدث خطأ: ${error.message || error}`);
+    await sendTelegramMessage("❌ حدث خطأ أثناء تنفيذ الأمر. تفقد السجل.");
   }
 };
 
 const processVoiceCommand = async (voice: any, token: string) => {
   try {
     await sendTelegramMessage("🎤 جاري تحليل الرسالة الصوتية...");
-
     const fileRes = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${voice.file_id}`);
     const fileData = await fileRes.json();
     if (!fileData.ok) throw new Error("تعذر الحصول على الملف من تليجرام");
@@ -175,7 +173,7 @@ const processVoiceCommand = async (voice: any, token: string) => {
     const base64Audio = await FileSystem.readAsStringAsync(localPath, { encoding: FileSystem.EncodingType.Base64 });
     
     const { GoogleGenerativeAI } = require("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI("AQ.Ab8RN6J44E1VOEus_it_hFS8fxm9ze4iCFEPuq2HptrK2PcQVA"); // سيتم استبداله لاحقاً
+    const genAI = new GoogleGenerativeAI("uSfZSdq53GYrRI2BFwjCmrpBEYZlo6BT10jhltzv eas whoami"); // سيتم استبداله لاحقاً
     const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
     
     const result = await model.generateContent([
@@ -198,11 +196,13 @@ const processVoiceCommand = async (voice: any, token: string) => {
 };
 
 export const checkTelegramCommands = async () => {
-  try { await sqlite.execAsync("ALTER TABLE vouchers ADD COLUMN party_amount REAL;"); } catch(e) {}
-
   try {
     const { token, chatId } = await getTelegramSettings();
     if (!token || !chatId) return;
+
+    // إنشاء الأعمدة الناقصة تلقائياً لضمان عدم فشل الأوامر
+    try { await sqlite.execAsync("ALTER TABLE vouchers ADD COLUMN party_amount REAL;"); } catch(e) {}
+    try { await sqlite.execAsync("ALTER TABLE customers ADD COLUMN updated_at INTEGER;"); } catch(e) {}
 
     const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
     const offset = lastUpdateId ? parseInt(lastUpdateId, 10) + 1 : 0;
@@ -213,11 +213,15 @@ export const checkTelegramCommands = async () => {
 
     if (!data.ok || !data.result || data.result.length === 0) return;
 
-    for (const update of data.result) {
+    // جلب آخر 3 رسائل كحد أقصى لتجنب البطء
+    const messagesToProcess = data.result.slice(-3); 
+
+    for (const update of messagesToProcess) {
       const message = update.message;
       if (!message) continue;
       if (String(message.chat.id) !== String(chatId)) continue;
 
+      // إرسال الأمر للمعالجة
       if (message.text) {
         await processTextCommand(message.text.trim());
       }
@@ -225,6 +229,7 @@ export const checkTelegramCommands = async () => {
         await processVoiceCommand(message.voice, token);
       }
 
+      // حفظ رقم الرسالة التي تمت معالجتها
       await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));
     }
   } catch (error) {
