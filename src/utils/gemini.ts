@@ -9,9 +9,15 @@ export type ParsedCommand = {
   description: string;
   partyName?: string;
   phone?: string;
+  accountName?: string;
   useContact?: boolean;
-  items?: { name: string; qty: number; price: number }[];
-  error?: string; // ✅ حقل جديد لرسالة الخطأ
+  itemName?: string;
+  quantity?: number;
+  unitPrice?: number;
+  currencyCode?: string;
+  discountValue?: number;
+  salesRepName?: string;
+  error?: string;
 };
 
 export const parseArabicCommand = async (text: string): Promise<ParsedCommand> => {
@@ -23,17 +29,23 @@ export const parseArabicCommand = async (text: string): Promise<ParsedCommand> =
       النص: "${text}"
 
       قواعد صارمة:
-      1. إذا كان النص يتحدث عن دفع أو صرف أو شراء (مثل: "صرفت"، "دفعت"، "اشتريت")، اجعل intent = "expense".
-      2. إذا كان النص يتحدث عن استلام أو قبض أو دخل (مثل: "استلمت"، "قبضت")، اجعل intent = "income".
-      3. إذا كان النص يطلب فتح حساب أو إضافة عميل (مثل: "افتح حساب"، "أضف عميل"، "سجل زبون")، اجعل intent = "create_customer".
-      4. إذا قال المستخدم أن الرقم موجود في جهات الاتصال، أو لم يذكر رقماً وطلب البحث، اجعل useContact = true.
-      5. استخرج اسم العميل في حقل partyName، ورقم الهاتف في حقل phone (إذا وجد).
-      6. استخرج المبلغ في حقل amount.
-      7. أي كلام إضافي أو وصف للعملية ضعه في description.
+      1. إذا كان النص يتحدث عن دفع أو صرف أو شراء، اجعل intent = "expense". (استخرج اسم المورد/العميل في partyName، واسم الحساب إذا ذُكر في accountName).
+      2. إذا كان النص يتحدث عن استلام أو قبض أو دخل، اجعل intent = "income". (استخرج اسم العميل/المورد في partyName، واسم الحساب إذا ذُكر في accountName).
+      3. إذا كان النص يطلب إضافة عميل جديد، اجعل intent = "create_customer". (استخرج الاسم في partyName، والهاتف في phone).
+      4. إذا كان النص يتحدث عن إصدار فاتورة مبيعات أو بيع أصناف، اجعل intent = "invoice". (استخرج اسم العميل في partyName، اسم الصنف في itemName، الكمية في quantity، سعر الوحدة في unitPrice، العملة في currencyCode، الخصم في discountValue، اسم المندوب في salesRepName).
+      5. إذا لم يكن النص محاسبياً، اجعل intent = "unknown".
 
-      أمثلة على المخرجات المطلوبة (JSON فقط):
+      قواعد إضافية هامة:
+      - لا تهتم بترتيب الكلمات، افهم المعنى العام للجملة.
+      - جميع المبالغ والأرقام يجب أن تكون أرقاماً (500) وليس نصاً.
+      - العملات المقبولة: YER (ريال يمني)، SAR (ريال سعودي). إذا لم تُذكر في الفاتورة، اجعلها "YER".
+
+      أمثلة على المخرجات المطلوبة (JSON فقط بدون أي نص آخر):
+      { "intent": "expense", "amount": 500, "partyName": "أحمد", "description": "بنزين" }
+      { "intent": "income", "amount": 14000, "partyName": "مراد الوليدي", "description": "دفعة من العميل" }
       { "intent": "create_customer", "partyName": "حسان العشاري", "phone": "777696688", "amount": 0, "description": "إضافة عميل" }
-      { "intent": "expense", "amount": 500, "description": "بنزين" }
+      { "intent": "invoice", "partyName": "أحمد", "itemName": "ماسورة", "quantity": 100, "unitPrice": 500, "currencyCode": "YER", "description": "فاتورة مبيعات" }
+      { "intent": "invoice", "partyName": "محلات الزعيم", "itemName": "ماسورة", "quantity": 50, "unitPrice": 10, "currencyCode": "SAR", "discountValue": 5, "salesRepName": "وليد", "description": "فاتورة مبيعات" }
     `;
 
     const result = await model.generateContent(prompt);
