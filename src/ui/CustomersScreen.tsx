@@ -54,9 +54,20 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
   }, [kind]);
 
   const nextCode = useMemo(() => {
-    const nums = rows.map((r) => parseInt(String(r.code ?? ""), 10)).filter((n) => !Number.isNaN(n));
-    const next = nums.length ? Math.max(...nums) + 1 : 1;
-    return String(next).padStart(3, "0");
+    let maxNum = 0;
+    rows.forEach((r) => {
+      const codeStr = String(r.code ?? "");
+      // استخراج الأرقام فقط من أي كود (سواء كان CUS-001 أو 001)
+      const numStr = codeStr.replace(/\D/g, "");
+      if (numStr) {
+        const num = parseInt(numStr, 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+    const next = maxNum + 1;
+    return `CUS-${String(next).padStart(3, "0")}`;
   }, [rows]);
 
   const filteredRows = useMemo(() => {

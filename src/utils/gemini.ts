@@ -4,7 +4,7 @@ const API_KEY = "AQ.Ab8RN6J7bRV7yGwhk6NI9mp3W4Giaa5iOxz_4S2sj7_-nFLRsg"; // سي
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export type ParsedCommand = {
-  intent: "expense" | "income" | "invoice" | "create_customer" | "unknown";
+  intent: "expense" | "income" | "invoice" | "create_customer" | "query_customer_balance" | "query_last_payment" | "query_stock" | "unknown";
   amount: number;
   description: string;
   partyName?: string;
@@ -33,7 +33,10 @@ export const parseArabicCommand = async (text: string): Promise<ParsedCommand> =
       2. إذا كان النص يتحدث عن استلام أو قبض أو دخل، اجعل intent = "income". (استخرج اسم العميل/المورد في partyName، واسم الحساب إذا ذُكر في accountName).
       3. إذا كان النص يطلب إضافة عميل جديد، اجعل intent = "create_customer". (استخرج الاسم في partyName، والهاتف في phone).
       4. إذا كان النص يتحدث عن إصدار فاتورة مبيعات أو بيع أصناف، اجعل intent = "invoice". (استخرج اسم العميل في partyName، اسم الصنف في itemName، الكمية في quantity، سعر الوحدة في unitPrice، العملة في currencyCode، الخصم في discountValue، اسم المندوب في salesRepName).
-      5. إذا لم يكن النص محاسبياً، اجعل intent = "unknown".
+      5. إذا كان النص يسأل عن رصيد عميل (مثل: "كم رصيد أحمد")، اجعل intent = "query_customer_balance". (استخرج اسم العميل في partyName).
+      6. إذا كان النص يسأل عن آخر سداد لعميل (مثل: "متى آخر سداد من أحمد")، اجعل intent = "query_last_payment". (استخرج اسم العميل في partyName).
+      7. إذا كان النص يسأل عن كمية مخزون صنف (مثل: "كم بقي من ماسورة")، اجعل intent = "query_stock". (استخرج اسم الصنف في itemName).
+      8. إذا لم يكن النص محاسبياً، اجعل intent = "unknown".
 
       قواعد إضافية هامة:
       - لا تهتم بترتيب الكلمات، افهم المعنى العام للجملة.
@@ -45,7 +48,9 @@ export const parseArabicCommand = async (text: string): Promise<ParsedCommand> =
       { "intent": "income", "amount": 14000, "partyName": "مراد الوليدي", "description": "دفعة من العميل" }
       { "intent": "create_customer", "partyName": "حسان العشاري", "phone": "777696688", "amount": 0, "description": "إضافة عميل" }
       { "intent": "invoice", "partyName": "أحمد", "itemName": "ماسورة", "quantity": 100, "unitPrice": 500, "currencyCode": "YER", "description": "فاتورة مبيعات" }
-      { "intent": "invoice", "partyName": "محلات الزعيم", "itemName": "ماسورة", "quantity": 50, "unitPrice": 10, "currencyCode": "SAR", "discountValue": 5, "salesRepName": "وليد", "description": "فاتورة مبيعات" }
+      { "intent": "query_customer_balance", "partyName": "أحمد", "amount": 0, "description": "استعلام رصيد" }
+      { "intent": "query_last_payment", "partyName": "أحمد", "amount": 0, "description": "استعلام آخر سداد" }
+      { "intent": "query_stock", "itemName": "ماسورة", "amount": 0, "description": "استعلام مخزون" }
     `;
 
     const result = await model.generateContent(prompt);
