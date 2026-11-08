@@ -1,15 +1,16 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const API_KEY = "AQ.Ab8RN6J7bRV7yGwhk6NI9mp3W4Giaa5iOxz_4S2sj7_-nFLRsg"; // سيتم وضعه لاحقاً
+const API_KEY = "AQ.Ab8RN6J7bRV7yGwhk6NI9mp3W4Giaa5iOxz_4S2sj7_-nFLRsg";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export type ParsedCommand = {
-  intent: "expense" | "income" | "invoice" | "create_customer" | "query_customer_balance" | "query_last_payment" | "query_stock" | "unknown";
+  intent: "expense" | "income" | "invoice" | "create_customer" | "query_customer_balance" | "query_last_payment" | "query_stock" | "query_customer_statement" | "unknown";
   amount: number;
   description: string;
   partyName?: string;
   phone?: string;
   accountName?: string;
+  cashboxName?: string; // ✅ جديد
   useContact?: boolean;
   itemName?: string;
   quantity?: number;
@@ -29,28 +30,33 @@ export const parseArabicCommand = async (text: string): Promise<ParsedCommand> =
       النص: "${text}"
 
       قواعد صارمة:
-      1. إذا كان النص يتحدث عن دفع أو صرف أو شراء، اجعل intent = "expense". (استخرج اسم المورد/العميل في partyName، واسم الحساب إذا ذُكر في accountName).
-      2. إذا كان النص يتحدث عن استلام أو قبض أو دخل، اجعل intent = "income". (استخرج اسم العميل/المورد في partyName، واسم الحساب إذا ذُكر في accountName).
+      1. إذا كان النص يتحدث عن دفع أو صرف أو شراء، اجعل intent = "expense". (استخرج اسم المورد/العميل في partyName، واسم الحساب إذا ذُكر في accountName، واسم الصندوق إذا ذُكر في cashboxName).
+      2. إذا كان النص يتحدث عن استلام أو قبض أو دخل، اجعل intent = "income". (استخرج اسم العميل/المورد في partyName، واسم الحساب إذا ذُكر في accountName، واسم الصندوق إذا ذُكر في cashboxName).
       3. إذا كان النص يطلب إضافة عميل جديد، اجعل intent = "create_customer". (استخرج الاسم في partyName، والهاتف في phone).
       4. إذا كان النص يتحدث عن إصدار فاتورة مبيعات أو بيع أصناف، اجعل intent = "invoice". (استخرج اسم العميل في partyName، اسم الصنف في itemName، الكمية في quantity، سعر الوحدة في unitPrice، العملة في currencyCode، الخصم في discountValue، اسم المندوب في salesRepName).
-      5. إذا كان النص يسأل عن رصيد عميل (مثل: "كم رصيد أحمد")، اجعل intent = "query_customer_balance". (استخرج اسم العميل في partyName).
-      6. إذا كان النص يسأل عن آخر سداد لعميل (مثل: "متى آخر سداد من أحمد")، اجعل intent = "query_last_payment". (استخرج اسم العميل في partyName).
-      7. إذا كان النص يسأل عن كمية مخزون صنف (مثل: "كم بقي من ماسورة")، اجعل intent = "query_stock". (استخرج اسم الصنف في itemName).
-      8. إذا لم يكن النص محاسبياً، اجعل intent = "unknown".
+      5. إذا كان النص يسأل عن رصيد عميل، اجعل intent = "query_customer_balance". (استخرج اسم العميل في partyName).
+      6. إذا كان النص يسأل عن آخر سداد لعميل، اجعل intent = "query_last_payment". (استخرج اسم العميل في partyName).
+      7. إذا كان النص يسأل عن كمية مخزون صنف، اجعل intent = "query_stock". (استخرج اسم الصنف في itemName).
+      9. إذا لم يكن النص محاسبياً، اجعل intent = "unknown".
 
-      قواعد إضافية هامة:
+      قواعد إضافية:
       - لا تهتم بترتيب الكلمات، افهم المعنى العام للجملة.
       - جميع المبالغ والأرقام يجب أن تكون أرقاماً (500) وليس نصاً.
       - العملات المقبولة: YER (ريال يمني)، SAR (ريال سعودي). إذا لم تُذكر في الفاتورة، اجعلها "YER".
+      - الصندوق قد يُسمى "صندوق نقدي" أو "محفظة" أو "بنك" أو "كاش".
 
       أمثلة على المخرجات المطلوبة (JSON فقط بدون أي نص آخر):
       { "intent": "expense", "amount": 500, "partyName": "أحمد", "description": "بنزين" }
+      { "intent": "expense", "amount": 500, "cashboxName": "محفظة الكريمي", "description": "بنزين" }
+      { "intent": "expense", "amount": 6800, "accountName": "تسويق وإعلان", "description": "لاصق استاند" }
       { "intent": "income", "amount": 14000, "partyName": "مراد الوليدي", "description": "دفعة من العميل" }
+      { "intent": "income", "amount": 14000, "partyName": "مراد الوليدي", "cashboxName": "بنك التضامن", "description": "دفعة" }
       { "intent": "create_customer", "partyName": "حسان العشاري", "phone": "777696688", "amount": 0, "description": "إضافة عميل" }
       { "intent": "invoice", "partyName": "أحمد", "itemName": "ماسورة", "quantity": 100, "unitPrice": 500, "currencyCode": "YER", "description": "فاتورة مبيعات" }
       { "intent": "query_customer_balance", "partyName": "أحمد", "amount": 0, "description": "استعلام رصيد" }
       { "intent": "query_last_payment", "partyName": "أحمد", "amount": 0, "description": "استعلام آخر سداد" }
       { "intent": "query_stock", "itemName": "ماسورة", "amount": 0, "description": "استعلام مخزون" }
+      { "intent": "query_customer_statement", "partyName": "أحمد", "amount": 0, "description": "كشف حساب" }
     `;
 
     const result = await model.generateContent(prompt);

@@ -7,6 +7,7 @@ import { buildInvoiceHtml, printHtml, shareHtmlAsPdf, type InvoicePrintData } fr
 import SalesReturnScreen from "./SalesReturnScreen";
 import { useTheme } from "./ThemeContext";
 import SalesItemPicker from "./components/SalesItemPicker";
+import { sendTelegramMessage } from "../utils/telegram";
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
@@ -178,6 +179,31 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
     Alert.alert("تأكيد الحفظ", `فاتورة مبيعات بمبلغ ${total.toFixed(2)} ${currency.symbol || currency.code}\nالعميل: ${customer.name}`, [{ text: "إلغاء", style: "cancel" }, { text: "حفظ", onPress: doSave }]);
   };
 
+
+  const sendAutoAlerts = async (invoiceTotal: number, currencySymbol: string, linesToCheck: any[]) => {
+    try {
+      // 1. تنبيه الفاتورة الكبيرة (أكثر من 50,000 ريال يمني أو ما يعادلها)
+      const threshold = 50000;
+      const baseCur = currencies.find(c => c.isBase);
+      const currentRate = baseCur?.code === currency?.code ? 1 : (Number(currency?.exchangeRate) || 1);
+      const baseTotal = invoiceTotal * currentRate;
+
+      if (baseTotal >= threshold) {
+        await sendTelegramMessage(`🚨 <b>تنبيه: فاتورة كبيرة!</b>\n👤 العميل: ${customer?.name || 'غير محدد'}\n💰 المبلغ: ${invoiceTotal.toFixed(2)} ${currencySymbol}\n🧾 رقم الفاتورة: ${editingNo || 'جديدة'}`);
+      }
+
+      // 2. تنبيه نقص المخزون (أقل من 5 وحدات)
+      for (const line of linesToCheck) {
+        const item: any = await sqlite.getFirstAsync("SELECT name, stock_quantity, unit FROM items WHERE id = ?", [line.itemId]);
+        if (item && Number(item.stock_quantity) <= 5) {
+          await sendTelegramMessage(`⚠️ <b>تنبيه: نقص مخزون!</b>\n📦 الصنف: ${item.name}\n🔢 المتبقي: ${Number(item.stock_quantity)} ${item.unit || ''}\n(بعد بيع ${line.quantity})`);
+        }
+      }
+    } catch (e) {
+      console.log("Auto alerts error:", e);
+    }
+  };
+
   const doSave = async () => {
     if (!customer || !currency) return;
     setSaving(true);
@@ -237,6 +263,7 @@ export default function SalesInv({ onBack }: { onBack: () => void }) {
       Alert.alert("تم الحفظ بنجاح", `رقم الفاتورة: ${currentInvoiceNo}`, [{ text: "طباعة", onPress: async () => { if (currentData) printHtml(await buildInvoiceHtml(currentData)); } }, { text: "مشاركة PDF", onPress: async () => { if (currentData) shareHtmlAsPdf(await buildInvoiceHtml(currentData), `فاتورة-${currentInvoiceNo}.pdf`); } }, { text: "لاحقاً", style: "cancel" }]);
 
       setCustomer(null); setCustomerSearch(""); setLines([]); setNotes(""); setSalesRep(null); setDiscountValue(""); setDiscountType("percent"); setEditingId(null); setEditingNo(null); setDateStr(new Date().toISOString().slice(0, 10)); if (paymentType === "cash") setCashbox(null);
+      sendAutoAlerts(total, currency.symbol || currency.code, lines).catch(console.error);
       await loadItems(); await loadHistory();
     } catch (e) { Alert.alert("تعذر الحفظ", String(e)); } finally { setSaving(false); }
   };
