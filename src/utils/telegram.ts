@@ -1,14 +1,14 @@
-import * as Print from "expo-print";
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Contacts from "expo-contacts/legacy";
+import * as Print from "expo-print";
 import { sqlite } from "../db/local";
 import { parseArabicCommand } from "./gemini";
 
 const TOKEN_KEY = 'tg_token';
 const CHAT_ID_KEY = 'tg_chat_id';
-const LAST_UPDATE_ID_KEY = '@flux_last_tg_update_id';
+const LAST_UPDATE_ID_KEY = '@flux_last_tg_update_id_v2';
 
 export const saveTelegramSettings = async (token: string, chatId: string) => {
   try {
@@ -44,12 +44,8 @@ export const sendTelegramDocument = async (fileUri: string, filename: string, ca
       fieldName: 'document',
       httpMethod: 'POST',
       uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-      parameters: {
-        chat_id: chatId,
-        caption: caption,
-      },
+      parameters: { chat_id: chatId, caption: caption },
     });
-
     const data = JSON.parse(response.body);
     if (!data.ok) throw new Error(data.description);
     return true;
@@ -63,129 +59,125 @@ export const notifyLargeInvoice = async (invoiceData: any) => {
   return await sendTelegramMessage(msg);
 };
 
+// ✅ القوائم والأزرار
+const sendMainMenu = async () => {
+  const { token, chatId } = await getTelegramSettings();
+  if (!token || !chatId) return;
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  const keyboard = {
+    inline_keyboard: [
+      [{ text: "💰 سند قبض", callback_data: "menu_receipt" }],
+      [{ text: "💸 سند صرف", callback_data: "menu_payment" }],
+      [{ text: "📊 كشف حساب عميل", callback_data: "menu_statement" }],
+      [{ text: "📦 استعلام مخزون", callback_data: "menu_stock" }],
+    ],
+  };
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: "👋 مرحباً بك في <b>بوت فلوكس</b>.\n\nاختر العملية التي تريد القيام بها:", parse_mode: 'HTML', reply_markup: JSON.stringify(keyboard) }),
+  });
+};
 
-// ✅ الفهم المحلي السريع (بدون إنترنت وبدون استهلاك حصة Gemini)
+const sendPersistentMenu = async () => {
+  const { token, chatId } = await getTelegramSettings();
+  if (!token || !chatId) return;
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  const replyKeyboard = {
+    keyboard: [
+      [{ text: "💰 سند قبض" }, { text: "💸 سند صرف" }],
+      [{ text: "📊 كشف حساب" }, { text: "📦 مخزون" }],
+      [{ text: "📋 القائمة" }],
+    ],
+    resize_keyboard: true,
+    persistent: true,
+  };
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: "✅ تم تفعيل الأزرار السريعة. يمكنك استخدامها في أي وقت.", reply_markup: JSON.stringify(replyKeyboard) }),
+  });
+};
+
+const handleStatus = async (token: string, chatId: string) => {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
+    const data = await res.json();
+    const pendingCount = data.ok ? data.result.length : "غير معروف";
+    const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
+    await sendTelegramMessage(
+      `📊 <b>حالة النظام</b>\n\n📥 الرسائل المعلقة: ${pendingCount}\n🔢 آخر رقم رسالة تمت معالجتها: ${lastUpdateId || 'لا يوجد'}\n🤖 حالة الذكاء الاصطناعي: يعمل\n\n💡 لإلغاء الرسائل المعلقة أرسل: /cancel`
+    );
+  } catch (e) {
+    await sendTelegramMessage("❌ تعذر جلب الحالة.");
+  }
+};
+
+const handleCancel = async (token: string, chatId: string) => {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=-1`);
+    const data = await res.json();
+    if (data.ok && data.result.length > 0) {
+      const lastUpdateId = data.result[0].update_id;
+      await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=${lastUpdateId + 1}`);
+      await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(lastUpdateId));
+      await sendTelegramMessage("✅ تم إلغاء جميع الأوامر المعلقة. أنت الآن تبدأ من جديد!");
+    } else {
+      await sendTelegramMessage("ℹ️ لا توجد أوامر معلقة لإلغائها.");
+    }
+  } catch (e) {
+    await sendTelegramMessage("❌ تعذر إلغاء الأوامر.");
+  }
+};
+
+const handleHelp = async () => {
+  await sendTelegramMessage(
+    `📚 <b>دليل الأوامر المتاحة</b>\n\n` +
+    `<b>الأوامر النصية السريعة:</b>\n` +
+    `- <code>صرفت 500 بنزين</code>\n` +
+    `- <code>استلمت 1000 من أحمد</code>\n` +
+    `- <code>رصيد أحمد</code>\n` +
+    `- <code>كشف حساب أحمد</code>\n` +
+    `- <code>مخزون ماسورة</code>\n\n` +
+    `<b>الأوامر الإدارية:</b>\n` +
+    `- <code>/start</code> : القائمة الرئيسية\n` +
+    `- <code>/status</code> : حالة النظام\n` +
+    `- <code>/cancel</code> : إلغاء الرسائل المعلقة\n` +
+    `- <code>/help</code> : هذه القائمة\n\n` +
+    `<b>الأوامر المعقدة (بالصوت أو النص):</b>\n` +
+    `تحدث بحرية تامة.`
+  );
+};
+
+// ✅ الفهم المحلي السريع (بدون إنترنت)
 const localParse = (text: string): any | null => {
   const cleaned = text.trim();
 
-  // 1. المصروف: صرفت 500 / دفعت 1000 / مصروف 2000 [بيان اختياري]
   const expenseMatch = cleaned.match(/^(?:صرفت|دفعت|مصروف)\s+(\d+(?:\.\d+)?)\s*(.*)$/);
-  if (expenseMatch) {
-    return {
-      intent: "expense",
-      amount: parseFloat(expenseMatch[1]),
-      description: expenseMatch[2] || "مصروف",
-      cashboxName: undefined,
-      partyName: undefined,
-    };
-  }
+  if (expenseMatch) return { intent: "expense", amount: parseFloat(expenseMatch[1]), description: expenseMatch[2] || "مصروف", cashboxName: undefined, partyName: undefined };
 
-  // 2. الإيراد: استلمت 1000 / قبضت 500 [بيان اختياري]
   const incomeMatch = cleaned.match(/^(?:استلمت|قبضت|إيراد)\s+(\d+(?:\.\d+)?)\s*(.*)$/);
-  if (incomeMatch) {
-    return {
-      intent: "income",
-      amount: parseFloat(incomeMatch[1]),
-      description: incomeMatch[2] || "إيراد",
-      cashboxName: undefined,
-      partyName: undefined,
-    };
-  }
+  if (incomeMatch) return { intent: "income", amount: parseFloat(incomeMatch[1]), description: incomeMatch[2] || "إيراد", cashboxName: undefined, partyName: undefined };
 
-  // 3. استعلام رصيد: رصيد أحمد / كم رصيد أحمد
   const balanceMatch = cleaned.match(/^(?:كم\s+)?رصيد\s+(.+)$/);
-  if (balanceMatch) {
-    return {
-      intent: "query_customer_balance",
-      partyName: balanceMatch[1].trim(),
-      amount: 0,
-      description: "استعلام رصيد",
-    };
-  }
+  if (balanceMatch) return { intent: "query_customer_balance", partyName: balanceMatch[1].trim(), amount: 0, description: "استعلام رصيد" };
 
-  // 4. استعلام مخزون: مخزون ماسورة / كم بقي ماسورة
   const stockMatch = cleaned.match(/^(?:كم\s+)?(?:بقي\s+)?مخزون\s+(.+)$/);
-  if (stockMatch) {
-    return {
-      intent: "query_stock",
-      itemName: stockMatch[1].trim(),
-      amount: 0,
-      description: "استعلام مخزون",
-    };
-  }
+  if (stockMatch) return { intent: "query_stock", itemName: stockMatch[1].trim(), amount: 0, description: "استعلام مخزون" };
 
-  // 5. كشف حساب: كشف حساب أحمد / كشف أحمد
   const statementMatch = cleaned.match(/^كشف\s+(?:حساب\s+)?(.+)$/);
-  if (statementMatch) {
-    return {
-      intent: "query_customer_statement",
-      partyName: statementMatch[1].trim(),
-      amount: 0,
-      description: "كشف حساب",
-    };
-  }
+  if (statementMatch) return { intent: "query_customer_statement", partyName: statementMatch[1].trim(), amount: 0, description: "كشف حساب" };
 
-  // 6. آخر سداد: آخر سداد أحمد / متى آخر سداد من أحمد
   const lastPaymentMatch = cleaned.match(/^(?:متى\s+)?آخر\s+سداد\s+(?:من\s+)?(.+)$/);
-  if (lastPaymentMatch) {
-    return {
-      intent: "query_last_payment",
-      partyName: lastPaymentMatch[1].trim(),
-      amount: 0,
-      description: "آخر سداد",
-    };
-  }
+  if (lastPaymentMatch) return { intent: "query_last_payment", partyName: lastPaymentMatch[1].trim(), amount: 0, description: "آخر سداد" };
 
-  return null; // لم يفهمها محلياً، اذهب إلى Gemini
+  return null;
 };
 
-
-// ✅ دالة فحص وإرسال التذكيرات المستحقة
-export const checkReminders = async () => {
-  try {
-    const now = Date.now();
-    const dueReminders: any = await sqlite.getAllAsync(
-      "SELECT id, title, due_date FROM reminders WHERE due_date <= ? AND is_sent = 0",
-      [now]
-    );
-
-    for (const rem of dueReminders) {
-      await sendTelegramMessage(`⏰ <b>تذكير مستحق:</b>\n${rem.title}\n📅 التاريخ: ${new Date(rem.due_date).toLocaleDateString('ar-YE')}`);
-      await sqlite.runAsync("UPDATE reminders SET is_sent = 1 WHERE id = ?", [rem.id]);
-    }
-  } catch (e) {
-    console.log("Reminders check error:", e);
-  }
-};
-
-// ✅ دالة إضافة تذكير جديد
-export const addReminder = async (title: string, dueDate: number) => {
-  try {
-    const id = `REM-${Date.now()}`;
-    const now = Date.now();
-    await sqlite.runAsync(
-      "INSERT INTO reminders (id, title, due_date, is_sent, created_at) VALUES (?, ?, ?, 0, ?)",
-      [id, title, dueDate, now]
-    );
-    return true;
-  } catch (e) {
-    console.log("Add reminder error:", e);
-    return false;
-  }
-};
-
-
-// ✅ ذاكرة السياق: حفظ واسترجاع آخر عميل
-const LAST_CUSTOMER_KEY = '@flux_last_customer';
-const saveLastCustomer = async (name: string) => { await AsyncStorage.setItem(LAST_CUSTOMER_KEY, name); };
-const getLastCustomer = async () => { return await AsyncStorage.getItem(LAST_CUSTOMER_KEY); };
-
+// ✅ دالة معالجة النصوص
 const processTextCommand = async (text: string) => {
   try {
-    // 1. المحاولة المحلية أولاً (سريعة جداً)
     let parsed = localParse(text);
-    
-    // 2. إذا فشل الفهم المحلي، نلجأ إلى الذكاء الاصطناعي (Gemini)
     if (!parsed) {
       parsed = await parseArabicCommand(text);
     }
@@ -194,25 +186,15 @@ const processTextCommand = async (text: string) => {
       const expenseId = `EXP-${Date.now()}`;
       const expenseNo = `EXP-${String(Date.now()).slice(-6)}`;
       const now = Date.now();
-      
-      const cashbox: any = await sqlite.getFirstAsync("SELECT id FROM cashboxes WHERE cashbox_type = 'analytical' LIMIT 1");
+      const cashbox = await findCashbox(parsed.cashboxName);
       const cashboxId = cashbox ? cashbox.id : null;
-
-      if (!cashboxId) {
-        await sendTelegramMessage("❌ لا يوجد صندوق تحليلي مسجل في التطبيق لخصم المصروف منه.");
-        return;
-      }
-
-      let partyId = null;
-      let pType = 'none';
-      let pName = 'مصروف ذكي';
-
-      // البحث عن حساب في دليل الحسابات إذا تم ذكره
+      if (!cashboxId) return await sendTelegramMessage("❌ لا يوجد صندوق تحليلي.");
+      
+      let partyId = null, pType = 'none', pName = 'مصروف ذكي';
       if (parsed.accountName) {
         const acc: any = await sqlite.getFirstAsync("SELECT id, name FROM accounts WHERE name LIKE ? LIMIT 1", [`%${parsed.accountName}%`]);
         if (acc) { partyId = acc.id; pType = 'account'; pName = acc.name; }
       }
-
       if (!partyId && parsed.partyName) {
         const supp: any = await sqlite.getFirstAsync("SELECT id, name FROM suppliers WHERE name LIKE ? LIMIT 1", [`%${parsed.partyName}%`]);
         const cust: any = await sqlite.getFirstAsync("SELECT id, name FROM customers WHERE name LIKE ? LIMIT 1", [`%${parsed.partyName}%`]);
@@ -225,38 +207,25 @@ const processTextCommand = async (text: string) => {
         [expenseId, expenseNo, cashboxId, pName, parsed.amount, parsed.description || text, now, pType, partyId, parsed.amount]
       );
       await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE id = ?", [parsed.amount, cashboxId]);
+      if (pType === 'supplier' && partyId) await sqlite.runAsync("UPDATE suppliers SET balance = balance - ? WHERE id = ?", [parsed.amount, partyId]);
+      else if (pType === 'customer' && partyId) await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [parsed.amount, partyId]);
+      else if (pType === 'account' && partyId) await sqlite.runAsync("UPDATE accounts SET balance = balance - ? WHERE id = ?", [parsed.amount, partyId]);
       
-      if (pType === 'supplier' && partyId) {
-        await sqlite.runAsync("UPDATE suppliers SET balance = balance - ? WHERE id = ?", [parsed.amount, partyId]);
-      } else if (pType === 'customer' && partyId) {
-        await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [parsed.amount, partyId]);
-      }
-
-      await sendTelegramMessage(`✅ تم تسجيل المصروف:\n💸 ${parsed.amount} YER\n📝 ${parsed.description}\n👤 الطرف: ${pName}`);
+      await sendTelegramMessage(`✅ تم تسجيل المصروف:\n💸 ${parsed.amount} YER\n📝 ${parsed.description}\n👤 الطرف: ${pName}\n🏦 الصندوق: ${cashbox.name}`);
     } 
     else if (parsed.intent === "income" && parsed.amount > 0) {
       const incomeId = `INC-${Date.now()}`;
       const incomeNo = `INC-${String(Date.now()).slice(-6)}`;
       const now = Date.now();
-      
-      const cashbox: any = await sqlite.getFirstAsync("SELECT id FROM cashboxes WHERE cashbox_type = 'analytical' LIMIT 1");
+      const cashbox = await findCashbox(parsed.cashboxName);
       const cashboxId = cashbox ? cashbox.id : null;
+      if (!cashboxId) return await sendTelegramMessage("❌ لا يوجد صندوق تحليلي.");
 
-      if (!cashboxId) {
-        await sendTelegramMessage("❌ لا يوجد صندوق تحليلي مسجل في التطبيق لإضافة الإيراد إليه.");
-        return;
-      }
-
-      let partyId = null;
-      let pType = 'none';
-      let pName = 'إيراد ذكي';
-
-      // البحث عن حساب في دليل الحسابات إذا تم ذكره
+      let partyId = null, pType = 'none', pName = 'إيراد ذكي';
       if (parsed.accountName) {
         const acc: any = await sqlite.getFirstAsync("SELECT id, name FROM accounts WHERE name LIKE ? LIMIT 1", [`%${parsed.accountName}%`]);
         if (acc) { partyId = acc.id; pType = 'account'; pName = acc.name; }
       }
-
       if (!partyId && parsed.partyName) {
         const cust: any = await sqlite.getFirstAsync("SELECT id, name FROM customers WHERE name LIKE ? LIMIT 1", [`%${parsed.partyName}%`]);
         const supp: any = await sqlite.getFirstAsync("SELECT id, name FROM suppliers WHERE name LIKE ? LIMIT 1", [`%${parsed.partyName}%`]);
@@ -269,169 +238,86 @@ const processTextCommand = async (text: string) => {
         [incomeId, incomeNo, cashboxId, pName, parsed.amount, parsed.description || text, now, pType, partyId, parsed.amount]
       );
       await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [parsed.amount, cashboxId]);
+      if (pType === 'customer' && partyId) await sqlite.runAsync("UPDATE customers SET balance = balance - ? WHERE id = ?", [parsed.amount, partyId]);
+      else if (pType === 'supplier' && partyId) await sqlite.runAsync("UPDATE suppliers SET balance = balance - ? WHERE id = ?", [parsed.amount, partyId]);
+      else if (pType === 'account' && partyId) await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [parsed.amount, partyId]);
       
-      if (pType === 'customer' && partyId) {
-        await sqlite.runAsync("UPDATE customers SET balance = balance - ? WHERE id = ?", [parsed.amount, partyId]);
-      } else if (pType === 'supplier' && partyId) {
-        await sqlite.runAsync("UPDATE suppliers SET balance = balance - ? WHERE id = ?", [parsed.amount, partyId]);
-      }
-
-      await sendTelegramMessage(`✅ تم تسجيل الإيراد:\n💰 ${parsed.amount} YER\n📝 ${parsed.description}\n👤 الطرف: ${pName}`);
+      await sendTelegramMessage(`✅ تم تسجيل الإيراد:\n💰 ${parsed.amount} YER\n📝 ${parsed.description}\n👤 الطرف: ${pName}\n🏦 الصندوق: ${cashbox.name}`);
     }
-    
+    else if (parsed.intent === "query_customer_balance" && parsed.partyName) {
+      const cust: any = await sqlite.getFirstAsync("SELECT name, balance FROM customers WHERE name LIKE ? LIMIT 1", [`%${parsed.partyName}%`]);
+      if (cust) {
+        let sarRate = 140;
+        try { const cur: any = await sqlite.getFirstAsync("SELECT exchange_rate FROM currencies WHERE code = 'SAR'"); if (cur?.exchange_rate) sarRate = Number(cur.exchange_rate); } catch(e) {}
+        const bal = Number(cust.balance);
+        await sendTelegramMessage(`👤 العميل: ${cust.name}\n💰 الرصيد الحالي: ${bal.toFixed(2)} YER\n≈ ${(bal / sarRate).toFixed(2)} SAR`);
+      } else await sendTelegramMessage(`❌ لم يتم العثور على العميل "${parsed.partyName}"`);
+    }
+    else if (parsed.intent === "query_last_payment" && parsed.partyName) {
+      const cust: any = await sqlite.getFirstAsync("SELECT id, name FROM customers WHERE name LIKE ? LIMIT 1", [`%${parsed.partyName}%`]);
+      if (cust) {
+        const lastVoucher: any = await sqlite.getFirstAsync("SELECT amount, created_at, description FROM vouchers WHERE party_id = ? AND voucher_type = 'receipt' ORDER BY created_at DESC LIMIT 1", [cust.id]);
+        if (lastVoucher) {
+          const date = new Date(lastVoucher.created_at).toLocaleDateString('ar-YE');
+          await sendTelegramMessage(`👤 العميل: ${cust.name}\n📅 آخر سداد: ${date}\n💸 المبلغ: ${Number(lastVoucher.amount).toFixed(2)} YER\n📝 البيان: ${lastVoucher.description || 'بدون بيان'}`);
+        } else await sendTelegramMessage(`👤 العميل: ${cust.name}\n⚠️ لا يوجد سندات قبض مسجلة.`);
+      } else await sendTelegramMessage(`❌ لم يتم العثور على العميل "${parsed.partyName}"`);
+    }
+    else if (parsed.intent === "query_stock" && parsed.itemName) {
+      const item: any = await sqlite.getFirstAsync("SELECT name, stock_quantity, unit FROM items WHERE name LIKE ? LIMIT 1", [`%${parsed.itemName}%`]);
+      if (item) await sendTelegramMessage(`📦 الصنف: ${item.name}\n🔢 الكمية المتوفرة: ${Number(item.stock_quantity)} ${item.unit || ''}`);
+      else await sendTelegramMessage(`❌ لم يتم العثور على الصنف "${parsed.itemName}"`);
+    }
     else if (parsed.intent === "query_customer_statement" && parsed.partyName) {
-      await saveLastCustomer(parsed.partyName);
-      try {
-        await sendTelegramMessage("⏳ جاري إعداد كشف الحساب...");
-        
-        // 1. البحث عن العميل
-        const cust: any = await sqlite.getFirstAsync("SELECT id, name, balance, phone FROM customers WHERE name LIKE ? LIMIT 1", [`%${parsed.partyName}%`]);
-        if (!cust) {
-          await sendTelegramMessage(`❌ لم يتم العثور على العميل "${parsed.partyName}"`);
-          return;
-        }
+      await sendTelegramMessage("⏳ جاري إعداد كشف الحساب...");
+      const cust: any = await sqlite.getFirstAsync("SELECT id, name, balance, phone FROM customers WHERE name LIKE ? LIMIT 1", [`%${parsed.partyName}%`]);
+      if (!cust) return await sendTelegramMessage(`❌ لم يتم العثور على العميل "${parsed.partyName}"`);
 
-        // 2. جلب الفواتير والسندات
-        const invoices: any = await sqlite.getAllAsync("SELECT id, invoice_no, total, created_at, invoice_type FROM invoices WHERE party_id = ? ORDER BY created_at ASC", [cust.id]);
-        const vouchers: any = await sqlite.getAllAsync("SELECT id, voucher_no, amount, created_at, voucher_type FROM vouchers WHERE party_id = ? ORDER BY created_at ASC", [cust.id]);
+      const invoices: any = await sqlite.getAllAsync("SELECT id, invoice_no, total, created_at, invoice_type FROM invoices WHERE party_id = ? ORDER BY created_at ASC", [cust.id]);
+      const vouchers: any = await sqlite.getAllAsync("SELECT id, voucher_no, amount, created_at, voucher_type FROM vouchers WHERE party_id = ? ORDER BY created_at ASC", [cust.id]);
 
-        // 3. دمج الحركات وترتيبها
-        const transactions: any[] = [];
-        invoices.forEach((inv: any) => {
-          transactions.push({
-            date: new Date(inv.created_at).toLocaleDateString('ar-YE'),
-            ref: inv.invoice_no,
-            type: inv.invoice_type === 'sales' ? 'فاتورة مبيعات' : 'فاتورة مشتريات',
-            debit: inv.invoice_type === 'sales' ? Number(inv.total) : 0, // العميل مدين
-            credit: inv.invoice_type === 'purchase' ? Number(inv.total) : 0,
-          });
-        });
-        vouchers.forEach((v: any) => {
-          transactions.push({
-            date: new Date(v.created_at).toLocaleDateString('ar-YE'),
-            ref: v.voucher_no,
-            type: v.voucher_type === 'receipt' ? 'سند قبض' : 'سند دفع',
-            debit: v.voucher_type === 'payment' ? Number(v.amount) : 0,
-            credit: v.voucher_type === 'receipt' ? Number(v.amount) : 0,
-          });
-        });
+      const transactions: any[] = [];
+      invoices.forEach((inv: any) => transactions.push({ date: new Date(inv.created_at).toLocaleDateString('ar-YE'), ref: inv.invoice_no, type: inv.invoice_type === 'sales' ? 'فاتورة مبيعات' : 'فاتورة مشتريات', debit: inv.invoice_type === 'sales' ? Number(inv.total) : 0, credit: inv.invoice_type === 'purchase' ? Number(inv.total) : 0 }));
+      vouchers.forEach((v: any) => transactions.push({ date: new Date(v.created_at).toLocaleDateString('ar-YE'), ref: v.voucher_no, type: v.voucher_type === 'receipt' ? 'سند قبض' : 'سند دفع', debit: v.voucher_type === 'payment' ? Number(v.amount) : 0, credit: v.voucher_type === 'receipt' ? Number(v.amount) : 0 }));
+      transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const rowsHtml = transactions.map(t => `<tr><td>${t.date}</td><td>${t.ref}</td><td>${t.type}</td><td>${t.debit > 0 ? t.debit.toFixed(2) : '-'}</td><td>${t.credit > 0 ? t.credit.toFixed(2) : '-'}</td></tr>`).join('');
 
-        // 4. بناء جدول HTML
-        const rowsHtml = transactions.map(t => `
-          <tr>
-            <td>${t.date}</td>
-            <td>${t.ref}</td>
-            <td>${t.type}</td>
-            <td>${t.debit > 0 ? t.debit.toFixed(2) : '-'}</td>
-            <td>${t.credit > 0 ? t.credit.toFixed(2) : '-'}</td>
-          </tr>
-        `).join('');
+      const html = `<html><head><meta charset="utf-8"><style>body{font-family:'Cairo',sans-serif;direction:rtl;padding:20px}h1{text-align:center;color:#0B2545}.header{text-align:center;margin-bottom:30px}.info{margin-bottom:20px;font-size:14px}table{width:100%;border-collapse:collapse;margin-bottom:30px}th,td{border:1px solid #CBD5E1;padding:8px;text-align:right}th{background-color:#F1F5F9;color:#0B2545}.total{font-size:18px;font-weight:bold;text-align:left;margin-top:20px;color:#0B2545}</style></head><body><div class="header"><h1>فلوكس - كشف حساب</h1><p>لأنابيب أكثر نظافة</p></div><div class="info"><p><strong>العميل:</strong> ${cust.name}</p><p><strong>الهاتف:</strong> ${cust.phone || 'غير مسجل'}</p><p><strong>تاريخ الكشف:</strong> ${new Date().toLocaleDateString('ar-YE')}</p></div><table><thead><tr><th>التاريخ</th><th>المرجع</th><th>البيان</th><th>مدين (عليه)</th><th>دائن (له)</th></tr></thead><tbody>${rowsHtml}</tbody></table><div class="total">الرصيد الحالي: ${Number(cust.balance).toFixed(2)} YER</div></body></html>`;
 
-        const html = `
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <style>
-                body { font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; }
-                h1 { text-align: center; color: #0B2545; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .info { margin-bottom: 20px; font-size: 14px; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                th, td { border: 1px solid #CBD5E1; padding: 8px; text-align: right; }
-                th { background-color: #F1F5F9; color: #0B2545; }
-                .total { font-size: 18px; font-weight: bold; text-align: left; margin-top: 20px; color: #0B2545; }
-              </style>
-            </head>
-            <body>
-              <div class="header">
-                <h1>فلوكس - كشف حساب</h1>
-                <p>لأنابيب أكثر نظافة</p>
-              </div>
-              <div class="info">
-                <p><strong>العميل:</strong> ${cust.name}</p>
-                <p><strong>الهاتف:</strong> ${cust.phone || 'غير مسجل'}</p>
-                <p><strong>تاريخ الكشف:</strong> ${new Date().toLocaleDateString('ar-YE')}</p>
-              </div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>التاريخ</th>
-                    <th>المرجع</th>
-                    <th>البيان</th>
-                    <th>مدين (عليه)</th>
-                    <th>دائن (له)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${rowsHtml}
-                </tbody>
-              </table>
-              <div class="total">
-                الرصيد الحالي: ${Number(cust.balance).toFixed(2)} YER
-              </div>
-            </body>
-          </html>
-        `;
-
-        // 5. إنشاء الـ PDF وإرساله
-        const { uri } = await Print.printToFileAsync({ html });
-        const filename = `statement_${Date.now()}.pdf`;
-        
-        // نسخ الملف باسم مقروء
-        const newUri = FileSystem.cacheDirectory + filename;
-        await FileSystem.copyAsync({ from: uri, to: newUri });
-        
-        // إرسال الملف عبر تليجرام
-        await sendTelegramDocument(newUri, filename, `📊 كشف حساب العميل: ${cust.name}\n💰 الرصيد الحالي: ${Number(cust.balance).toFixed(2)} YER`);
-
-      } catch (err) {
-        await sendTelegramMessage(`❌ خطأ في إعداد كشف الحساب: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      const { uri } = await Print.printToFileAsync({ html });
+      const filename = `statement_${Date.now()}.pdf`;
+      const newUri = FileSystem.cacheDirectory + filename;
+      await FileSystem.copyAsync({ from: uri, to: newUri });
+      await sendTelegramDocument(newUri, filename, `📊 كشف حساب العميل: ${cust.name}\n💰 الرصيد الحالي: ${Number(cust.balance).toFixed(2)} YER`);
     }
-
     else if (parsed.intent === "create_customer" && parsed.partyName) {
       let phoneNumber = parsed.phone || "";
-      
       if (parsed.useContact || (!parsed.phone && parsed.partyName)) {
         try {
           const { status } = await Contacts.requestPermissionsAsync();
           if (status === 'granted') {
-            const { data } = await Contacts.getContactsAsync({
-              fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name],
-            });
+            const { data } = await Contacts.getContactsAsync({ fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name] });
             const contact = data.find((c: any) => c.name && c.name.includes(parsed.partyName || ""));
-            if (contact && contact.phoneNumbers && contact.phoneNumbers.length > 0) {
-              phoneNumber = contact.phoneNumbers[0].number || "";
-            }
+            if (contact && contact.phoneNumbers && contact.phoneNumbers.length > 0) phoneNumber = contact.phoneNumbers[0].number || "";
           }
-        } catch (e) { console.log("Contact search error", e); }
+        } catch (e) {}
       }
-
       const lastCustomer: any = await sqlite.getFirstAsync("SELECT code FROM customers WHERE code LIKE 'CUS-%' ORDER BY code DESC LIMIT 1");
       let nextCode = "CUS-001";
       if (lastCustomer && lastCustomer.code) {
         const lastNum = parseInt(lastCustomer.code.replace(/\D/g, ""), 10);
         nextCode = `CUS-${String(lastNum + 1).padStart(3, "0")}`;
       }
-      
-      const customerId = `CUS-${Date.now()}`;
-      const now = Date.now();
-      
-      await sqlite.runAsync(
-        `INSERT INTO customers (id, code, name, phone, balance, created_at, updated_at) VALUES (?, ?, ?, ?, 0, ?, ?)`,
-        [customerId, nextCode, parsed.partyName, phoneNumber, now, now]
-      );
-      
+      await sqlite.runAsync(`INSERT INTO customers (id, code, name, phone, balance, created_at, updated_at) VALUES (?, ?, ?, ?, 0, ?, ?)`, [`CUS-${Date.now()}`, nextCode, parsed.partyName, phoneNumber, Date.now(), Date.now()]);
       await sendTelegramMessage(`✅ تم إضافة العميل بنجاح:\n👤 الاسم: ${parsed.partyName}\n🔢 الكود: ${nextCode}\n📞 الهاتف: ${phoneNumber || "غير مسجل"}`);
     }
     else {
-      await sendTelegramMessage("🤖 لم أفهم الأمر. جرب:\n- \"صرفت 500 بنزين\"\n- \"استلمت 1000 من أحمد\"\n- \"افتح حساب عميل جديد باسم...\"");
+      if (parsed.error) await sendTelegramMessage(`❌ خطأ من Gemini: ${parsed.error}`);
+      else await sendTelegramMessage("🤖 لم أفهم الأمر. جرب:\n- \"صرفت 500 بنزين\"\n- \"استلمت 1000 من أحمد\"\n- \"افتح حساب عميل جديد باسم...\"");
     }
-  } catch (error) {
-    console.log("Error processing text command:", error);
-    await sendTelegramMessage("❌ حدث خطأ أثناء تنفيذ الأمر. تفقد السجل.");
+  } catch (error: any) {
+    await sendTelegramMessage(`❌ خطأ: ${error.message || error}`);
   }
 };
 
@@ -440,155 +326,34 @@ const processVoiceCommand = async (voice: any, token: string) => {
     await sendTelegramMessage("🎤 جاري تحليل الرسالة الصوتية...");
     const fileRes = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${voice.file_id}`);
     const fileData = await fileRes.json();
-    if (!fileData.ok) throw new Error("تعذر الحصول على الملف من تليجرام");
-
-    const filePath = fileData.result.file_path;
-    const audioUrl = `https://api.telegram.org/file/bot${token}/${filePath}`;
-    
+    if (!fileData.ok) throw new Error("تعذر الحصول على الملف");
+    const audioUrl = `https://api.telegram.org/file/bot${token}/${fileData.result.file_path}`;
     const localPath = FileSystem.cacheDirectory + `voice_${Date.now()}.ogg`;
     await FileSystem.downloadAsync(audioUrl, localPath);
     const base64Audio = await FileSystem.readAsStringAsync(localPath, { encoding: FileSystem.EncodingType.Base64 });
-    
     const { GoogleGenerativeAI } = require("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI("AQ.Ab8RN6J7bRV7yGwhk6NI9mp3W4Giaa5iOxz_4S2sj7_-nFLRsg"); // سيتم استبداله لاحقاً
+    const genAI = new GoogleGenerativeAI("AQ.Ab8RN6J7bRV7yGwhk6NI9mp3W4Giaa5iOxz_4S2sj7_-nFLRsg");
     const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-    
-    const result = await model.generateContent([
-      "استمع لهذه الرسالة الصوتية العربية وحولها إلى نص مكتوب فقط، دون أي تعليق أو إضافة.",
-      { inlineData: { data: base64Audio, mimeType: "audio/ogg" } }
-    ]);
-    
+    const result = await model.generateContent(["استمع لهذه الرسالة الصوتية العربية وحولها إلى نص مكتوب فقط، دون أي تعليق أو إضافة.", { inlineData: { data: base64Audio, mimeType: "audio/ogg" } }]);
     const transcribedText = result.response.text().trim();
     await FileSystem.deleteAsync(localPath, { idempotent: true });
-    
     if (!transcribedText) throw new Error("لم يتمكن الذكاء الاصطناعي من فهم الصوت");
-    
     await sendTelegramMessage(`📝 سمعتك تقول: "${transcribedText}"\n⏳ جاري التنفيذ...`);
-    
     await processTextCommand(transcribedText);
-    
   } catch (error) {
     await sendTelegramMessage(`❌ تعذر معالجة الصوت.`);
   }
 };
 
-
-// ✅ دالة إرسال القائمة الرئيسية (Inline Keyboard)
-const sendMainMenu = async () => {
-  const { token, chatId } = await getTelegramSettings();
-  if (!token || !chatId) return;
-  
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
-  const keyboard = {
-    inline_keyboard: [
-      [{ text: "💰 سند قبض", callback_data: "menu_receipt" }],
-      [{ text: "💸 سند صرف", callback_data: "menu_payment" }],
-      [{ text: "📊 كشف حساب عميل", callback_data: "menu_statement" }],
-      [{ text: "📦 استعلام مخزون", callback_data: "menu_stock" }],
-    ],
-  };
-
-  await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: "👋 مرحباً بك في <b>بوت فلوكس</b>.\n\nاختر العملية التي تريد القيام بها:",
-      parse_mode: 'HTML',
-      reply_markup: JSON.stringify(keyboard),
-    }),
-  });
-};
-
-
-// ✅ دالة عرض الحالة والأوامر المعلقة
-const handleStatus = async (token: string, chatId: string) => {
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
-    const data = await res.json();
-    const pendingCount = data.ok ? data.result.length : "غير معروف";
-    try { await sqlite.execAsync("CREATE TABLE IF NOT EXISTS reminders (id TEXT PRIMARY KEY, title TEXT NOT NULL, due_date INTEGER NOT NULL, is_sent INTEGER DEFAULT 0, created_at INTEGER NOT NULL);"); } catch(e) {}
-    const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
-    await sendTelegramMessage(
-      `📊 <b>حالة النظام</b>\n\n` +
-      `📥 الرسائل المعلقة: ${pendingCount}\n` +
-      `🔢 آخر رقم رسالة تمت معالجتها: ${lastUpdateId || 'لا يوجد'}\n` +
-      `🤖 حالة الذكاء الاصطناعي: يعمل (تأكد من الحصة اليومية)\n\n` +
-      `💡 لإلغاء الرسائل المعلقة أرسل: /cancel`
-    );
-  } catch (e) {
-    await sendTelegramMessage("❌ تعذر جلب الحالة. تأكد من اتصال الإنترنت.");
+const findCashbox = async (cashboxName?: string) => {
+  if (cashboxName) {
+    const cb: any = await sqlite.getFirstAsync("SELECT id, name FROM cashboxes WHERE name LIKE ? AND cashbox_type = 'analytical' LIMIT 1", [`%${cashboxName}%`]);
+    if (cb) return cb;
   }
-};
-
-// ✅ دالة إلغاء الأوامر المعلقة
-const handleCancel = async (token: string, chatId: string) => {
-  try {
-    // جلب آخر رسالة لتخطي كل ما قبلها
-    const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=-1`);
-    const data = await res.json();
-    if (data.ok && data.result.length > 0) {
-      const lastUpdateId = data.result[0].update_id;
-      // إخبار تليجرام بتجاهل كل ما قبل هذه الرسالة
-      await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=${lastUpdateId + 1}`);
-      await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(lastUpdateId));
-      await sendTelegramMessage("✅ تم إلغاء جميع الأوامر المعلقة. أنت الآن تبدأ من جديد!");
-    } else {
-      await sendTelegramMessage("ℹ️ لا توجد أوامر معلقة لإلغائها.");
-    }
-  } catch (e) {
-    await sendTelegramMessage("❌ تعذر إلغاء الأوامر.");
-  }
-};
-
-// ✅ دالة عرض قائمة الأوامر
-const handleHelp = async () => {
-  await sendTelegramMessage(
-    `📚 <b>دليل الأوامر المتاحة</b>\n\n` +
-    `<b>الأوامر النصية السريعة:</b>\n` +
-    `- <code>صرفت 500 بنزين</code>\n` +
-    `- <code>استلمت 1000 من أحمد</code>\n` +
-    `- <code>رصيد أحمد</code>\n` +
-    `- <code>كشف حساب أحمد</code>\n` +
-    `- <code>مخزون ماسورة</code>\n\n` +
-    `<b>الأوامر الإدارية:</b>\n` +
-    `- <code>/start</code> : القائمة الرئيسية\n` +
-    `- <code>/status</code> : حالة النظام والرسائل المعلقة\n` +
-    `- <code>/cancel</code> : إلغاء الأوامر المعلقة\n` +
-    `- <code>/help</code> : هذه القائمة\n\n` +
-    `<b>الأوامر المعقدة (بالصوت أو النص):</b>\n` +
-    `تحدث بحرية تامة (مثال: "بعت لماكس مول 100 علبة بسعر 3 ريال ونص").`
-  );
-};
-
-
-// ✅ دالة إرسال الأزرار الثابتة بجانب حقل الكتابة
-const sendPersistentMenu = async () => {
-  const { token, chatId } = await getTelegramSettings();
-  if (!token || !chatId) return;
-  
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
-  
-  // الأزرار التي ستظهر بجانب حقل الكتابة
-  const replyKeyboard = {
-    keyboard: [
-      [{ text: "💰 سند قبض" }, { text: "💸 سند صرف" }],
-      [{ text: "📊 كشف حساب" }, { text: "📦 مخزون" }],
-      [{ text: "📋 القائمة" }],
-    ],
-    resize_keyboard: true, // تصغير حجم الأزرار
-    persistent: true,      // إبقاء الأزرار ظاهرة دائماً
-  };
-
-  await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: "✅ تم تفعيل الأزرار السريعة. يمكنك استخدامها في أي وقت.",
-      reply_markup: JSON.stringify(replyKeyboard),
-    }),
-  });
+  const yemeni: any = await sqlite.getFirstAsync("SELECT id, name FROM cashboxes WHERE cashbox_type = 'analytical' AND (name LIKE '%نقدي%' OR name LIKE '%يمني%' OR name LIKE '%كاش%') LIMIT 1");
+  if (yemeni) return yemeni;
+  const first: any = await sqlite.getFirstAsync("SELECT id, name FROM cashboxes WHERE cashbox_type = 'analytical' LIMIT 1");
+  return first;
 };
 
 export const checkTelegramCommands = async () => {
@@ -596,11 +361,11 @@ export const checkTelegramCommands = async () => {
     const { token, chatId } = await getTelegramSettings();
     if (!token || !chatId) return;
 
-    // إنشاء الأعمدة الناقصة تلقائياً لضمان عدم فشل الأوامر
+    // ترحيل الجداول
     try { await sqlite.execAsync("ALTER TABLE vouchers ADD COLUMN party_amount REAL;"); } catch(e) {}
     try { await sqlite.execAsync("ALTER TABLE customers ADD COLUMN updated_at INTEGER;"); } catch(e) {}
-
     try { await sqlite.execAsync("CREATE TABLE IF NOT EXISTS reminders (id TEXT PRIMARY KEY, title TEXT NOT NULL, due_date INTEGER NOT NULL, is_sent INTEGER DEFAULT 0, created_at INTEGER NOT NULL);"); } catch(e) {}
+
     const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
     const offset = lastUpdateId ? parseInt(lastUpdateId, 10) + 1 : 0;
 
@@ -610,39 +375,82 @@ export const checkTelegramCommands = async () => {
 
     if (!data.ok || !data.result || data.result.length === 0) return;
 
-    // جلب آخر 3 رسائل كحد أقصى لتجنب البطء
-    const messagesToProcess = data.result.slice(-3); 
+    for (const update of data.result) {
+      // ✅ الأزرار (Callback)
+      if (update.callback_query) {
+        const cb = update.callback_query;
+        if (cb.data === "menu_receipt") await sendTelegramMessage("💰 اختر العميل لسند القبض:");
+        else if (cb.data === "menu_payment") await sendTelegramMessage("💸 اختر الطرف لسند الصرف:");
+        else if (cb.data === "menu_statement") await sendTelegramMessage("📊 اختر العميل لكشف الحساب:");
+        else if (cb.data === "menu_stock") await sendTelegramMessage("📦 اختر الصنف للاستعلام عن المخزون:");
+        try { await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ callback_query_id: cb.id }) }); } catch (e) {}
+        await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));
+        continue;
+      }
 
-    for (const update of messagesToProcess) {
       const message = update.message;
       if (!message) continue;
       if (String(message.chat.id) !== String(chatId)) continue;
 
-      // إرسال الأمر للمعالجة
+      // ✅ معالجة الأوامر الإدارية فوراً (قبل أي شيء آخر)
       if (message.text) {
-        // دعم "كم رصيده" باستخدام الذاكرة
-        if (message.text.trim().match(/^(?:كم\s+)?رصيده\??$/)) {
-          const lastName = await getLastCustomer();
-          if (lastName) {
-            await processTextCommand(`رصيد ${lastName}`);
-            await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));
-            continue;
-          } else {
-            await sendTelegramMessage("⚠️ لم أتعرف على العميل. جرب: رصيد أحمد");
+        const txt = message.text.trim();
+        if (txt === '/start' || txt === '📋 القائمة') {
+          await sendPersistentMenu();
+          await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));
+          continue;
+        }
+        if (txt === '/status') { await handleStatus(token, chatId); await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id)); continue; }
+        if (txt === '/cancel' || txt === 'الغي') { await handleCancel(token, chatId); await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id)); continue; }
+        if (txt === '/help') { await handleHelp(); await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id)); continue; }
+        
+        // الأزرار الثابتة
+        if (txt === '💰 سند قبض') { await sendTelegramMessage("💰 تم اختيار سند قبض. اكتب: استلمت [المبلغ] من [الاسم]"); await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id)); continue; }
+        if (txt === '💸 سند صرف') { await sendTelegramMessage("💸 تم اختيار سند صرف. اكتب: صرفت [المبلغ] [البيان]"); await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id)); continue; }
+        if (txt === '📊 كشف حساب') { await sendTelegramMessage("📊 تم اختيار كشف حساب. اكتب: كشف [اسم العميل]"); await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id)); continue; }
+        if (txt === '📦 مخزون') { await sendTelegramMessage("📦 تم اختيار المخزون. اكتب: مخزون [اسم الصنف]"); await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id)); continue; }
+        
+        // التذكيرات
+        if (txt.startsWith('ذكرني')) {
+          const match = txt.match(/ذكرني\s+(.+?)\s+بعد\s+(\d+)\s+أيام?/);
+          if (match) {
+            const title = match[1].trim();
+            const days = parseInt(match[2], 10);
+            const dueDate = Date.now() + (days * 24 * 60 * 60 * 1000);
+            const id = `REM-${Date.now()}`;
+            try {
+              await sqlite.runAsync("INSERT INTO reminders (id, title, due_date, is_sent, created_at) VALUES (?, ?, ?, 0, ?)", [id, title, dueDate, Date.now()]);
+              await sendTelegramMessage(`✅ تم إضافة التذكير:\n📝 ${title}\n📅 بعد ${days} أيام (${new Date(dueDate).toLocaleDateString('ar-YE')})`);
+            } catch (e) { await sendTelegramMessage("❌ تعذر إضافة التذكير."); }
             await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));
             continue;
           }
         }
-        await processTextCommand(message.text.trim());
+
+        // معالجة النصوص العادية
+        await processTextCommand(txt);
       }
       else if (message.voice) {
         await processVoiceCommand(message.voice, token);
       }
 
-      // حفظ رقم الرسالة التي تمت معالجتها
       await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));
     }
   } catch (error) {
     console.log("Error checking Telegram commands:", error);
+  }
+};
+
+// ✅ فحص التذكيرات المستحقة
+export const checkReminders = async () => {
+  try {
+    const now = Date.now();
+    const dueReminders: any = await sqlite.getAllAsync("SELECT id, title, due_date FROM reminders WHERE due_date <= ? AND is_sent = 0", [now]);
+    for (const rem of dueReminders) {
+      await sendTelegramMessage(`⏰ <b>تذكير مستحق:</b>\n${rem.title}\n📅 التاريخ: ${new Date(rem.due_date).toLocaleDateString('ar-YE')}`);
+      await sqlite.runAsync("UPDATE reminders SET is_sent = 1 WHERE id = ?", [rem.id]);
+    }
+  } catch (e) {
+    console.log("Reminders check error:", e);
   }
 };
