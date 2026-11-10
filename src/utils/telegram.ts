@@ -63,9 +63,132 @@ export const notifyLargeInvoice = async (invoiceData: any) => {
   return await sendTelegramMessage(msg);
 };
 
+
+// ✅ الفهم المحلي السريع (بدون إنترنت وبدون استهلاك حصة Gemini)
+const localParse = (text: string): any | null => {
+  const cleaned = text.trim();
+
+  // 1. المصروف: صرفت 500 / دفعت 1000 / مصروف 2000 [بيان اختياري]
+  const expenseMatch = cleaned.match(/^(?:صرفت|دفعت|مصروف)\s+(\d+(?:\.\d+)?)\s*(.*)$/);
+  if (expenseMatch) {
+    return {
+      intent: "expense",
+      amount: parseFloat(expenseMatch[1]),
+      description: expenseMatch[2] || "مصروف",
+      cashboxName: undefined,
+      partyName: undefined,
+    };
+  }
+
+  // 2. الإيراد: استلمت 1000 / قبضت 500 [بيان اختياري]
+  const incomeMatch = cleaned.match(/^(?:استلمت|قبضت|إيراد)\s+(\d+(?:\.\d+)?)\s*(.*)$/);
+  if (incomeMatch) {
+    return {
+      intent: "income",
+      amount: parseFloat(incomeMatch[1]),
+      description: incomeMatch[2] || "إيراد",
+      cashboxName: undefined,
+      partyName: undefined,
+    };
+  }
+
+  // 3. استعلام رصيد: رصيد أحمد / كم رصيد أحمد
+  const balanceMatch = cleaned.match(/^(?:كم\s+)?رصيد\s+(.+)$/);
+  if (balanceMatch) {
+    return {
+      intent: "query_customer_balance",
+      partyName: balanceMatch[1].trim(),
+      amount: 0,
+      description: "استعلام رصيد",
+    };
+  }
+
+  // 4. استعلام مخزون: مخزون ماسورة / كم بقي ماسورة
+  const stockMatch = cleaned.match(/^(?:كم\s+)?(?:بقي\s+)?مخزون\s+(.+)$/);
+  if (stockMatch) {
+    return {
+      intent: "query_stock",
+      itemName: stockMatch[1].trim(),
+      amount: 0,
+      description: "استعلام مخزون",
+    };
+  }
+
+  // 5. كشف حساب: كشف حساب أحمد / كشف أحمد
+  const statementMatch = cleaned.match(/^كشف\s+(?:حساب\s+)?(.+)$/);
+  if (statementMatch) {
+    return {
+      intent: "query_customer_statement",
+      partyName: statementMatch[1].trim(),
+      amount: 0,
+      description: "كشف حساب",
+    };
+  }
+
+  // 6. آخر سداد: آخر سداد أحمد / متى آخر سداد من أحمد
+  const lastPaymentMatch = cleaned.match(/^(?:متى\s+)?آخر\s+سداد\s+(?:من\s+)?(.+)$/);
+  if (lastPaymentMatch) {
+    return {
+      intent: "query_last_payment",
+      partyName: lastPaymentMatch[1].trim(),
+      amount: 0,
+      description: "آخر سداد",
+    };
+  }
+
+  return null; // لم يفهمها محلياً، اذهب إلى Gemini
+};
+
+
+// ✅ دالة فحص وإرسال التذكيرات المستحقة
+export const checkReminders = async () => {
+  try {
+    const now = Date.now();
+    const dueReminders: any = await sqlite.getAllAsync(
+      "SELECT id, title, due_date FROM reminders WHERE due_date <= ? AND is_sent = 0",
+      [now]
+    );
+
+    for (const rem of dueReminders) {
+      await sendTelegramMessage(`⏰ <b>تذكير مستحق:</b>\n${rem.title}\n📅 التاريخ: ${new Date(rem.due_date).toLocaleDateString('ar-YE')}`);
+      await sqlite.runAsync("UPDATE reminders SET is_sent = 1 WHERE id = ?", [rem.id]);
+    }
+  } catch (e) {
+    console.log("Reminders check error:", e);
+  }
+};
+
+// ✅ دالة إضافة تذكير جديد
+export const addReminder = async (title: string, dueDate: number) => {
+  try {
+    const id = `REM-${Date.now()}`;
+    const now = Date.now();
+    await sqlite.runAsync(
+      "INSERT INTO reminders (id, title, due_date, is_sent, created_at) VALUES (?, ?, ?, 0, ?)",
+      [id, title, dueDate, now]
+    );
+    return true;
+  } catch (e) {
+    console.log("Add reminder error:", e);
+    return false;
+  }
+};
+
+
+// ✅ ذاكرة السياق: حفظ واسترجاع آخر عميل
+const LAST_CUSTOMER_KEY = '@flux_last_customer';
+const saveLastCustomer = async (name: string) => { await AsyncStorage.setItem(LAST_CUSTOMER_KEY, name); };
+const getLastCustomer = async () => { return await AsyncStorage.getItem(LAST_CUSTOMER_KEY); };
+
 const processTextCommand = async (text: string) => {
   try {
-    const parsed = await parseArabicCommand(text);
+    // 1. المحاولة المحلية أولاً (سريعة جداً)
+    let parsed = localParse(text);
+    
+    // 2. إذا فشل الفهم المحلي، نلجأ إلى الذكاء الاصطناعي (Gemini)
+    if (!parsed) {
+      parsed = await parseArabicCommand(text);
+    }
     
     if (parsed.intent === "expense" && parsed.amount > 0) {
       const expenseId = `EXP-${Date.now()}`;
@@ -157,6 +280,7 @@ const processTextCommand = async (text: string) => {
     }
     
     else if (parsed.intent === "query_customer_statement" && parsed.partyName) {
+      await saveLastCustomer(parsed.partyName);
       try {
         await sendTelegramMessage("⏳ جاري إعداد كشف الحساب...");
         
@@ -348,6 +472,95 @@ const processVoiceCommand = async (voice: any, token: string) => {
   }
 };
 
+
+// ✅ دالة إرسال القائمة الرئيسية (Inline Keyboard)
+const sendMainMenu = async () => {
+  const { token, chatId } = await getTelegramSettings();
+  if (!token || !chatId) return;
+  
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  const keyboard = {
+    inline_keyboard: [
+      [{ text: "💰 سند قبض", callback_data: "menu_receipt" }],
+      [{ text: "💸 سند صرف", callback_data: "menu_payment" }],
+      [{ text: "📊 كشف حساب عميل", callback_data: "menu_statement" }],
+      [{ text: "📦 استعلام مخزون", callback_data: "menu_stock" }],
+    ],
+  };
+
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: "👋 مرحباً بك في <b>بوت فلوكس</b>.\n\nاختر العملية التي تريد القيام بها:",
+      parse_mode: 'HTML',
+      reply_markup: JSON.stringify(keyboard),
+    }),
+  });
+};
+
+
+// ✅ دالة عرض الحالة والأوامر المعلقة
+const handleStatus = async (token: string, chatId: string) => {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
+    const data = await res.json();
+    const pendingCount = data.ok ? data.result.length : "غير معروف";
+    try { await sqlite.execAsync("CREATE TABLE IF NOT EXISTS reminders (id TEXT PRIMARY KEY, title TEXT NOT NULL, due_date INTEGER NOT NULL, is_sent INTEGER DEFAULT 0, created_at INTEGER NOT NULL);"); } catch(e) {}
+    const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
+    await sendTelegramMessage(
+      `📊 <b>حالة النظام</b>\n\n` +
+      `📥 الرسائل المعلقة: ${pendingCount}\n` +
+      `🔢 آخر رقم رسالة تمت معالجتها: ${lastUpdateId || 'لا يوجد'}\n` +
+      `🤖 حالة الذكاء الاصطناعي: يعمل (تأكد من الحصة اليومية)\n\n` +
+      `💡 لإلغاء الرسائل المعلقة أرسل: /cancel`
+    );
+  } catch (e) {
+    await sendTelegramMessage("❌ تعذر جلب الحالة. تأكد من اتصال الإنترنت.");
+  }
+};
+
+// ✅ دالة إلغاء الأوامر المعلقة
+const handleCancel = async (token: string, chatId: string) => {
+  try {
+    // جلب آخر رسالة لتخطي كل ما قبلها
+    const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=-1`);
+    const data = await res.json();
+    if (data.ok && data.result.length > 0) {
+      const lastUpdateId = data.result[0].update_id;
+      // إخبار تليجرام بتجاهل كل ما قبل هذه الرسالة
+      await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=${lastUpdateId + 1}`);
+      await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(lastUpdateId));
+      await sendTelegramMessage("✅ تم إلغاء جميع الأوامر المعلقة. أنت الآن تبدأ من جديد!");
+    } else {
+      await sendTelegramMessage("ℹ️ لا توجد أوامر معلقة لإلغائها.");
+    }
+  } catch (e) {
+    await sendTelegramMessage("❌ تعذر إلغاء الأوامر.");
+  }
+};
+
+// ✅ دالة عرض قائمة الأوامر
+const handleHelp = async () => {
+  await sendTelegramMessage(
+    `📚 <b>دليل الأوامر المتاحة</b>\n\n` +
+    `<b>الأوامر النصية السريعة:</b>\n` +
+    `- <code>صرفت 500 بنزين</code>\n` +
+    `- <code>استلمت 1000 من أحمد</code>\n` +
+    `- <code>رصيد أحمد</code>\n` +
+    `- <code>كشف حساب أحمد</code>\n` +
+    `- <code>مخزون ماسورة</code>\n\n` +
+    `<b>الأوامر الإدارية:</b>\n` +
+    `- <code>/start</code> : القائمة الرئيسية\n` +
+    `- <code>/status</code> : حالة النظام والرسائل المعلقة\n` +
+    `- <code>/cancel</code> : إلغاء الأوامر المعلقة\n` +
+    `- <code>/help</code> : هذه القائمة\n\n` +
+    `<b>الأوامر المعقدة (بالصوت أو النص):</b>\n` +
+    `تحدث بحرية تامة (مثال: "بعت لماكس مول 100 علبة بسعر 3 ريال ونص").`
+  );
+};
+
 export const checkTelegramCommands = async () => {
   try {
     const { token, chatId } = await getTelegramSettings();
@@ -357,6 +570,7 @@ export const checkTelegramCommands = async () => {
     try { await sqlite.execAsync("ALTER TABLE vouchers ADD COLUMN party_amount REAL;"); } catch(e) {}
     try { await sqlite.execAsync("ALTER TABLE customers ADD COLUMN updated_at INTEGER;"); } catch(e) {}
 
+    try { await sqlite.execAsync("CREATE TABLE IF NOT EXISTS reminders (id TEXT PRIMARY KEY, title TEXT NOT NULL, due_date INTEGER NOT NULL, is_sent INTEGER DEFAULT 0, created_at INTEGER NOT NULL);"); } catch(e) {}
     const lastUpdateId = await AsyncStorage.getItem(LAST_UPDATE_ID_KEY);
     const offset = lastUpdateId ? parseInt(lastUpdateId, 10) + 1 : 0;
 
@@ -376,6 +590,19 @@ export const checkTelegramCommands = async () => {
 
       // إرسال الأمر للمعالجة
       if (message.text) {
+        // دعم "كم رصيده" باستخدام الذاكرة
+        if (message.text.trim().match(/^(?:كم\s+)?رصيده\??$/)) {
+          const lastName = await getLastCustomer();
+          if (lastName) {
+            await processTextCommand(`رصيد ${lastName}`);
+            await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));
+            continue;
+          } else {
+            await sendTelegramMessage("⚠️ لم أتعرف على العميل. جرب: رصيد أحمد");
+            await AsyncStorage.setItem(LAST_UPDATE_ID_KEY, String(update.update_id));
+            continue;
+          }
+        }
         await processTextCommand(message.text.trim());
       }
       else if (message.voice) {
