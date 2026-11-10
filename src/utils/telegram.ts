@@ -38,14 +38,24 @@ export const sendTelegramDocument = async (fileUri: string, filename: string, ca
   const { token, chatId } = await getTelegramSettings();
   if (!token || !chatId) throw new Error('لم يتم إعداد التوكن أو Chat ID');
   const url = `https://api.telegram.org/bot${token}/sendDocument`;
-  const formData = new FormData();
-  formData.append('chat_id', chatId);
-  formData.append('caption', caption);
-  formData.append('document', { uri: fileUri, name: filename, type: 'application/json' } as any);
-  const response = await fetch(url, { method: 'POST', body: formData, headers: { 'Content-Type': 'multipart/form-data' } });
-  const data = await response.json();
-  if (!data.ok) throw new Error(data.description);
-  return true;
+  
+  try {
+    const response = await FileSystem.uploadAsync(url, fileUri, {
+      fieldName: 'document',
+      httpMethod: 'POST',
+      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+      parameters: {
+        chat_id: chatId,
+        caption: caption,
+      },
+    });
+
+    const data = JSON.parse(response.body);
+    if (!data.ok) throw new Error(data.description);
+    return true;
+  } catch (error: any) {
+    throw new Error(error.message || String(error));
+  }
 };
 
 export const notifyLargeInvoice = async (invoiceData: any) => {
@@ -243,7 +253,7 @@ const processTextCommand = async (text: string) => {
 
         // 5. إنشاء الـ PDF وإرساله
         const { uri } = await Print.printToFileAsync({ html });
-        const filename = `كشف-حساب-${cust.name}-${new Date().toISOString().slice(0,10)}.pdf`;
+        const filename = `statement_${Date.now()}.pdf`;
         
         // نسخ الملف باسم مقروء
         const newUri = FileSystem.cacheDirectory + filename;
