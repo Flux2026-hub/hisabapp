@@ -561,6 +561,36 @@ const handleHelp = async () => {
   );
 };
 
+
+// ✅ دالة إرسال الأزرار الثابتة بجانب حقل الكتابة
+const sendPersistentMenu = async () => {
+  const { token, chatId } = await getTelegramSettings();
+  if (!token || !chatId) return;
+  
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  
+  // الأزرار التي ستظهر بجانب حقل الكتابة
+  const replyKeyboard = {
+    keyboard: [
+      [{ text: "💰 سند قبض" }, { text: "💸 سند صرف" }],
+      [{ text: "📊 كشف حساب" }, { text: "📦 مخزون" }],
+      [{ text: "📋 القائمة" }],
+    ],
+    resize_keyboard: true, // تصغير حجم الأزرار
+    persistent: true,      // إبقاء الأزرار ظاهرة دائماً
+  };
+
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: "✅ تم تفعيل الأزرار السريعة. يمكنك استخدامها في أي وقت.",
+      reply_markup: JSON.stringify(replyKeyboard),
+    }),
+  });
+};
+
 export const checkTelegramCommands = async () => {
   try {
     const { token, chatId } = await getTelegramSettings();
