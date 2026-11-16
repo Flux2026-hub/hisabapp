@@ -17,13 +17,14 @@ import VouchersScreen from "./VouchersScreen";
 import JournalScreen from "./JournalScreen";
 import TransfersScreen from "./TransfersScreen";
 import SalesRepsScreen from "./SalesRepsScreen";
+import DefaultAccountsScreen from "./DefaultAccountsScreen"; // ✅ استيراد الشاشة الجديدة
 import { getPendingSyncCount, processSyncQueue } from "../sync/queue";
 import { useTheme } from "./ThemeContext";
 
 type Mode =
   | "menu" | "customers" | "suppliers" | "cashboxes" | "accounts" | "items" | "currencies"
   | "recipe" | "production" | "salesInvoice" | "salesReps" | "purchaseInvoice" | "voucher"
-  | "journal" | "transfer" | "reports";
+  | "journal" | "transfer" | "reports" | "defaultAccounts"; // ✅ إضافة النمط الجديد
 
 type MenuItem = { mode: Mode; label: string; icon: string; section: string };
 
@@ -32,6 +33,7 @@ const MENU: MenuItem[] = [
   { section: "البيانات الأساسية", mode: "suppliers", label: "الموردون", icon: "truck" },
   { section: "البيانات الأساسية", mode: "cashboxes", label: "الصناديق", icon: "wallet" },
   { section: "البيانات الأساسية", mode: "accounts", label: "الحسابات الرئيسية", icon: "file-tree" },
+  { section: "البيانات الأساسية", mode: "defaultAccounts", label: "الحسابات الافتراضية", icon: "link-variant" }, // ✅ الزر الجديد
   { section: "المخزون والإنتاج", mode: "items", label: "الأصناف", icon: "package-variant" },
   { section: "المخزون والإنتاج", mode: "currencies", label: "العملات", icon: "cash" },
   { section: "المخزون والإنتاج", mode: "recipe", label: "التركيبة", icon: "clipboard-list" },
@@ -52,8 +54,7 @@ export default function AccountingModule() {
 
   const [mode, setMode] = useState<Mode>("menu");
   const [pending, setPending] = useState(0);
-  
-  // ✅ حالة للاحتفاظ بالشاشات المفتوحة (الفواتير فقط)
+
   const [mountedScreens, setMountedScreens] = useState<string[]>([]);
 
   useEffect(() => {
@@ -90,8 +91,7 @@ export default function AccountingModule() {
 
   return (
     <View style={{ flex: 1 }}>
-      
-      {/* ✅ الشاشات التي نحتفظ بحالتها (لا تغلق عند الخروج) */}
+
       {mountedScreens.includes("salesInvoice") && (
         <View style={{ flex: 1, display: mode === "salesInvoice" ? "flex" : "none" }}>
           <SalesInvoiceScreen onBack={goMenu} />
@@ -103,7 +103,6 @@ export default function AccountingModule() {
         </View>
       )}
 
-      {/* ✅ الشاشات العادية (تغلق وتفتح لتوفير الذاكرة) */}
       {mode === "customers" || mode === "suppliers" ? <CustomersScreen kind={mode} onBack={goMenu} /> : null}
       {mode === "currencies" ? <CurrenciesScreen onBack={goMenu} /> : null}
       {mode === "items" ? <ItemsScreen onBack={goMenu} /> : null}
@@ -116,8 +115,8 @@ export default function AccountingModule() {
       {mode === "journal" ? <JournalScreen onBack={goMenu} /> : null}
       {mode === "transfer" ? <TransfersScreen onBack={goMenu} /> : null}
       {mode === "reports" ? <ReportsIndex onBack={goMenu} /> : null}
+      {mode === "defaultAccounts" ? <DefaultAccountsScreen onBack={goMenu} /> : null} {/* ✅ عرض الشاشة الجديدة */}
 
-      {/* ✅ القائمة الرئيسية (تظهر فقط عندما mode === "menu") */}
       {mode === "menu" && (
         <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.desktopContent]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={true}>
 

@@ -8,6 +8,7 @@ import BrandBanner from "./components/BrandBanner";
 import {
   createCustomer, createSupplier, deleteCustomer, deleteSupplier,
   listCustomers, listSuppliers, updateCustomer, updateSupplier,
+  listAccounts,
 } from "../sync/accounting";
 import { sqlite } from "../db/local";
 import { useTheme } from "./ThemeContext";
@@ -17,8 +18,8 @@ type Kind = "customers" | "suppliers";
 type Row = any;
 
 const CONFIG: Record<Kind, any> = {
-  customers: { singular: "العميل", plural: "العملاء", parentAccountCode: "1103", list: listCustomers, create: createCustomer, update: updateCustomer, remove: deleteCustomer },
-  suppliers: { singular: "المورد", plural: "الموردون", parentAccountCode: "2101", list: listSuppliers, create: createSupplier, update: updateSupplier, remove: deleteSupplier },
+  customers: { singular: "العميل", plural: "العملاء", list: listCustomers, create: createCustomer, update: updateCustomer, remove: deleteCustomer },
+  suppliers: { singular: "المورد", plural: "الموردون", list: listSuppliers, create: createSupplier, update: updateSupplier, remove: deleteSupplier },
 };
 
 export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: () => void }) {
@@ -26,22 +27,28 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
   const { showToast } = useToast();
   const cfg = CONFIG[kind];
   const [rows, setRows] = useState<Row[]>([]);
+  const [accounts, setAccounts] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sarRate, setSarRate] = useState(140);
 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState(""); // تم إزالة +967
+  const [phone, setPhone] = useState("");
+  const [accountCode, setAccountCode] = useState("");
+  const [accountLabel, setAccountLabel] = useState("");
 
   const [search, setSearch] = useState("");
   const [searchFocus, setSearchFocus] = useState(false);
   const [showCodeSuggest, setShowCodeSuggest] = useState(false);
   const [showNameSuggest, setShowNameSuggest] = useState(false);
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
 
   const load = async () => {
     try {
       const data = await cfg.list();
       setRows(data || []);
+      const accs = await listAccounts();
+      setAccounts(accs || []);
       const sar: any = await sqlite.getFirstAsync("SELECT exchange_rate FROM currencies WHERE code = 'SAR'");
       if (sar?.exchange_rate) setSarRate(Number(sar.exchange_rate) || 140);
     } catch (e) { Alert.alert("تعذر تحميل البيانات", String(e)); }
@@ -57,7 +64,6 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
     let maxNum = 0;
     rows.forEach((r) => {
       const codeStr = String(r.code ?? "");
-      // استخراج الأرقام فقط من أي كود (سواء كان CUS-001 أو 001)
       const numStr = codeStr.replace(/\D/g, "");
       if (numStr) {
         const num = parseInt(numStr, 10);
@@ -76,6 +82,12 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
     return rows.filter((r) => `${r.code ?? ""} ${r.name ?? ""} ${r.phone ?? ""}`.toLowerCase().includes(q));
   }, [rows, search]);
 
+  const filteredAccounts = useMemo(() => {
+    if (!accountLabel.trim()) return accounts;
+    const q = accountLabel.toLowerCase();
+    return accounts.filter((a) => `${a.code ?? ""} ${a.name ?? ""}`.toLowerCase().includes(q));
+  }, [accounts, accountLabel]);
+
   const nameSuggestions = useMemo(() => {
     const q = name.trim().toLowerCase();
     if (!q) return [];
@@ -83,7 +95,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
   }, [rows, name]);
 
   const clearForm = () => {
-    setEditingId(null); setCode(""); setName(""); setPhone(""); setShowCodeSuggest(false); setShowNameSuggest(false);
+    setEditingId(null); setCode(""); setName(""); setPhone(""); setAccountCode(""); setAccountLabel(""); setShowCodeSuggest(false); setShowNameSuggest(false); setShowAccountPicker(false);
   };
 
   const cleanPhone = (raw: string) => {
@@ -108,7 +120,6 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
       }
     } catch (e: any) {
       Alert.alert("خطأ في جهات الاتصال", "التفاصيل: " + String(e.message || e));
-      console.log("Contacts error:", e);
     }
   };
 
@@ -125,7 +136,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
       if (rows.some((r) => String(r.code ?? "").trim() === trimmedCode && r.id !== editingId)) return Alert.alert("تنبيه", "الرمز مستخدم");
       if (rows.some((r) => String(r.name ?? "").trim().toLowerCase() === trimmedName.toLowerCase() && r.id !== editingId)) return Alert.alert("تنبيه", `يوجد ${cfg.singular} بهذا الاسم مسبقًا`);
 
-      const input: any = { code: trimmedCode, name: trimmedName, phone: trimmedPhone, parentAccountCode: cfg.parentAccountCode };
+      const input: any = { code: trimmedCode, name: trimmedName, phone: trimmedPhone, accountCode: accountCode || null };
 
       if (editingId) await cfg.update(editingId, input);
       else await cfg.create(input);
@@ -140,16 +151,18 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
   const edit = (r: Row) => {
     setEditingId(r.id); setCode(String(r.code ?? "")); setName(String(r.name ?? ""));
     setPhone(String(r.phone ?? ""));
+    setAccountCode(r.accountCode ?? "");
+    setAccountLabel(accounts.find((a) => a.code === r.accountCode)?.name ?? "");
   };
 
   const remove = (r: Row) => {
     Alert.alert("تأكيد الحذف", `هل تريد حذف «${r.name}»؟`, [
       { text: "إلغاء", style: "cancel" },
       { text: "حذف", style: "destructive", onPress: async () => {
-          try { 
-            await cfg.remove(r.id); 
-            await load(); 
-            if (editingId === r.id) clearForm(); 
+          try {
+            await cfg.remove(r.id);
+            await load();
+            if (editingId === r.id) clearForm();
             showToast("تم الحذف بنجاح", "success");
           } catch (e) { Alert.alert("تعذر الحذف", String(e)); }
       }},
@@ -161,7 +174,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContainer}>
-        
+
         <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
@@ -171,7 +184,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
 
         <Text style={[styles.label, { color: colors.textMuted }]}>بحث</Text>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={search} onChangeText={setSearch} onFocus={() => setSearchFocus(true)} onBlur={() => setTimeout(() => setSearchFocus(false), 200)} placeholder="ابحث بالرمز أو الاسم أو الهاتف" placeholderTextColor={colors.textMuted} textAlign="right" />
-        
+
         {searchFocus && search.trim().length > 0 && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredRows.length === 0 ? (
@@ -198,7 +211,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
             </Pressable>
           )}
         </View>
-        
+
         {showCodeSuggest && !editingId && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={applySuggestedCode}>
@@ -210,7 +223,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
 
         <Text style={[styles.label, { color: colors.textMuted }]}>الاسم</Text>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={name} onChangeText={setName} onFocus={() => setShowNameSuggest(true)} onBlur={() => setTimeout(() => setShowNameSuggest(false), 200)} placeholder={`اسم ${cfg.singular}`} placeholderTextColor={colors.textMuted} textAlign="right" />
-        
+
         {showNameSuggest && nameSuggestions.length > 0 && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {nameSuggestions.map((r) => (
@@ -229,6 +242,24 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
             <MaterialCommunityIcons name="contacts" size={24} color={colors.blue} />
           </Pressable>
         </View>
+
+        {/* ✅ ربط الحساب المحاسبي */}
+        <Text style={[styles.label, { color: colors.textMuted }]}>الحساب المحاسبي المرتبط</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={accountLabel} onChangeText={(t) => { setAccountLabel(t); setShowAccountPicker(true); }} onFocus={() => setShowAccountPicker(true)} onBlur={() => setTimeout(() => setShowAccountPicker(false), 200)} placeholder="ابحث عن الحساب..." placeholderTextColor={colors.textMuted} textAlign="right" />
+        {showAccountPicker && (
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
+            {filteredAccounts.length === 0 ? (
+              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد حسابات مطابقة</Text>
+            ) : (
+              filteredAccounts.map((a) => (
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={a.code} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPress={() => { setAccountCode(a.code); setAccountLabel(a.name); setShowAccountPicker(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{a.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{a.code}</Text>
+                </Pressable>
+              ))
+            )}
+          </ScrollView>
+        )}
 
         <View style={styles.buttons}>
           <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save}>
@@ -255,6 +286,7 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
                   <View style={styles.rowInfo}>
                     <Text style={[styles.rowName, { color: colors.text }]}>{r.name}</Text>
                     <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{r.code ?? ""} · {r.phone || "—"}</Text>
+                    {r.accountCode ? <Text style={{ fontSize: 10, color: colors.blue, textAlign: "right", marginTop: 2 }}>الحساب: {accounts.find(a => a.code === r.accountCode)?.name || r.accountCode}</Text> : null}
                     <Text style={[styles.rowBalance, { color: balanceColor(bal), fontWeight: "800", fontSize: 16 }]}>{bal.toFixed(2)} YER</Text>
                     <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2, textAlign: 'right', fontWeight: '600' }}>≈ {(bal / sarRate).toFixed(2)} SAR</Text>
                   </View>

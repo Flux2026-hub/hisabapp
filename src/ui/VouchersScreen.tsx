@@ -80,7 +80,7 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
 
   const loadHistory = async () => {
     try {
-      let query = "SELECT id, voucher_no, voucher_type, party_name, amount, currency_code, created_at, party_type, cashbox_id, description, exchange_rate, party_amount FROM vouchers WHERE 1=1";
+      let query = "SELECT id, voucher_no, voucher_type, party_id, party_name, amount, currency_code, created_at, party_type, cashbox_id, description, exchange_rate, party_amount FROM vouchers WHERE 1=1";
       const params: any[] = [];
       if (filterVType !== "all") { query += " AND voucher_type = ?"; params.push(filterVType); }
       if (filterParty !== "all") { query += " AND party_type = ?"; params.push(filterParty); }

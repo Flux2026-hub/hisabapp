@@ -19,6 +19,7 @@ const TYPE_MAP: Record<string, CashboxType> = { main: "main", sub: "sub", analyt
 export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
   const { colors } = useTheme();
   const [rows, setRows] = useState<Row[]>([]);
+  const [accounts, setAccounts] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<CashboxType>("main");
   const [sarRate, setSarRate] = useState(140);
@@ -27,17 +28,22 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState<string | null>(null);
   const [parentLabel, setParentLabel] = useState("");
+  const [accountCode, setAccountCode] = useState("");
+  const [accountLabel, setAccountLabel] = useState("");
   const [initialBalance, setInitialBalance] = useState("");
   const [currencyCode, setCurrencyCode] = useState<"YER" | "SAR">("YER");
 
   const [search, setSearch] = useState("");
   const [searchFocus, setSearchFocus] = useState(false);
   const [showParentPicker, setShowParentPicker] = useState(false);
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
 
   const load = async () => {
     try {
       const data = await listCashboxes();
       setRows(data || []);
+      const accs: any = await sqlite.getAllAsync("SELECT code, name FROM accounts WHERE account_type = 'asset' OR account_type = 'cash' ORDER BY code");
+      setAccounts(accs || []);
       const sar: any = await sqlite.getFirstAsync("SELECT exchange_rate FROM currencies WHERE code = 'SAR'");
       if (sar?.exchange_rate) setSarRate(Number(sar.exchange_rate) || 140);
     } catch (e) { Alert.alert("تعذر تحميل الصناديق", String(e)); }
@@ -45,14 +51,32 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
 
   useEffect(() => { void load(); }, []);
 
+  // ✅ دالة حساب الرصيد المجمع للصناديق الرئيسية والفرعية
+  const getAggregatedBalance = (boxId: string, allRows: Row[]): number => {
+    const box = allRows.find(r => r.id === boxId);
+    if (!box) return 0;
+    // إذا كان الصندوق تحليلياً، نأخذ رصيده المباشر
+    if (box.cashboxType === 'analytical') return Number(box.balance || 0);
+    // إذا كان رئيسياً أو فرعياً، نجمع أرصدة الأبناء
+    const children = allRows.filter(r => r.parentId === boxId);
+    if (children.length === 0) return Number(box.balance || 0); // في حال لا يوجد أبناء، نأخذ الرصيد المخزن
+    return children.reduce((sum, child) => sum + getAggregatedBalance(child.id, allRows), 0);
+  };
+
   const typeOf = (r: Row): CashboxType => TYPE_MAP[String(r.cashboxType ?? "")] ?? "main";
   const tabRows = useMemo(() => rows.filter((r) => typeOf(r) === activeTab), [rows, activeTab]);
-  
+
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return tabRows;
     return tabRows.filter((r) => `${r.code ?? ""} ${r.name ?? ""}`.toLowerCase().includes(q));
   }, [tabRows, search]);
+
+  const filteredAccounts = useMemo(() => {
+    if (!accountLabel.trim()) return accounts;
+    const q = accountLabel.toLowerCase();
+    return accounts.filter((a) => `${a.code ?? ""} ${a.name ?? ""}`.toLowerCase().includes(q));
+  }, [accounts, accountLabel]);
 
   const counts = useMemo(() => {
     const c: Record<CashboxType, number> = { main: 0, sub: 0, analytical: 0 };
@@ -77,7 +101,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
   }, [rows, activeTab]);
 
   const clearForm = () => {
-    setEditingId(null); setCode(""); setName(""); setParentId(null); setParentLabel(""); setInitialBalance(""); setCurrencyCode("YER"); setShowParentPicker(false);
+    setEditingId(null); setCode(""); setName(""); setParentId(null); setParentLabel(""); setAccountCode(""); setAccountLabel(""); setInitialBalance(""); setCurrencyCode("YER"); setShowParentPicker(false); setShowAccountPicker(false);
   };
 
   const save = async () => {
@@ -90,7 +114,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
       if (rows.some((r) => String(r.code ?? "").trim() === trimmedCode && r.id !== editingId)) return Alert.alert("تنبيه", "الرمز مستخدم مسبقاً");
       if (rows.some((r) => String(r.name ?? "").trim().toLowerCase() === trimmedName.toLowerCase() && r.id !== editingId)) return Alert.alert("تنبيه", "يوجد صندوق بهذا الاسم مسبقاً");
 
-      const input: any = { code: trimmedCode, name: trimmedName, parentId: activeTab === "main" ? undefined : parentId, cashboxType: activeTab, balance: Number(initialBalance) || 0, currencyCode };
+      const input: any = { code: trimmedCode, name: trimmedName, parentId: activeTab === "main" ? undefined : parentId, accountCode: accountCode || null, cashboxType: activeTab, balance: Number(initialBalance) || 0, currencyCode };
 
       if (editingId) await updateCashbox(editingId, input);
       else await createCashbox(input);
@@ -101,7 +125,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
   };
 
   const edit = (r: Row) => {
-    setEditingId(r.id); setCode(String(r.code ?? "")); setName(String(r.name ?? "")); setParentId(r.parentId ?? null); setParentLabel(rows.find((x) => x.id === r.parentId)?.name ?? ""); setInitialBalance(String(r.balance ?? "")); setCurrencyCode(r.currencyCode === "SAR" ? "SAR" : "YER"); setActiveTab(typeOf(r));
+    setEditingId(r.id); setCode(String(r.code ?? "")); setName(String(r.name ?? "")); setParentId(r.parentId ?? null); setParentLabel(rows.find((x) => x.id === r.parentId)?.name ?? ""); setAccountCode(r.accountCode ?? ""); setAccountLabel(accounts.find(a => a.code === r.accountCode)?.name ?? ""); setInitialBalance(String(r.balance ?? "")); setCurrencyCode(r.currencyCode === "SAR" ? "SAR" : "YER"); setActiveTab(typeOf(r));
   };
 
   const remove = (r: Row) => {
@@ -141,7 +165,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
 
         <Text style={[styles.label, { color: colors.textMuted }]}>بحث</Text>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={search} onChangeText={setSearch} onFocus={() => setSearchFocus(true)} onBlur={() => setTimeout(() => setSearchFocus(false), 200)} placeholder="ابحث بالرمز أو الاسم" placeholderTextColor={colors.textMuted} textAlign="right" />
-        
+
         {searchFocus && search.trim().length > 0 && (
           <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
             {filteredRows.length === 0 ? (
@@ -171,6 +195,24 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
 
         <Text style={[styles.label, { color: colors.textMuted }]}>الاسم</Text>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={name} onChangeText={setName} placeholder="مثال: الصندوق الرئيسي - الكاش" placeholderTextColor={colors.textMuted} textAlign="right" />
+
+        {/* ربط الصندوق بالحساب */}
+        <Text style={[styles.label, { color: colors.textMuted }]}>حساب الصندوق في الدليل المحاسبي</Text>
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={accountLabel} onChangeText={(t) => { setAccountLabel(t); setShowAccountPicker(true); }} onFocus={() => setShowAccountPicker(true)} onBlur={() => setTimeout(() => setShowAccountPicker(false), 200)} placeholder="ابحث عن الحساب..." placeholderTextColor={colors.textMuted} textAlign="right" />
+        {showAccountPicker && (
+          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
+            {filteredAccounts.length === 0 ? (
+              <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد حسابات مطابقة</Text>
+            ) : (
+              filteredAccounts.map((a) => (
+                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={a.code} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setAccountCode(a.code); setAccountLabel(a.name); setShowAccountPicker(false); }}>
+                  <Text style={[styles.suggestName, { color: colors.text }]}>{a.name}</Text>
+                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{a.code}</Text>
+                </Pressable>
+              ))
+            )}
+          </ScrollView>
+        )}
 
         {activeTab !== "main" && (
           <>
@@ -221,7 +263,7 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
           ) : (
             filteredRows.map((r) => {
               const isSAR = r.currencyCode === "SAR";
-              const bal = Number(r.balance || 0);
+              const bal = getAggregatedBalance(r.id, rows); // ✅ استخدام الرصيد المجمع
               const equivalent = isSAR ? bal * sarRate : bal / sarRate;
               return (
                 <View key={r.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -232,7 +274,8 @@ export default function CashboxesScreen({ onBack }: { onBack: () => void }) {
                   <View style={styles.rowInfo}>
                     <Text style={[styles.rowName, { color: colors.text }]}>{r.name}</Text>
                     <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{r.code} {r.parentId ? `• تابع لـ: ${getParentName(r.parentId)}` : ""}</Text>
-                    <Text style={[styles.rowBalance, { color: balanceColor(r.balance) }]}>الرصيد: {bal.toFixed(2)} {isSAR ? "SAR" : "YER"}</Text>
+                    {r.accountCode ? <Text style={{ fontSize: 10, color: colors.blue, textAlign: "right", marginTop: 2 }}>الحساب المرتبط: {accounts.find(a => a.code === r.accountCode)?.name || r.accountCode}</Text> : null}
+                    <Text style={[styles.rowBalance, { color: balanceColor(bal) }]}>الرصيد: {bal.toFixed(2)} {isSAR ? "SAR" : "YER"}</Text>
                     <Text style={[styles.rowEquivalent, { color: colors.textMuted }]}>≈ {equivalent.toFixed(2)} {isSAR ? "YER" : "SAR"}</Text>
                   </View>
                 </View>

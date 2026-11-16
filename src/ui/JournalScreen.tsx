@@ -3,7 +3,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { sqlite } from "../db/local";
 import BrandBanner from "./components/BrandBanner";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useTheme } from "./ThemeContext"; // 🚀 استدعاء مركز الألوان
+import { useTheme } from "./ThemeContext";
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
@@ -15,7 +15,7 @@ type JLine = {
 };
 
 export default function JournalScreen({ onBack }: { onBack: () => void }) {
-  const { colors } = useTheme(); // 🚀 قراءة الألوان
+  const { colors } = useTheme();
   const [accounts, setAccounts] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -25,35 +25,38 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
   const [dateStr, setDateStr] = useState(new Date().toISOString().slice(0, 10));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [currency, setCurrency] = useState<any | null>(null);
-  const [exchangeRate, setExchangeRate] = useState("1");                                                                            
+  const [exchangeRate, setExchangeRate] = useState("1");
   const [showCurrency, setShowCurrency] = useState(false);
-  const [currencySearch, setCurrencySearch] = useState(""); // 🚀 بحث العملة
+  const [currencySearch, setCurrencySearch] = useState("");
 
   const [lines, setLines] = useState<JLine[]>([]);
-  const [saving, setSaving] = useState(false);                                                                                      
+  const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null); // ✅ تتبع القيد الجاري تعديله
 
   // حالة السطر الجديد
   const [pickAccount, setPickAccount] = useState<any | null>(null);
-  const [accountSearch, setAccountSearch] = useState(""); // 🚀 بحث الحساب
+  const [accountSearch, setAccountSearch] = useState("");
   const [pickPartyType, setPickPartyType] = useState<"none" | "customer" | "supplier">("none");
   const [pickParty, setPickParty] = useState<any | null>(null);
-  const [partySearch, setPartySearch] = useState(""); // 🚀 بحث الطرف
+  const [partySearch, setPartySearch] = useState("");
   const [pickDebit, setPickDebit] = useState("");
   const [pickCredit, setPickCredit] = useState("");
   const [lineDesc, setLineDesc] = useState("");
-                                                                                                                                    const [showAccount, setShowAccount] = useState(false);
-  const [showPartyPicker, setShowPartyPicker] = useState(false);                                                                    
+  const [showAccount, setShowAccount] = useState(false);
+  const [showPartyPicker, setShowPartyPicker] = useState(false);
   const [lineCurrency, setLineCurrency] = useState<any | null>(null);
   const [lineExchangeRate, setLineExchangeRate] = useState("1");
   const [showLineCurrency, setShowLineCurrency] = useState(false);
-  const [lineCurrencySearch, setLineCurrencySearch] = useState(""); // 🚀 بحث عملة السطر
+  const [lineCurrencySearch, setLineCurrencySearch] = useState("");
 
   useEffect(() => {
     (async () => {
       try {
-        const acc: any = await sqlite.getAllAsync("SELECT id, code, name, account_type FROM accounts ORDER BY code");                     setAccounts(acc || []);
-        const cust: any = await sqlite.getAllAsync("SELECT id, name, code FROM customers ORDER BY name");                                 setCustomers(cust || []);
+        const acc: any = await sqlite.getAllAsync("SELECT id, code, name, account_type FROM accounts ORDER BY code");
+        setAccounts(acc || []);
+        const cust: any = await sqlite.getAllAsync("SELECT id, name, code FROM customers ORDER BY name");
+        setCustomers(cust || []);
         const supp: any = await sqlite.getAllAsync("SELECT id, name, code FROM suppliers ORDER BY name");
         setSuppliers(supp || []);
 
@@ -64,9 +67,10 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
         if (base) { setCurrency(base); setExchangeRate("1"); }
 
         await loadHistory();
-      } catch (e) { Alert.alert("تعذر التحميل", String(e)); }                                                                         
+      } catch (e) { Alert.alert("تعذر التحميل", String(e)); }
     })();
-  }, []);                                                                                                                                                                                                                                                             
+  }, []);
+
   const loadHistory = async () => {
     const rows: any = await sqlite.getAllAsync(`SELECT id, entry_no, description, total_debit, created_at FROM journal_entries ORDER BY created_at DESC LIMIT 5`);
     setHistory(rows || []);
@@ -81,7 +85,6 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
   const balanced = isBalanced;
   const canSave = balanced && description.trim().length > 0 && !saving && lines.length >= 2 && currency;
 
-  // 🚀 دوال الفلترة للبحث
   const filteredCurrencies = useMemo(() => {
     if (!currencySearch.trim()) return currencies;
     const q = currencySearch.toLowerCase();
@@ -107,7 +110,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
     return currencies.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
   }, [currencies, lineCurrencySearch]);
 
-  const addLine = () => {                                                                                                             
+  const addLine = () => {
     if (pickPartyType === "none" && !pickAccount) return Alert.alert("تنبيه", "اختر الحساب");
     if (pickPartyType !== "none" && !pickParty) return Alert.alert("تنبيه", "اختر " + (pickPartyType === "customer" ? "العميل" : "المورد"));
 
@@ -135,60 +138,110 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
     setLineCurrency(null); setLineExchangeRate("1"); setLineCurrencySearch(""); setShowLineCurrency(false);
     setShowAccount(false); setShowPartyPicker(false);
   };
-                                                                                                                                    const removeLine = (key: string) => setLines(lines.filter((l) => l.key !== key));                                                                                                                                                                                                                                      
-  const save = async () => {                                                                                                          
-    if (!canSave || !currency) return;                                                                                                
+
+  const removeLine = (key: string) => setLines(lines.filter((l) => l.key !== key));
+
+  // ✅ دالة تطبيق أو عكس تأثير القيد على الأرصدة
+  const applyBalances = async (linesToProcess: JLine[], multiplier: 1 | -1) => {
+    for (const l of linesToProcess) {
+      const baseAmount = (l.debitBase || 0) - (l.creditBase || 0);
+      if (l.partyId && l.partyType === 'customer') {
+        await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [baseAmount * multiplier, l.partyId]);
+      } 
+      else if (l.partyId && l.partyType === 'supplier') {
+        await sqlite.runAsync("UPDATE suppliers SET balance = balance - ? WHERE id = ?", [baseAmount * multiplier, l.partyId]);
+      }
+      if (l.accountCode) {
+         await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE code = ?", [baseAmount * multiplier, l.accountCode]);
+      }
+    }
+  };
+
+  const save = async () => {
+    if (!canSave || !currency) return;
     setSaving(true);
     try {
       const now = Date.now();
+      
+      // إذا كنا نعدل قيداً سابقاً، نقوم بعكس تأثيره وحذفه أولاً
+      if (editingEntryId) {
+        const oldLines: any = await sqlite.getAllAsync("SELECT * FROM journal_lines WHERE entry_id = ?", [editingEntryId]);
+        const mappedOldLines: JLine[] = oldLines.map((l: any) => ({
+          key: newId(), accountCode: l.account_code, accountName: l.account_name,
+          debit: Number(l.foreign_debit) || 0, credit: Number(l.foreign_credit) || 0,
+          debitBase: Number(l.debit) || 0, creditBase: Number(l.credit) || 0,
+          partyType: l.party_type, partyId: l.party_id, partyName: l.party_name, lineDesc: l.line_desc || ""
+        }));
+        await applyBalances(mappedOldLines, -1);
+        await sqlite.runAsync("DELETE FROM journal_lines WHERE entry_id = ?", [editingEntryId]);
+        await sqlite.runAsync("DELETE FROM journal_entries WHERE id = ?", [editingEntryId]);
+      }
+
       const prefix = "JRN";
       const last: any = await sqlite.getAllAsync(`SELECT entry_no FROM journal_entries WHERE entry_no LIKE ? ORDER BY created_at DESC LIMIT 1`, [`${prefix}-%`]);
       let nextNum = 1;
-      if (last && last.length > 0) nextNum = parseInt(String(last[0].entry_no).replace(/\D/g, ""), 10) + 1;                             
+      if (last && last.length > 0) nextNum = parseInt(String(last[0].entry_no).replace(/\D/g, ""), 10) + 1;
       const entryNo = `${prefix}-${String(nextNum).padStart(3, "0")}`;
       const entryId = newId();
       const finalDate = dateStr ? new Date(dateStr).getTime() : now;
       const rate = Number(exchangeRate) || 1;
 
-      await sqlite.runAsync(                                                                                                              
-        `INSERT INTO journal_entries (id, entry_no, description, total_debit, total_credit, currency_code, exchange_rate, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,                                                                                                     
+      await sqlite.runAsync(
+        `INSERT INTO journal_entries (id, entry_no, description, total_debit, total_credit, currency_code, exchange_rate, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [entryId, entryNo, description.trim(), totalDebitBase, totalCreditBase, currency.code, rate, finalDate]
       );
 
       for (const l of lines) {
-        await sqlite.runAsync(                                                                                                              
+        await sqlite.runAsync(
           `INSERT INTO journal_lines (id, entry_id, account_code, account_name, debit, credit, foreign_debit, foreign_credit, party_type, party_id, party_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [newId(), entryId, l.accountCode, l.accountName, l.debitBase, l.creditBase, l.debit, l.credit, l.partyType, l.partyId, l.partyName]
         );
       }
 
+      // تطبيق التأثير الجديد
+      await applyBalances(lines, 1);
+
       Alert.alert("تم الحفظ", `رقم القيد: ${entryNo}`);
-      setDescription(""); setLines([]); setDateStr(new Date().toISOString().slice(0, 10));
+      setDescription(""); setLines([]); setDateStr(new Date().toISOString().slice(0, 10)); setEditingEntryId(null);
       await loadHistory();
     } catch (e) { Alert.alert("تعذر الحفظ", String(e)); } finally { setSaving(false); }
   };
 
   const deleteEntry = (id: string) => {
-    Alert.alert("تأكيد الحذف", "هل أنت متأكد من حذف هذا القيد؟", [
+    Alert.alert("تأكيد الحذف", "هل أنت متأكد من حذف هذا القيد؟ سيتم عكس تأثيره.", [
       { text: "إلغاء", style: "cancel" },
       { text: "حذف", style: "destructive", onPress: async () => {
           try {
+            const oldLines: any = await sqlite.getAllAsync("SELECT * FROM journal_lines WHERE entry_id = ?", [id]);
+            const mappedOldLines: JLine[] = oldLines.map((l: any) => ({
+              key: newId(), accountCode: l.account_code, accountName: l.account_name,
+              debit: Number(l.foreign_debit) || 0, credit: Number(l.foreign_credit) || 0,
+              debitBase: Number(l.debit) || 0, creditBase: Number(l.credit) || 0,
+              partyType: l.party_type, partyId: l.party_id, partyName: l.party_name, lineDesc: l.line_desc || ""
+            }));
+            await applyBalances(mappedOldLines, -1);
+
             await sqlite.runAsync("DELETE FROM journal_lines WHERE entry_id = ?", [id]);
             await sqlite.runAsync("DELETE FROM journal_entries WHERE id = ?", [id]);
             await loadHistory();
+            if (editingEntryId === id) {
+              setEditingEntryId(null);
+              setLines([]);
+              setDescription("");
+            }
           } catch (e) { Alert.alert("تعذر الحذف", String(e)); }
       }},
-    ]);                                                                                                                             
+    ]);
   };
 
   const editEntry = async (h: any) => {
     try {
       const lines: any = await sqlite.getAllAsync("SELECT * FROM journal_lines WHERE entry_id = ?", [h.id]);
-      const newLines = lines.map((l: any) => ({                                                                                           
+      const newLines: JLine[] = lines.map((l: any) => ({
         key: newId(),
         accountCode: l.account_code,
         accountName: l.account_name,
-        debit: Number(l.foreign_debit) || Number(l.debit) || 0, // 🚀 تم تصحيح الأعمدة هنا لجلب القيمة الأصلية
+        debit: Number(l.foreign_debit) || Number(l.debit) || 0,
         credit: Number(l.foreign_credit) || Number(l.credit) || 0,
         debitBase: Number(l.debit) || 0,
         creditBase: Number(l.credit) || 0,
@@ -199,16 +252,15 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
       }));
       setDescription(h.description);
       setLines(newLines);
-      await sqlite.runAsync("DELETE FROM journal_lines WHERE entry_id = ?", [h.id]);
-      await sqlite.runAsync("DELETE FROM journal_entries WHERE id = ?", [h.id]);
-      await loadHistory();
+      setEditingEntryId(h.id); // حفظ معرف القيد قيد التعديل
       Alert.alert("للتعديل", "تم تحميل القيد في النموذج. قم بتعديله واضغط حفظ.");
     } catch (e) { Alert.alert("تعذر التعديل", String(e)); }
   };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        
+
         <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
@@ -226,8 +278,8 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
               <DateTimePicker value={dateStr ? new Date(dateStr) : new Date()} mode="date" display="default" onChange={(event, selectedDate) => { setShowDatePicker(Platform.OS === 'ios'); if (selectedDate) setDateStr(selectedDate.toISOString().slice(0, 10)); }} />
             )}
           </View>
-          <View style={{ flex: 1 }}>                                                                                                          
-            <Text style={[styles.label, { color: colors.textMuted }]}>العملة</Text>                                                                                          
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.label, { color: colors.textMuted }]}>العملة</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
               value={currencySearch}
@@ -240,7 +292,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
             />
             {showCurrency && (
               <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-                {filteredCurrencies.map((c) => (                                                                                                            
+                {filteredCurrencies.map((c) => (
                   <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setCurrency(c); setCurrencySearch(c.name); setExchangeRate(c.isBase ? "1" : String(c.exchange_rate || 1)); setShowCurrency(false); }}>
                     <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.code})</Text>
                   </Pressable>
@@ -252,12 +304,12 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
             <Text style={[styles.label, { color: colors.textMuted }]}>سعر الصرف</Text>
             <TextInput style={[styles.input, { backgroundColor: currency?.isBase ? colors.bg : colors.surface, borderColor: colors.border, color: colors.text }]} value={exchangeRate} onChangeText={setExchangeRate} editable={!currency?.isBase} keyboardType="decimal-pad" textAlign="right" />
           </View>
-        </View>                                                                                                                   
-                                                                                                                                          
+        </View>
+
         <Text style={[styles.label, { color: colors.textMuted }]}>البيان العام للقيد *</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={description} onChangeText={setDescription} placeholder="مثال: قيد إثبات مصروفات" placeholderTextColor={colors.textMuted} textAlign="right" />                                                                                 
-        
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>سطور القيد ({lines.length})</Text>                                                              
+        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={description} onChangeText={setDescription} placeholder="مثال: قيد إثبات مصروفات" placeholderTextColor={colors.textMuted} textAlign="right" />
+
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>سطور القيد ({lines.length})</Text>
         <View style={[styles.tableBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {lines.length === 0 ? (
             <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد سطور بعد. أضف سطراً من الأسفل.</Text>
@@ -269,7 +321,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                   <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => removeLine(l.key)} style={[styles.delBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#fee2e2" }]}><Text style={[styles.delText, { color: colors.isDark ? "#FCA5A5" : "#991b1b" }]}>حذف</Text></Pressable>
                 </View>
                 <View style={styles.rowBody}>
-                  <View style={{ flex: 1 }}>                                                                                                          
+                  <View style={{ flex: 1 }}>
                     <Text style={[styles.rowName, { color: colors.text }]}>{l.accountName}</Text>
                     <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{l.accountCode}</Text>
                     {l.partyName && <Text style={[styles.rowParty, { color: colors.orange }]}>{l.partyType === 'customer' ? 'عميل: ' : 'مورد: '}{l.partyName}</Text>}
@@ -281,7 +333,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                     {!currency?.isBase && <Text style={[styles.rowBase, { color: colors.textMuted }]}>أساسي: {(l.debitBase || l.creditBase).toFixed(2)}</Text>}
                   </View>
                 </View>
-              </View>                                                                                                                         
+              </View>
             ))
           )}
         </View>
@@ -308,7 +360,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                 textAlign="right"
               />
               {showAccount && (
-                <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">                                                                                                    
+                <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                   {filteredAccounts.map((a) => (
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={a.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickAccount(a); setAccountSearch(a.name); setShowAccount(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{a.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{a.code}</Text></Pressable>
                   ))}
@@ -331,13 +383,13 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                 <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
                   {filteredParties.map((p) => (
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={p.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setPickParty(p); setPartySearch(p.name); setShowPartyPicker(false); }}><Text style={[styles.suggestName, { color: colors.text }]}>{p.name}</Text><Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{p.code}</Text></Pressable>
-                  ))}                                                                                                                             
+                  ))}
                 </ScrollView>
               )}
             </>
           )}
-                                                                                                                                            
-          <Text style={[styles.label, { color: colors.textMuted }]}>بيان السطر (اختياري)</Text>                                                                            
+
+          <Text style={[styles.label, { color: colors.textMuted }]}>بيان السطر (اختياري)</Text>
           <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={lineDesc} onChangeText={setLineDesc} placeholder="وصف مختصر للسطر" placeholderTextColor={colors.textMuted} textAlign="right" />
 
           <Text style={[styles.label, { color: colors.textMuted }]}>عملة السطر</Text>
@@ -353,7 +405,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
           />
           {showLineCurrency && (
             <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setLineCurrency(null); setLineCurrencySearch(""); setShowLineCurrency(false); }}>                       
+              <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setLineCurrency(null); setLineCurrencySearch(""); setShowLineCurrency(false); }}>
                 <Text style={[styles.suggestName, { color: colors.text }]}>العملة الأساسية</Text>
               </Pressable>
               {filteredLineCurrencies.map((c) => (
@@ -361,9 +413,9 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                   <Text style={[styles.suggestName, { color: colors.text }]}>{c.name} ({c.code})</Text>
                 </Pressable>
               ))}
-            </ScrollView>                                                                                                                         
+            </ScrollView>
           )}
-          
+
           {lineCurrency && !lineCurrency.isBase && (
             <>
               <Text style={[styles.label, { color: colors.textMuted }]}>سعر الصرف</Text>
@@ -375,12 +427,12 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
             <View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textMuted }]}>مدين ({lineCurrency ? lineCurrency.code : currency?.code})</Text><TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickDebit} onChangeText={(t) => { setPickDebit(t); if (t) setPickCredit(""); }} placeholder="0" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" textAlign="right" /></View>
             <View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textMuted }]}>دائن ({lineCurrency ? lineCurrency.code : currency?.code})</Text><TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={pickCredit} onChangeText={(t) => { setPickCredit(t); if (t) setPickDebit(""); }} placeholder="0" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" textAlign="right" /></View>
           </View>
-                                                                                                                                            
+
           <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.addBtn, { backgroundColor: colors.navy }]} onPress={addLine}><Text style={styles.addBtnText}>+ إدراج السطر في القيد</Text></Pressable>
         </View>
 
         <View style={[styles.balanceBox, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF", borderColor: colors.blue }]}>
-          <View style={styles.balRow}><Text style={[styles.balLabel, { color: colors.blue }]}>مجموع المدين (أساسي):</Text><Text style={[styles.balValue, { color: colors.blue }]}>{totalDebitBase.toFixed(2)} {currency?.code || "YER"}</Text></View>                                                                             
+          <View style={styles.balRow}><Text style={[styles.balLabel, { color: colors.blue }]}>مجموع المدين (أساسي):</Text><Text style={[styles.balValue, { color: colors.blue }]}>{totalDebitBase.toFixed(2)} {currency?.code || "YER"}</Text></View>
           <View style={styles.balRow}><Text style={[styles.balLabel, { color: colors.blue }]}>مجموع الدائن (أساسي):</Text><Text style={[styles.balValue, { color: colors.blue }]}>{totalCreditBase.toFixed(2)} {currency?.code || "YER"}</Text></View>
           {(!currency?.isBase) && (
             <View style={[styles.balRow, { borderTopWidth: 1, borderTopColor: colors.blue, marginTop: 4, paddingTop: 4 }]}>
@@ -393,15 +445,21 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
         </View>
 
         <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
-          <Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : "حفظ القيد نهائياً"}</Text>                                          
+          <Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : (editingEntryId ? "تحديث القيد" : "حفظ القيد نهائياً")}</Text>
         </Pressable>
+
+        {editingEntryId && (
+          <Pressable style={[styles.cancelEditBtn, { borderColor: colors.border }]} onPress={() => { setEditingEntryId(null); setLines([]); setDescription(""); setDateStr(new Date().toISOString().slice(0, 10)); }}>
+            <Text style={{ color: colors.text, textAlign: "center", fontWeight: "700" }}>إلغاء التعديل</Text>
+          </Pressable>
+        )}
 
         {history.length > 0 && (
           <>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>آخر القيود</Text>
             <View style={styles.list}>
               {history.map((h) => (
-                <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>                                                                                            
+                <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.histActions}>
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => editEntry(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{ fontSize: 14 }}>✏️</Text></Pressable>
                     <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => deleteEntry(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{ fontSize: 14 }}>🗑️</Text></Pressable>
@@ -413,7 +471,7 @@ export default function JournalScreen({ onBack }: { onBack: () => void }) {
                   </View>
                   <Text style={[styles.histAmount, { color: colors.blue }]}>{Number(h.total_debit).toFixed(2)}</Text>
                 </View>
-              ))}                                                                                                                             
+              ))}
             </View>
           </>
         )}
@@ -438,7 +496,7 @@ const styles = StyleSheet.create({
   rowIndex: { fontSize: 12, fontWeight: "700", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   delBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   delText: { fontSize: 11, fontWeight: "700" },
-  rowBody: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-end" },                               
+  rowBody: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-end" },
   rowName: { fontWeight: "700", fontSize: 14, textAlign: "right", width: "100%" },
   rowMeta: { fontSize: 12, marginTop: 2, textAlign: "right" },
   rowParty: { fontSize: 12, fontWeight: "700", marginTop: 2, textAlign: "right" },
@@ -465,6 +523,7 @@ const styles = StyleSheet.create({
   primary: { padding: 14, borderRadius: 10, marginTop: 16 },
   primaryText: { color: "#fff", fontWeight: "800", fontSize: 16, textAlign: "center" },
   disabled: { opacity: 0.5 },
+  cancelEditBtn: { borderWidth: 1, padding: 13, borderRadius: 10, marginTop: 8 },
   list: { gap: 8, marginTop: 4 },
   histRow: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   histInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },

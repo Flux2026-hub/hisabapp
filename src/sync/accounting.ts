@@ -9,17 +9,20 @@ const id = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const queue = async (entityType: string, entityId: string, operationType: string, payload: unknown, now: Date) => db.insert(syncQueue).values({ operationId: id(), entityType, entityId, operationType, payload: JSON.stringify(payload), status: "pending", attempts: 0, createdAt: now, updatedAt: now });
 
 export async function listCustomers() { return db.select().from(customers); }
-export async function updateCustomer(entityId: string, input: { code: string; name: string; phone?: string; address?: string; category?: string; parentAccountCode?: string }) { const now=new Date(); await db.update(customers).set(input).where(eq(customers.id, entityId)); await queue("customer",entityId,"update",input,now); }
+export async function updateCustomer(entityId: string, input: { code: string; name: string; phone?: string; address?: string; category?: string; accountCode?: string }) { const now=new Date(); await db.update(customers).set(input).where(eq(customers.id, entityId)); await queue("customer",entityId,"update",input,now); }
 export async function deleteCustomer(entityId: string) { const now=new Date(); await db.delete(customers).where(eq(customers.id, entityId)); await queue("customer",entityId,"delete",{},now); }
 export async function listSuppliers() { return db.select().from(suppliers); }
-export async function updateSupplier(entityId: string, input: { code: string; name: string; phone?: string; address?: string; category?: string; parentAccountCode?: string }) { const now=new Date(); await db.update(suppliers).set(input).where(eq(suppliers.id, entityId)); await queue("supplier",entityId,"update",input,now); }
+export async function updateSupplier(entityId: string, input: { code: string; name: string; phone?: string; address?: string; category?: string; accountCode?: string }) { const now=new Date(); await db.update(suppliers).set(input).where(eq(suppliers.id, entityId)); await queue("supplier",entityId,"update",input,now); }
 export async function deleteSupplier(entityId: string) { const now=new Date(); await db.delete(suppliers).where(eq(suppliers.id, entityId)); await queue("supplier",entityId,"delete",{},now); }
-export async function createCustomer(input: { code: string; name: string; phone?: string; address?: string; category?: string; parentAccountCode?: string }) { const duplicate=await db.select().from(customers).where(eq(customers.name,input.name)); if(duplicate.length) throw new Error("هذا العميل مسجل مسبقًا"); const entityId=id(), now=new Date(); await db.insert(customers).values({ id:entityId, ...input, createdAt:now }); await queue("customer",entityId,"create",input,now); return entityId; }
-export async function createSupplier(input: { code: string; name: string; phone?: string; address?: string; category?: string; parentAccountCode?: string }) { const duplicate=await db.select().from(suppliers).where(eq(suppliers.name,input.name)); if(duplicate.length) throw new Error("هذا المورد مسجل مسبقًا"); const entityId=id(), now=new Date(); await db.insert(suppliers).values({ id:entityId, ...input, createdAt:now }); await queue("supplier",entityId,"create",input,now); return entityId; }
-export async function createCashbox(input: { code: string; name: string; parentId?: string; cashboxType: string }) { const entityId=id(), now=new Date(); await db.insert(cashboxes).values({ id:entityId, ...input, createdAt:now }); await queue("cashbox",entityId,"create",input,now); return entityId; }
+export async function createCustomer(input: { code: string; name: string; phone?: string; address?: string; category?: string; accountCode?: string }) { const duplicate=await db.select().from(customers).where(eq(customers.name,input.name)); if(duplicate.length) throw new Error("هذا العميل مسجل مسبقًا"); const entityId=id(), now=new Date(); await db.insert(customers).values({ id:entityId, ...input, createdAt:now }); await queue("customer",entityId,"create",input,now); return entityId; }
+export async function createSupplier(input: { code: string; name: string; phone?: string; address?: string; category?: string; accountCode?: string }) { const duplicate=await db.select().from(suppliers).where(eq(suppliers.name,input.name)); if(duplicate.length) throw new Error("هذا المورد مسجل مسبقًا"); const entityId=id(), now=new Date(); await db.insert(suppliers).values({ id:entityId, ...input, createdAt:now }); await queue("supplier",entityId,"create",input,now); return entityId; }
+
+// ✅ تحديث دوال الصناديق لتستقبل الحقول الجديدة
+export async function createCashbox(input: { code: string; name: string; parentId?: string; cashboxType: string; accountCode?: string; balance?: number; currencyCode?: string }) { const entityId=id(), now=new Date(); await db.insert(cashboxes).values({ id:entityId, ...input, createdAt:now }); await queue("cashbox",entityId,"create",input,now); return entityId; }
 export async function listCashboxes() { return db.select().from(cashboxes); }
-export async function updateCashbox(entityId: string, input: { code: string; name: string; parentId?: string; cashboxType: string }) { const now=new Date(); await db.update(cashboxes).set(input).where(eq(cashboxes.id, entityId)); await queue("cashbox",entityId,"update",input,now); }
+export async function updateCashbox(entityId: string, input: { code: string; name: string; parentId?: string; cashboxType: string; accountCode?: string; balance?: number; currencyCode?: string }) { const now=new Date(); await db.update(cashboxes).set(input).where(eq(cashboxes.id, entityId)); await queue("cashbox",entityId,"update",input,now); }
 export async function deleteCashbox(entityId: string) { const now=new Date(); await db.delete(cashboxes).where(eq(cashboxes.id, entityId)); await queue("cashbox",entityId,"delete",{},now); }
+
 export async function listAccounts() { return db.select().from(accounts); }
 export async function createAccount(input: { code: string; name: string; accountType: string; parentCode?: string }) { const entityId=id(), now=new Date(); await db.insert(accounts).values({ id:entityId, ...input, createdAt:now }); await queue("account",entityId,"create",input,now); return entityId; }
 export async function updateAccount(entityId: string, input: { code: string; name: string; accountType: string; parentCode?: string }) { const now=new Date(); await db.update(accounts).set(input).where(eq(accounts.id, entityId)); await queue("account",entityId,"update",input,now); }
@@ -44,3 +47,33 @@ export async function listItemOpeningBalances() { return db.select().from(itemOp
 export async function saveItemOpeningBalance(input:{itemId:string;quantity:number;unitCost:number;warehouseId:string}) { const now=new Date(), existing=await db.select().from(itemOpeningBalances).where(eq(itemOpeningBalances.itemId,input.itemId)); const entityId=existing[0]?.id??id(); if(existing.length) await db.update(itemOpeningBalances).set({...input,updatedAt:now}).where(eq(itemOpeningBalances.itemId,input.itemId)); else await db.insert(itemOpeningBalances).values({id:entityId,...input,updatedAt:now}); await db.update(items).set({stockQuantity:input.quantity,averageCost:input.unitCost,updatedAt:now}).where(eq(items.id,input.itemId)); await queue("item_opening_balance",entityId,existing.length?"update":"create",input,now); }
 export async function listCashboxMovements(from?: Date, to?: Date) { const rows = await db.select().from(vouchers); return rows.filter(r => (!from || r.createdAt >= from) && (!to || r.createdAt <= to)).map(r => ({ id:r.id, date:r.createdAt, type:r.voucherType === "receipt" ? "قبض" : "صرف", reference:r.voucherNo, cashboxId:r.cashboxId, party:r.partyName || "-", description:r.description || "-", debit:r.voucherType === "receipt" ? r.amount : 0, credit:r.voucherType === "payment" ? r.amount : 0, amount:r.amount })); }
 export async function listOpeningBalanceReport() { const [accountRows,itemRows] = await Promise.all([db.select().from(accountOpeningBalances), db.select().from(itemOpeningBalances)]); return { accounts: accountRows.map(r=>({id:r.id, code:r.accountCode, debit:r.debit, credit:r.credit, currency:r.currencyCode, date:r.updatedAt})), items: itemRows.map(r=>({id:r.id, itemId:r.itemId, quantity:r.quantity, unitCost:r.unitCost, totalValue:r.quantity*r.unitCost, warehouseId:r.warehouseId, date:r.updatedAt})) }; }
+
+// ✅ دوال الحسابات الافتراضية
+import { defaultAccounts } from "../db/accounting-schema";
+
+export async function getDefaultAccounts() {
+  const rows = await db.select().from(defaultAccounts).limit(1);
+  return rows[0] ?? { 
+    id: "default", 
+    inventoryAccount: null, 
+    salesRevenueAccount: null, 
+    cogsAccount: null, 
+    commissionAccount: null 
+  };
+}
+
+export async function saveDefaultAccounts(input: { 
+  inventoryAccount?: string; 
+  salesRevenueAccount?: string; 
+  cogsAccount?: string; 
+  commissionAccount?: string 
+}) {
+  const now = new Date();
+  const current = await db.select().from(defaultAccounts).limit(1);
+  if (current.length) {
+    await db.update(defaultAccounts).set(input).where(eq(defaultAccounts.id, "default"));
+  } else {
+    await db.insert(defaultAccounts).values({ id: "default", ...input, createdAt: now });
+  }
+  await queue("default_accounts", "default", current.length ? "update" : "create", input, now);
+}
