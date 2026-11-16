@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { sqlite } from "../../db/local";
-import { useTheme } from "../ThemeContext"; // 🚀 استدعاء مركز الألوان
+import { useTheme } from "../ThemeContext";
+import DateRangePicker from "./components/DateRangePicker";
 
 export default function TrialBalanceScreen({ onBack }: { onBack: () => void }) {
-  const { colors } = useTheme(); // 🚀 قراءة الألوان
+  const { colors } = useTheme();
+  const today = new Date().toISOString().slice(0, 10);
+  const [from, setFrom] = useState(new Date().getFullYear() + "-01-01");
+  const [to, setTo] = useState(today);
+  
   const [rows, setRows] = useState<any[]>([]);
   const [totals, setTotals] = useState({ debit: 0, credit: 0 });
   const [loading, setLoading] = useState(false);
@@ -12,54 +17,55 @@ export default function TrialBalanceScreen({ onBack }: { onBack: () => void }) {
   const load = async () => {
     setLoading(true);
     try {
-      const manual: any = await sqlite.getAllAsync(`SELECT account_code as code, account_name as name, SUM(debit) as debit, SUM(credit) as credit FROM journal_lines GROUP BY account_code`);
-      const cash: any = await sqlite.getFirstAsync("SELECT SUM(balance) as bal FROM cashboxes");
-      const customers: any = await sqlite.getFirstAsync("SELECT SUM(balance) as bal FROM customers");
-      const suppliers: any = await sqlite.getFirstAsync("SELECT SUM(balance) as bal FROM suppliers");
+      const fromTs = new Date(from + "T00:00:00").getTime();
+      const toTs = new Date(to + "T23:59:59").getTime();
 
-      let allRows = [...(manual || [])];
-      if (cash?.bal) allRows.push({ code: "1000", name: "الصناديق (النقدية)", debit: Number(cash.bal), credit: 0 });
-      if (customers?.bal) allRows.push({ code: "1100", name: "العملاء (مدينون)", debit: Number(customers.bal), credit: 0 });
-      if (suppliers?.bal) allRows.push({ code: "2000", name: "الموردون (دائنون)", debit: 0, credit: Number(suppliers.bal) });
+      // ✅ الاعتماد فقط على القيود اليومية ضمن الفترة المحددة
+      const data: any = await sqlite.getAllAsync(`
+        SELECT a.code, a.name, a.account_type,
+               SUM(jl.debit) as debit, SUM(jl.credit) as credit
+        FROM journal_lines jl
+        JOIN journal_entries je ON je.id = jl.entry_id
+        JOIN accounts a ON a.code = jl.account_code
+        WHERE je.created_at BETWEEN ? AND ?
+        GROUP BY a.code, a.name, a.account_type
+        ORDER BY a.code
+      `, [fromTs, toTs]);
 
       let totalD = 0, totalC = 0;
-      allRows = allRows.map(r => {
+      const processedRows = (data || []).map((r: any) => {
         const d = Number(r.debit) || 0;
         const c = Number(r.credit) || 0;
-        totalD += d; totalC += c;
+        totalD += d;
+        totalC += c;
         return { ...r, debit: d, credit: c };
       });
 
-      const diff = totalD - totalC;
-      if (Math.abs(diff) > 0.01) {
-        if (diff > 0) { allRows.push({ code: "3000", name: "حقوق الملكية / أرباح مؤجلة", debit: 0, credit: diff }); totalC += diff; }
-        else { allRows.push({ code: "3000", name: "حقوق الملكية / خسائر مؤجلة", debit: Math.abs(diff), credit: 0 }); totalD += Math.abs(diff); }
-      }
-
-      setRows(allRows);
+      setRows(processedRows);
       setTotals({ debit: totalD, credit: totalC });
     } catch (e) { Alert.alert("تعذر التحميل", String(e)); } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [from, to]);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-      
       <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
         <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى التقارير</Text>
       </Pressable>
 
       <Text style={[styles.screenTitle, { color: colors.text }]}>ميزان المراجعة</Text>
-      <Text style={[styles.hint, { color: colors.textMuted }]}>ملخص أرصدة جميع الحسابات (مدين ودائن) حتى تاريخ اليوم.</Text>
+      <Text style={[styles.hint, { color: colors.textMuted }]}>ملخص أرصدة الحسابات (مدين ودائن) بناءً على القيود اليومية للفترة المحددة.</Text>
 
-      <View style={[styles.tableHeader, { backgroundColor: colors.blue }]}>
+      <DateRangePicker from={from} to={to} onFromChange={setFrom} onToChange={setTo} />
+
+      <View style={[styles.tableHeader, { backgroundColor: colors.blue, marginTop: 16 }]}>
         <Text style={styles.th}>الحساب</Text>
         <Text style={styles.thAmount}>مدين</Text>
         <Text style={styles.thAmount}>دائن</Text>
       </View>
 
-      {loading ? <Text style={[styles.empty, { color: colors.textMuted }]}>جارٍ التحميل...</Text> : rows.length === 0 ? <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد بيانات</Text> : (
+      {loading ? <Text style={[styles.empty, { color: colors.textMuted }]}>جارٍ التحميل...</Text> : rows.length === 0 ? <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد حركات في هذه الفترة</Text> : (
         rows.map((r, i) => (
           <View key={i} style={[styles.row, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
             <View style={{ flex: 2, alignItems: "flex-end" }}>
@@ -80,12 +86,13 @@ export default function TrialBalanceScreen({ onBack }: { onBack: () => void }) {
 
       <View style={[styles.statusBox, { backgroundColor: colors.surface }]}>
         <Text style={[styles.statusText, { color: Math.abs(totals.debit - totals.credit) < 0.01 ? colors.success : colors.danger }]}>
-          {Math.abs(totals.debit - totals.credit) < 0.01 ? "✅ الميزان متوازن" : "⚠️ الميزان غير متوازن"}
+          {Math.abs(totals.debit - totals.credit) < 0.01 ? "✅ الميزان متوازن" : "⚠️ الميزان غير متوازن (تأكد من تسجيل جميع العمليات في القيود)"}
         </Text>
       </View>
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
   back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 8 },
@@ -104,5 +111,5 @@ const styles = StyleSheet.create({
   totalAmount: { flex: 1, fontWeight: "800", fontSize: 16, textAlign: "center" },
   empty: { textAlign: "center", padding: 20 },
   statusBox: { marginTop: 16, padding: 12, borderRadius: 8, alignItems: "center" },
-  statusText: { fontWeight: "800", fontSize: 14 },
+  statusText: { fontWeight: "800", fontSize: 14, textAlign: "center" },
 });

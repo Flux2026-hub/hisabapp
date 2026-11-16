@@ -9,7 +9,7 @@ import { useTheme } from "../ThemeContext";
 export default function ProfitLossReport({ onBack }: { onBack: () => void }) {
   const { colors } = useTheme();
   const today = new Date().toISOString().slice(0, 10);
-  const [from, setFrom] = useState(today.slice(0, 8) + "01");
+  const [from, setFrom] = useState(today.slice(0, 4) + "-01-01");
   const [to, setTo] = useState(today);
   
   const [revenues, setRevenues] = useState<any[]>([]);

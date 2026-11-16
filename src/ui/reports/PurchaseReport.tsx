@@ -10,7 +10,7 @@ import { useTheme } from "../ThemeContext"; // 🚀 استدعاء مركز ال
 export default function PurchaseReport({ onBack }: { onBack: () => void }) {
   const { colors } = useTheme(); // 🚀 قراءة الألوان
   const today = new Date().toISOString().slice(0, 10);
-  const [from, setFrom] = useState(today.slice(0, 8) + "01");
+  const [from, setFrom] = useState(today.slice(0, 4) + "-01-01");
   const [to, setTo] = useState(today);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [baseSymbol, setBaseSymbol] = useState("ر.ي");
