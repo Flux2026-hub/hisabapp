@@ -29,7 +29,6 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
   const [rows, setRows] = useState<Row[]>([]);
   const [accounts, setAccounts] = useState<Row[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [sarRate, setSarRate] = useState(140);
 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -49,8 +48,6 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
       setRows(data || []);
       const accs = await listAccounts();
       setAccounts(accs || []);
-      const sar: any = await sqlite.getFirstAsync("SELECT exchange_rate FROM currencies WHERE code = 'SAR'");
-      if (sar?.exchange_rate) setSarRate(Number(sar.exchange_rate) || 140);
     } catch (e) { Alert.alert("تعذر تحميل البيانات", String(e)); }
   };
 
@@ -67,13 +64,10 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
       const numStr = codeStr.replace(/\D/g, "");
       if (numStr) {
         const num = parseInt(numStr, 10);
-        if (!isNaN(num) && num > maxNum) {
-          maxNum = num;
-        }
+        if (!isNaN(num) && num > maxNum) maxNum = num;
       }
     });
-    const next = maxNum + 1;
-    return `CUS-${String(next).padStart(3, "0")}`;
+    return `CUS-${String(maxNum + 1).padStart(3, "0")}`;
   }, [rows]);
 
   const filteredRows = useMemo(() => {
@@ -98,13 +92,8 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
     setEditingId(null); setCode(""); setName(""); setPhone(""); setAccountCode(""); setAccountLabel(""); setShowCodeSuggest(false); setShowNameSuggest(false); setShowAccountPicker(false);
   };
 
-  const cleanPhone = (raw: string) => {
-    return raw.replace(/[^\d+]/g, "");
-  };
-
-  const onPhoneChange = (text: string) => {
-    setPhone(cleanPhone(text));
-  };
+  const cleanPhone = (raw: string) => raw.replace(/[^\d+]/g, "");
+  const onPhoneChange = (text: string) => setPhone(cleanPhone(text));
 
   const pickContact = async () => {
     try {
@@ -112,14 +101,13 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
       if (status === 'granted') {
         const contact = await Contacts.presentContactPickerAsync();
         if (contact && contact.phoneNumbers && contact.phoneNumbers.length > 0) {
-          const rawNumber = contact.phoneNumbers[0].number || "";
-          setPhone(cleanPhone(rawNumber));
+          setPhone(cleanPhone(contact.phoneNumbers[0].number || ""));
         }
       } else {
-        Alert.alert("تنبيه", "تم رفض صلاحية الوصول لجهات الاتصال. يرجى تفعيلها من إعدادات الهاتف.");
+        Alert.alert("تنبيه", "تم رفض صلاحية الوصول لجهات الاتصال.");
       }
     } catch (e: any) {
-      Alert.alert("خطأ في جهات الاتصال", "التفاصيل: " + String(e.message || e));
+      Alert.alert("خطأ في جهات الاتصال", String(e.message || e));
     }
   };
 
@@ -243,7 +231,6 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
           </Pressable>
         </View>
 
-        {/* ✅ ربط الحساب المحاسبي */}
         <Text style={[styles.label, { color: colors.textMuted }]}>الحساب المحاسبي المرتبط</Text>
         <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={accountLabel} onChangeText={(t) => { setAccountLabel(t); setShowAccountPicker(true); }} onFocus={() => setShowAccountPicker(true)} onBlur={() => setTimeout(() => setShowAccountPicker(false), 200)} placeholder="ابحث عن الحساب..." placeholderTextColor={colors.textMuted} textAlign="right" />
         {showAccountPicker && (
@@ -276,7 +263,8 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
             <Text style={[styles.empty, { color: colors.textMuted }]}>لا توجد سجلات</Text>
           ) : (
             filteredRows.map((r) => {
-              const bal = Number(r.balance || 0);
+              const balYer = Number(r.balanceYer || r.balance_yer || 0);
+              const balSar = Number(r.balanceSar || r.balance_sar || 0);
               return (
                 <View key={r.id} style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.rowActions}>
@@ -287,8 +275,9 @@ export default function CustomersScreen({ kind, onBack }: { kind: Kind; onBack: 
                     <Text style={[styles.rowName, { color: colors.text }]}>{r.name}</Text>
                     <Text style={[styles.rowMeta, { color: colors.textMuted }]}>{r.code ?? ""} · {r.phone || "—"}</Text>
                     {r.accountCode ? <Text style={{ fontSize: 10, color: colors.blue, textAlign: "right", marginTop: 2 }}>الحساب: {accounts.find(a => a.code === r.accountCode)?.name || r.accountCode}</Text> : null}
-                    <Text style={[styles.rowBalance, { color: balanceColor(bal), fontWeight: "800", fontSize: 16 }]}>{bal.toFixed(2)} YER</Text>
-                    <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2, textAlign: 'right', fontWeight: '600' }}>≈ {(bal / sarRate).toFixed(2)} SAR</Text>
+                    {/* ✅ عرض رصيد YER و SAR بشكل منفصل */}
+                    <Text style={{ fontSize: 13, color: balanceColor(balYer), fontWeight: "800", textAlign: "right", marginTop: 4 }}>{balYer.toFixed(2)} YER</Text>
+                    <Text style={{ fontSize: 13, color: balanceColor(balSar), fontWeight: "800", textAlign: "right", marginTop: 2 }}>{balSar.toFixed(2)} SAR</Text>
                   </View>
                 </View>
               );
@@ -317,7 +306,6 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
   rowName: { fontWeight: "700", fontSize: 14, textAlign: "right", width: "100%" },
   rowMeta: { fontSize: 11, marginTop: 3, textAlign: "right" },
-  rowBalance: { fontSize: 11, marginTop: 3, textAlign: "right" },
   rowActions: { flexDirection: "row", gap: 6, alignItems: "center" },
   editBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
   delBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },

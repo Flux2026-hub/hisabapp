@@ -15,7 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: 'com.flux.hisabapp'
   },
   android: {
-    package: 'com.flux.hisabapp.v2',
+    package: 'com.flux.hisabapp.v3',
     adaptiveIcon: {
       foregroundImage: './assets/images/square-icon.png',
       backgroundColor: '#0B2545',

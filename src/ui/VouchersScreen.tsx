@@ -13,6 +13,11 @@ type PartyType = "none" | "customer" | "supplier" | "account";
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
+
+const getBalanceField = (currencyCode: string) => {
+  return currencyCode === 'SAR' ? 'balance_sar' : 'balance_yer';
+};
+
 export default function VouchersScreen({ onBack }: { onBack: () => void }) {
   const { colors } = useTheme();
   const [vType, setVType] = useState<VType>("receipt");
@@ -174,8 +179,8 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
            else if (partyType === "supplier") newPDelta = vType === "payment" ? -finalPartyAmount : finalPartyAmount;
            else if (partyType === "account") newPDelta = vType === "receipt" ? finalPartyAmount : -finalPartyAmount;
            
-           if (partyType === "customer") await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
-           else if (partyType === "supplier") await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
+           if (partyType === "customer") await sqlite.runAsync(`UPDATE customers SET ${getBalanceField(currency.code)} = ${getBalanceField(currency.code)} + ? WHERE id = ?`, [newPDelta, partyRecord.id]);
+           else if (partyType === "supplier") await sqlite.runAsync(`UPDATE suppliers SET ${getBalanceField(currency.code)} = ${getBalanceField(currency.code)} + ? WHERE id = ?`, [newPDelta, partyRecord.id]);
            else if (partyType === "account") await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [newPDelta, partyRecord.id]);
         }
         Alert.alert("تم التعديل", "تم تحديث السند وتعديل الأرصدة بنجاح");
@@ -194,8 +199,8 @@ export default function VouchersScreen({ onBack }: { onBack: () => void }) {
         // تأثير الطرف
         if (partyRecord && partyType !== "none") {
           let partyDelta = 0;
-          if (partyType === "customer") { partyDelta = vType === "receipt" ? -finalPartyAmount : finalPartyAmount; await sqlite.runAsync("UPDATE customers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
-          } else if (partyType === "supplier") { partyDelta = vType === "payment" ? -finalPartyAmount : finalPartyAmount; await sqlite.runAsync("UPDATE suppliers SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
+          if (partyType === "customer") { partyDelta = vType === "receipt" ? -finalPartyAmount : finalPartyAmount; await sqlite.runAsync(`UPDATE customers SET ${getBalanceField(currency.code)} = ${getBalanceField(currency.code)} + ? WHERE id = ?`, [partyDelta, partyRecord.id]);
+          } else if (partyType === "supplier") { partyDelta = vType === "payment" ? -finalPartyAmount : finalPartyAmount; await sqlite.runAsync(`UPDATE suppliers SET ${getBalanceField(currency.code)} = ${getBalanceField(currency.code)} + ? WHERE id = ?`, [partyDelta, partyRecord.id]);
           } else if (partyType === "account") { partyDelta = vType === "receipt" ? finalPartyAmount : -finalPartyAmount; await sqlite.runAsync("UPDATE accounts SET balance = balance + ? WHERE id = ?", [partyDelta, partyRecord.id]);
           }
         }
