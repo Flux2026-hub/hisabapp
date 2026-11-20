@@ -1,407 +1,89 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { sqlite } from "../db/local";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { sqlite } from "../db/local";
 import { useTheme } from "./ThemeContext";
 
-type Row = any;
+type Cashbox = { id: string; code: string; name: string; balance: number; currency_code: string };
+type Transfer = { id: string; transfer_no: string; from_account: string; to_account: string; amount: number; from_currency: string | null; to_currency: string | null; exchange_rate: number | null; description: string | null; created_at: number };
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+const n = (v: unknown, d = 0) => Number.isFinite(Number(v)) ? Number(v) : d;
+const localDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const positive = (v: unknown) => Number.isFinite(Number(v)) && Number(v) > 0;
 
 export default function TransfersScreen({ onBack }: { onBack: () => void }) {
   const { colors } = useTheme();
-  const [cashboxes, setCashboxes] = useState<Row[]>([]);
-  const [currencies, setCurrencies] = useState<Row[]>([]);
+  const [cashboxes, setCashboxes] = useState<Cashbox[]>([]);
+  const [from, setFrom] = useState<Cashbox | null>(null), [to, setTo] = useState<Cashbox | null>(null);
+  const [fromSearch, setFromSearch] = useState(""), [toSearch, setToSearch] = useState("");
+  const [showFrom, setShowFrom] = useState(false), [showTo, setShowTo] = useState(false), [showDate, setShowDate] = useState(false);
+  const [amount, setAmount] = useState(""), [rate, setRate] = useState("1"), [description, setDescription] = useState("");
+  const [date, setDate] = useState(localDate(new Date()));
+  const [editingId, setEditingId] = useState<string | null>(null), [saving, setSaving] = useState(false), [history, setHistory] = useState<Transfer[]>([]);
+  const different = !!from && !!to && from.currency_code !== to.currency_code;
+  const sourceAmount = n(amount), exchangeRate = different ? n(rate) : 1, targetAmount = sourceAmount * exchangeRate;
 
-  const [from, setFrom] = useState<Row | null>(null);
-  const [to, setTo] = useState<Row | null>(null);
-  const [fromCurrency, setFromCurrency] = useState<Row | null>(null);
-  const [toCurrency, setToCurrency] = useState<Row | null>(null);
-  const [exchangeRate, setExchangeRate] = useState("1");
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [dateStr, setDateStr] = useState(new Date().toISOString().slice(0, 10));
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  // 🚀 إضافة حالات البحث
-  const [fromSearch, setFromSearch] = useState("");
-  const [toSearch, setToSearch] = useState("");
-  const [fromCurSearch, setFromCurSearch] = useState("");
-  const [toCurSearch, setToCurSearch] = useState("");
-
-  const [showFrom, setShowFrom] = useState(false);
-  const [showTo, setShowTo] = useState(false);
-  const [showFromCur, setShowFromCur] = useState(false);
-  const [showToCur, setShowToCur] = useState(false);
-
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [history, setHistory] = useState<Row[]>([]);                                                                                                            
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
+  useEffect(() => { loadData(); }, []);
   const loadData = async () => {
     try {
-      const cb: any = await sqlite.getAllAsync("SELECT id, code, name, balance FROM cashboxes ORDER BY name");
-      setCashboxes(cb || []);
-
-      const cur: any = await sqlite.getAllAsync("SELECT id, code, name, symbol, exchange_rate, is_base FROM currencies ORDER BY is_base DESC, code");
-      const normCur = (cur || []).map((x: any) => ({ ...x, isBase: !!(x.is_base ?? x.isBase), exchangeRate: Number(x.exchange_rate) || 1 }));
-      setCurrencies(normCur);
-
-      const base = normCur.find((x: any) => x.isBase);
-      if (base && !fromCurrency) setFromCurrency(base);
-      if (base && !toCurrency) setToCurrency(base);
-
+      const rows: any[] = await sqlite.getAllAsync(`SELECT id,code,name,balance,COALESCE(currency_code,'YER') currency_code FROM cashboxes ORDER BY name`);
+      setCashboxes((rows || []).map((r: any) => ({ id: String(r.id), code: String(r.code || ""), name: String(r.name || ""), balance: n(r.balance), currency_code: String(r.currency_code || "YER") })));
       await loadHistory();
-    } catch (e) {
-      Alert.alert("تعذر التحميل", String(e));
-    }
+    } catch (e) { Alert.alert("تعذر التحميل", String(e)); }
   };
-
   const loadHistory = async () => {
-    const rows: any = await sqlite.getAllAsync(
-      `SELECT id, transfer_no, from_account, to_account, amount, original_amount, from_currency, to_currency, exchange_rate, description, created_at FROM account_transfers ORDER BY created_at DESC LIMIT 10`
-    );
-    setHistory(rows || []);
+    const rows: any[] = await sqlite.getAllAsync(`SELECT id,transfer_no,from_account,to_account,amount,from_currency,to_currency,exchange_rate,description,created_at FROM account_transfers ORDER BY created_at DESC LIMIT 20`);
+    setHistory((rows || []) as Transfer[]);
   };
-
-  // 🚀 دوال الفلترة للبحث
-  const filteredFromBoxes = useMemo(() => {
-    if (!fromSearch.trim()) return cashboxes;
-    const q = fromSearch.toLowerCase();
-    return cashboxes.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
-  }, [cashboxes, fromSearch]);
-
-  const filteredToBoxes = useMemo(() => {
-    const list = cashboxes.filter((c) => c.id !== from?.id);
-    if (!toSearch.trim()) return list;
-    const q = toSearch.toLowerCase();
-    return list.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
-  }, [cashboxes, toSearch, from]);
-
-  const filteredFromCur = useMemo(() => {
-    if (!fromCurSearch.trim()) return currencies;
-    const q = fromCurSearch.toLowerCase();
-    return currencies.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
-  }, [currencies, fromCurSearch]);
-
-  const filteredToCur = useMemo(() => {
-    if (!toCurSearch.trim()) return currencies;
-    const q = toCurSearch.toLowerCase();
-    return currencies.filter(c => String(c.name).toLowerCase().includes(q) || String(c.code).toLowerCase().includes(q));
-  }, [currencies, toCurSearch]);
-
-  const canSave = !!from && !!to && from.id !== to.id && Number(amount) > 0 && !!fromCurrency && !!toCurrency && !saving;
-
-  const save = () => {                                                                                                                                              
-    if (!canSave || !from || !to) return;
-    const amt = Number(amount);
-    let finalRate = Number(exchangeRate) || 1;
-    if (!fromCurrency || !toCurrency || fromCurrency.code === toCurrency.code) finalRate = 1;
-    const baseAmount = amt * finalRate;
-
-    Alert.alert("تأكيد", editingId ? "تأكيد تعديل التحويل" : "تأكيد التحويل", [
-      { text: "إلغاء", style: "cancel" },
-      { text: "تنفيذ", onPress: doSave }
-    ]);
-  };
-
+  const fromList = useMemo(() => { const q = fromSearch.trim().toLowerCase(); return cashboxes.filter(c => !q || `${c.name} ${c.code} ${c.currency_code}`.toLowerCase().includes(q)); }, [cashboxes, fromSearch]);
+  const toList = useMemo(() => { const q = toSearch.trim().toLowerCase(); return cashboxes.filter(c => c.id !== from?.id && (!q || `${c.name} ${c.code} ${c.currency_code}`.toLowerCase().includes(q))); }, [cashboxes, toSearch, from]);
+  const canSave = !!from && !!to && from.id !== to.id && positive(amount) && (!different || positive(rate)) && !saving;
+  const reset = () => { setFrom(null); setTo(null); setFromSearch(""); setToSearch(""); setAmount(""); setRate("1"); setDescription(""); setEditingId(null); setDate(localDate(new Date())); };
+  const nextNo = async () => { const r: any[] = await sqlite.getAllAsync(`SELECT transfer_no FROM account_transfers WHERE transfer_no LIKE ? ORDER BY created_at DESC LIMIT 1`, ["TRF-%"]); const x = r?.[0] ? parseInt(String(r[0].transfer_no).replace(/\D/g, ""), 10) + 1 : 1; return `TRF-${String(Number.isFinite(x) ? x : 1).padStart(3, "0")}`; };
+  const save = () => { if (!canSave) return; Alert.alert(editingId ? "تأكيد التعديل" : "تأكيد التحويل", `${sourceAmount.toFixed(2)} ${from!.currency_code} ← ${targetAmount.toFixed(2)} ${to!.currency_code}`, [{ text: "إلغاء", style: "cancel" }, { text: "تنفيذ", onPress: doSave }]); };
   const doSave = async () => {
-    if (!from || !to || !fromCurrency || !toCurrency) return;
-    setSaving(true);
+    if (!from || !to) return; setSaving(true);
     try {
-      const now = dateStr ? new Date(dateStr).getTime() : Date.now();
-      const amt = Number(amount);
-      let finalRate = Number(exchangeRate) || 1;
-      if (fromCurrency.code === toCurrency.code) finalRate = 1;
-      const baseAmount = amt * finalRate;
-
-      if (editingId) {                                                                                                                                                  
-        const oldT: any = await sqlite.getFirstAsync("SELECT * FROM account_transfers WHERE id = ?", [editingId]);                                                      
-        if (oldT) {
-           const oldRate = Number(oldT.exchange_rate) || 1;
-           const oldBase = Number(oldT.amount) * oldRate;
-           await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE name = ?", [oldBase, oldT.from_account]);
-           await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE name = ?", [oldBase, oldT.to_account]);
+      const source = n(amount), r = different ? n(rate) : 1, target = source * r;
+      if (!positive(source) || (different && !positive(r))) throw new Error("المبلغ وسعر الصرف يجب أن يكونا أكبر من صفر");
+      const when = new Date(`${date}T00:00:00`).getTime(); if (!Number.isFinite(when)) throw new Error("التاريخ غير صحيح");
+      await sqlite.withTransactionAsync(async () => {
+        if (editingId) {
+          const old: any = await sqlite.getFirstAsync(`SELECT * FROM account_transfers WHERE id=?`, [editingId]); if (!old) throw new Error("التحويل غير موجود");
+          const oldFrom: any = await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [old.from_account]);
+          const oldTo: any = await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [old.to_account]); if (!oldFrom || !oldTo) throw new Error("تعذر العثور على الصناديق القديمة");
+          const oldRate = old.from_currency === old.to_currency ? 1 : n(old.exchange_rate, 1);
+          await sqlite.runAsync(`UPDATE cashboxes SET balance=balance+? WHERE id=?`, [n(old.amount), oldFrom.id]);
+          await sqlite.runAsync(`UPDATE cashboxes SET balance=balance-? WHERE id=?`, [n(old.amount) * oldRate, oldTo.id]);
+          await sqlite.runAsync(`UPDATE account_transfers SET from_account=?,to_account=?,amount=?,original_amount=?,description=?,created_at=?,from_currency=?,to_currency=?,exchange_rate=? WHERE id=?`, [from.name, to.name, source, source, description.trim(), when, from.currency_code, to.currency_code, r, editingId]);
+        } else {
+          const current: any = await sqlite.getFirstAsync(`SELECT balance FROM cashboxes WHERE id=?`, [from.id]); if (n(current?.balance) < source) throw new Error(`الرصيد غير كافٍ: ${n(current?.balance).toFixed(2)} ${from.currency_code}`);
+          await sqlite.runAsync(`INSERT INTO account_transfers (id,transfer_no,from_account,to_account,amount,original_amount,description,created_at,from_currency,to_currency,exchange_rate) VALUES (?,?,?,?,?,?,?,?,?,?,?)`, [newId(), await nextNo(), from.name, to.name, source, source, description.trim(), when, from.currency_code, to.currency_code, r]);
         }
-
-        await sqlite.runAsync(
-          `UPDATE account_transfers SET from_account=?, to_account=?, amount=?, description=?, created_at=?, from_currency=?, to_currency=?, exchange_rate=?, original_amount=? WHERE id=?`,
-          [from.name, to.name, amt, description.trim(), now, fromCurrency.code, toCurrency.code, finalRate, amt, editingId]
-        );
-
-        await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE id = ?", [baseAmount, from.id]);
-        await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [baseAmount, to.id]);
-
-        Alert.alert("تم التعديل", "تم تحديث التحويل بنجاح");
-        setEditingId(null);
-      } else {                                                                                                                                                          
-        const prefix = "TRF";
-        const last: any = await sqlite.getAllAsync(`SELECT transfer_no FROM account_transfers WHERE transfer_no LIKE ? ORDER BY created_at DESC LIMIT 1`, [`${prefix}-%`]);
-        let nextNum = 1;
-        if (last && last.length > 0) nextNum = parseInt(String(last[0].transfer_no).replace(/\D/g, ""), 10) + 1;
-        const transferNo = `${prefix}-${String(nextNum).padStart(3, "0")}`;
-                                                                                                                                                                        
-        await sqlite.runAsync(
-          `INSERT INTO account_transfers (id, transfer_no, from_account, to_account, amount, description, created_at, from_currency, to_currency, exchange_rate, original_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [newId(), transferNo, from.name, to.name, amt, description.trim(), now, fromCurrency.code, toCurrency.code, finalRate, amt]                                   
-        );
-                                                                                                                                                                        
-        await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE id = ?", [baseAmount, from.id]);
-        await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE id = ?", [baseAmount, to.id]);
-        Alert.alert("تم التحويل بنجاح", `رقم التحويل: ${transferNo}`);
-      }                                                                                                                                                         
-      setFrom(null); setTo(null); setAmount(""); setDescription(""); setFromSearch(""); setToSearch("");
-      setEditingId(null);
-      await loadData();
-    } catch (e) {
-      Alert.alert("تعذر التحويل", String(e));
-    } finally {
-      setSaving(false);
-    }
+        await sqlite.runAsync(`UPDATE cashboxes SET balance=balance-? WHERE id=? AND currency_code=?`, [source, from.id, from.currency_code]);
+        await sqlite.runAsync(`UPDATE cashboxes SET balance=balance+? WHERE id=? AND currency_code=?`, [target, to.id, to.currency_code]);
+      });
+      Alert.alert("تم بنجاح", "تم حفظ التحويل وتحديث الأرصدة"); reset(); await loadData();
+    } catch (e) { Alert.alert("تعذر التنفيذ", String(e)); } finally { setSaving(false); }
   };
-
-  const editTransfer = async (h: any) => {                                                                                                                           
-    setEditingId(h.id);
-     const f = cashboxes.find(c => c.name === h.from_account);
-     const t = cashboxes.find(c => c.name === h.to_account);
-     setFrom(f || null); if (f) setFromSearch(f.name);
-     setTo(t || null); if (t) setToSearch(t.name);
-     setAmount(String(h.amount));
-     setDescription(h.description || "");
-     if (h.created_at) setDateStr(new Date(h.created_at).toISOString().slice(0, 10));
-
-     const fc = currencies.find(c => c.code === h.from_currency);
-     const tc = currencies.find(c => c.code === h.to_currency);
-     if (fc) { setFromCurrency(fc); setFromCurSearch(fc.name); }
-     if (tc) { setToCurrency(tc); setToCurSearch(tc.name); }
-     if (h.exchange_rate) setExchangeRate(String(h.exchange_rate));                                                                                               
-  };
-                                                                                                                                                                  
-  const deleteTransfer = (id: string) => {
-    Alert.alert("تأكيد الحذف", "هل تريد حذف هذا التحويل وعكس تأثيره على الأرصدة؟", [
-      { text: "إلغاء", style: "cancel" },
-      { text: "حذف", style: "destructive", onPress: async () => {
-          try {
-            const t: any = await sqlite.getFirstAsync("SELECT * FROM account_transfers WHERE id = ?", [id]);
-            if (t) {
-               const rate = Number(t.exchange_rate) || 1;
-               const base = Number(t.amount) * rate;                                                                                                                   
-               await sqlite.runAsync("UPDATE cashboxes SET balance = balance + ? WHERE name = ?", [base, t.from_account]);                                             
-               await sqlite.runAsync("UPDATE cashboxes SET balance = balance - ? WHERE name = ?", [base, t.to_account]);
-               await sqlite.runAsync("DELETE FROM account_transfers WHERE id = ?", [id]);
-               await loadData();
-            }
-          } catch (e) { Alert.alert("تعذر الحذف", String(e)); }
-      }}
-    ]);
-  };
-  return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        
-        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
-          <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
-        </Pressable>
-                                                                                                                                                                        
-        <Text style={[styles.screenTitle, { color: colors.text }]}>التحويلات بين الصناديق</Text>
-
-        <Text style={[styles.label, { color: colors.textMuted }]}>من صندوق</Text>                                                                                                                      
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-          value={fromSearch}
-          onChangeText={(text) => { setFromSearch(text); setShowFrom(true); if (from && text !== from.name) setFrom(null); }}
-          onFocus={() => setShowFrom(true)}
-          onBlur={() => setTimeout(() => setShowFrom(false), 200)}
-          placeholder="ابحث أو اكتب اسم الصندوق..."
-          placeholderTextColor={colors.textMuted}
-          textAlign="right"
-        />
-        {showFrom && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-            {filteredFromBoxes.length === 0 ? <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text> : 
-              filteredFromBoxes.map((c) => (
-                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setFrom(c); setFromSearch(c.name); setShowFrom(false); }}>
-                  <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
-                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
-                </Pressable>
-              ))
-            }
-          </ScrollView>
-        )}
-
-        <Text style={[styles.label, { color: colors.textMuted }]}>إلى صندوق</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-          value={toSearch}
-          onChangeText={(text) => { setToSearch(text); setShowTo(true); if (to && text !== to.name) setTo(null); }}
-          onFocus={() => setShowTo(true)}
-          onBlur={() => setTimeout(() => setShowTo(false), 200)}
-          placeholder="ابحث أو اكتب اسم الصندوق..."
-          placeholderTextColor={colors.textMuted}
-          textAlign="right"
-        />
-        {showTo && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-            {filteredToBoxes.length === 0 ? <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا نتائج</Text> : 
-              filteredToBoxes.map((c) => (
-                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setTo(c); setToSearch(c.name); setShowTo(false); }}>
-                  <Text style={[styles.suggestName, { color: colors.text }]}>{c.name}</Text>
-                  <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{c.code} · الرصيد: {Number(c.balance || 0).toFixed(2)}</Text>
-                </Pressable>
-              ))
-            }
-          </ScrollView>
-        )}                                                                                                                                                      
-        
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.label, { color: colors.textMuted }]}>عملة الصندوق المصدر</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-              value={fromCurSearch}
-              onChangeText={(text) => { setFromCurSearch(text); setShowFromCur(true); }}
-              onFocus={() => setShowFromCur(true)}
-              onBlur={() => setTimeout(() => setShowFromCur(false), 200)}
-              placeholder="العملة..."
-              placeholderTextColor={colors.textMuted}
-              textAlign="right"
-            />
-            {showFromCur && (
-              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-                {filteredFromCur.map((c) => (
-                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setFromCurrency(c); setFromCurSearch(c.name); setShowFromCur(false); }}>
-                    <Text style={[styles.suggestName, { color: colors.text }]}>{c.code} - {c.name}</Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.label, { color: colors.textMuted }]}>عملة الصندوق الهدف</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-              value={toCurSearch}
-              onChangeText={(text) => { setToCurSearch(text); setShowToCur(true); }}
-              onFocus={() => setShowToCur(true)}
-              onBlur={() => setTimeout(() => setShowToCur(false), 200)}
-              placeholder="العملة..."
-              placeholderTextColor={colors.textMuted}
-              textAlign="right"
-            />
-            {showToCur && (
-              <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-                {filteredToCur.map((c) => (
-                  <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={c.id} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { setToCurrency(c); setToCurSearch(c.name); setShowToCur(false); }}>
-                    <Text style={[styles.suggestName, { color: colors.text }]}>{c.code} - {c.name}</Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            )}
-          </View>                                                                                                                                                       
-        </View>
-
-        {fromCurrency && toCurrency && fromCurrency.code !== toCurrency.code && (
-          <View>
-            <Text style={[styles.label, { color: colors.textMuted }]}>سعر الصرف</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={exchangeRate} onChangeText={setExchangeRate} keyboardType="decimal-pad" textAlign="right" />
-          </View>
-        )}
-
-        <Text style={[styles.label, { color: colors.textMuted }]}>المبلغ ({fromCurrency?.code || ""})</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={amount} onChangeText={setAmount} keyboardType="decimal-pad" textAlign="right" />
-
-        {fromCurrency && toCurrency && fromCurrency.code !== toCurrency.code && (
-          <View style={{ marginTop: 10, padding: 12, backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF", borderRadius: 8, borderWidth: 1, borderColor: colors.blue }}>
-            <Text style={{ textAlign: "right", fontWeight: "700", color: colors.blue, fontSize: 14 }}>
-              المبلغ المعادل بالعملة الأساسية: {(Number(amount) * Number(exchangeRate)).toFixed(2)} YER                                                                     
-            </Text>
-          </View>
-        )}
-
-        <Text style={[styles.label, { color: colors.textMuted }]}>التاريخ</Text>
-        <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
-          <Text style={[styles.pickerText, { color: colors.text }]}>{dateStr}</Text>
-          <MaterialCommunityIcons name="calendar" size={20} color={colors.textMuted} />
-        </Pressable>
-        {showDatePicker && (
-          <DateTimePicker value={dateStr ? new Date(dateStr) : new Date()} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(Platform.OS === "ios"); if (d) setDateStr(d.toISOString().slice(0, 10)); }} />
-        )}
-
-        <Text style={[styles.label, { color: colors.textMuted }]}>البيان (اختياري)</Text>
-        <TextInput style={[styles.input, { minHeight: 60, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={description} onChangeText={setDescription} textAlign="right" multiline />
-
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-          <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { flex: 1, backgroundColor: colors.orange }, (!canSave || saving) && styles.disabled]} onPress={save} disabled={!canSave || saving}>
-            <Text style={styles.primaryText}>{saving ? "جارٍ..." : (editingId ? "تحديث التحويل" : "تنفيذ التحويل")}</Text>
-          </Pressable>
-          {editingId && (                                                                                                                                                   
-            <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.cancelBtn, { backgroundColor: colors.isDark ? "#334155" : "#f1f5f9" }]} onPress={() => { setEditingId(null); setAmount(""); setDescription(""); setFrom(null); setTo(null); setFromSearch(""); setToSearch(""); }}>
-              <Text style={[styles.cancelBtnText, { color: colors.text }]}>إلغاء</Text>
-            </Pressable>
-          )}
-        </View>
-                                                                                                                                                                        
-        {history.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>آخر التحويلات</Text>
-            <View style={styles.list}>
-              {history.map((h) => (
-                <View key={h.id} style={[styles.histRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <View style={styles.histActions}>
-                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => editTransfer(h)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#1E3A8A" : "#EFF6FF" }]}><Text style={{fontSize:14}}>✏️</Text></Pressable>                                              
-                    <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} onPress={() => deleteTransfer(h.id)} style={[styles.iconBtn, { backgroundColor: colors.isDark ? "#7F1D1D" : "#FEE2E2" }]}><Text style={{fontSize:14}}>🗑️</Text></Pressable>                                       
-                  </View>                                                                                                                                                         
-                  <View style={styles.histInfo}>
-                    <Text style={[styles.histName, { color: colors.text }]}>{h.from_account} → {h.to_account}</Text>                                                                                          
-                    <Text style={[styles.histMeta, { color: colors.blue }]}>{h.transfer_no}</Text>
-                    <Text style={[styles.histDate, { color: colors.textMuted }]}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text>                                                                         
-                  </View>
-                  <View style={styles.histRight}>                                                                                                                                   
-                    <Text style={[styles.histAmount, { color: colors.blue }]}>{Number(h.amount).toFixed(2)} {h.from_currency || ""}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+  const edit = (h: Transfer) => { const f = cashboxes.find(c => c.name === h.from_account), t = cashboxes.find(c => c.name === h.to_account); if (!f || !t) return Alert.alert("تعذر التعديل", "الصناديق غير موجودة"); setEditingId(h.id); setFrom(f); setTo(t); setFromSearch(f.name); setToSearch(t.name); setAmount(String(h.amount)); setRate(String(h.exchange_rate || 1)); setDescription(h.description || ""); setDate(localDate(new Date(h.created_at))); };
+  const remove = (id: string) => Alert.alert("تأكيد الحذف", "سيتم عكس أثر التحويل على الأرصدة", [{ text: "إلغاء", style: "cancel" }, { text: "حذف", style: "destructive", onPress: async () => { try { await sqlite.withTransactionAsync(async () => { const h: any = await sqlite.getFirstAsync(`SELECT * FROM account_transfers WHERE id=?`, [id]); if (!h) throw new Error("التحويل غير موجود"); const f: any = await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [h.from_account]); const t: any = await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [h.to_account]); if (!f || !t) throw new Error("الصناديق غير موجودة"); const rr = h.from_currency === h.to_currency ? 1 : n(h.exchange_rate, 1); await sqlite.runAsync(`UPDATE cashboxes SET balance=balance+? WHERE id=?`, [n(h.amount), f.id]); await sqlite.runAsync(`UPDATE cashboxes SET balance=balance-? WHERE id=?`, [n(h.amount) * rr, t.id]); await sqlite.runAsync(`DELETE FROM account_transfers WHERE id=?`, [id]); }); reset(); await loadData(); } catch (e) { Alert.alert("تعذر الحذف", String(e)); } } }]);
+  return <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
+    <Pressable onPress={onBack}><Text style={[s.back, { color: colors.blue }]}>‹ العودة</Text></Pressable><Text style={[s.title, { color: colors.text }]}>التحويلات بين الصناديق</Text>
+    <Text style={[s.label, { color: colors.textMuted }]}>من صندوق</Text><TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={fromSearch} onChangeText={x => { setFromSearch(x); setShowFrom(true); if (from && x !== from.name) setFrom(null); }} onFocus={() => setShowFrom(true)} onBlur={() => setTimeout(() => setShowFrom(false), 200)} placeholder="ابحث عن الصندوق المصدر" placeholderTextColor={colors.textMuted} textAlign="right" />
+    {showFrom && <ScrollView style={[s.suggest, { backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>{fromList.map(c => <Pressable key={c.id} style={s.item} onPressIn={() => { setFrom(c); setFromSearch(c.name); setShowFrom(false); }}><Text style={[s.name, { color: colors.text }]}>{c.name}</Text><Text style={{ color: colors.textMuted }}>{c.code} · {c.currency_code} · {c.balance.toFixed(2)}</Text></Pressable>)}</ScrollView>}
+    <Text style={[s.label, { color: colors.textMuted }]}>إلى صندوق</Text><TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={toSearch} onChangeText={x => { setToSearch(x); setShowTo(true); if (to && x !== to.name) setTo(null); }} onFocus={() => setShowTo(true)} onBlur={() => setTimeout(() => setShowTo(false), 200)} placeholder="ابحث عن الصندوق الهدف" placeholderTextColor={colors.textMuted} textAlign="right" />
+    {showTo && <ScrollView style={[s.suggest, { backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled>{toList.map(c => <Pressable key={c.id} style={s.item} onPressIn={() => { setTo(c); setToSearch(c.name); setShowTo(false); }}><Text style={[s.name, { color: colors.text }]}>{c.name}</Text><Text style={{ color: colors.textMuted }}>{c.code} · {c.currency_code} · {c.balance.toFixed(2)}</Text></Pressable>)}</ScrollView>}
+    {from && to && <Text style={[s.currency, { color: colors.blue }]}>{from.currency_code} → {to.currency_code}</Text>}
+    {different && <><Text style={[s.label, { color: colors.textMuted }]}>سعر الصرف: 1 {fromCurrency(from)} = ؟ {toCurrency(to)}</Text><TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={rate} onChangeText={setRate} keyboardType="decimal-pad" textAlign="right" /></>}
+    <Text style={[s.label, { color: colors.textMuted }]}>المبلغ ({fromCurrency(from)})</Text><TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={amount} onChangeText={setAmount} keyboardType="decimal-pad" textAlign="right" />
+    {from && to && positive(amount) && <Text style={[s.preview, { color: colors.blue }]}>سيُخصم {sourceAmount.toFixed(2)} {fromCurrency(from)} ويُضاف {targetAmount.toFixed(2)} {toCurrency(to)}</Text>}
+    <Text style={[s.label, { color: colors.textMuted }]}>التاريخ</Text><Pressable style={[s.input, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDate(true)}><Text style={{ color: colors.text, textAlign: "right" }}>{date}</Text></Pressable>{showDate && <DateTimePicker value={new Date(`${date}T00:00:00`)} mode="date" onChange={(_, d) => { setShowDate(false); if (d) setDate(localDate(d)); }} />}
+    <Text style={[s.label, { color: colors.textMuted }]}>البيان</Text><TextInput style={[s.input, { minHeight: 65, backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={description} onChangeText={setDescription} multiline textAlign="right" />
+    <View style={s.buttons}><Pressable style={[s.primary, { backgroundColor: colors.orange, opacity: canSave ? 1 : .5 }]} disabled={!canSave} onPress={save}><Text style={s.primaryText}>{saving ? "جارٍ..." : editingId ? "تحديث التحويل" : "تنفيذ التحويل"}</Text></Pressable>{editingId && <Pressable style={s.cancel} onPress={reset}><Text>إلغاء</Text></Pressable>}</View>
+    <Text style={[s.section, { color: colors.text }]}>آخر التحويلات</Text>{history.map(h => { const received = n(h.amount) * (h.from_currency === h.to_currency ? 1 : n(h.exchange_rate, 1)); return <View key={h.id} style={[s.history, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={s.actions}><Pressable onPress={() => edit(h)}><Text>✏️</Text></Pressable><Pressable onPress={() => remove(h.id)}><Text>🗑️</Text></Pressable></View><View style={s.info}><Text style={{ color: colors.text, fontWeight: "700" }}>{h.from_account} → {h.to_account}</Text><Text style={{ color: colors.textMuted }}>{h.amount} {h.from_currency} → {received.toFixed(2)} {h.to_currency}</Text><Text style={{ color: colors.textMuted }}>{new Date(h.created_at).toLocaleString("ar-EG")}</Text></View></View>; })}
+  </ScrollView></KeyboardAvoidingView>;
 }
-
-const styles = StyleSheet.create({
-  scrollContainer: { backgroundColor: "transparent", paddingHorizontal: 8, paddingTop: 16, paddingBottom: 40 },
-  back: { paddingVertical: 10, alignSelf: "flex-start", marginBottom: 8 },
-  backText: { textAlign: "left", fontWeight: "700" },
-  screenTitle: { fontSize: 22, marginBottom: 12, textAlign: "left", fontFamily: "CodecBold", width: "100%" },                                  
-  sectionTitle: { fontSize: 16, fontWeight: "700", textAlign: "left", marginTop: 16, marginBottom: 8, fontFamily: "CodecBold" },
-  label: { fontSize: 12, textAlign: "right", marginTop: 8, marginBottom: 4 },
-  input: { borderWidth: 1, borderRadius: 8, padding: 10, fontSize: 14, textAlign: "right" },
-  picker: { borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
-  pickerText: { textAlign: "right", flex: 1, fontSize: 14 },                                                                                    
-  pickerArrow: { fontSize: 12, marginLeft: 8 },
-  suggestBox: { marginTop: 4, borderWidth: 1, borderRadius: 8, overflow: "hidden", maxHeight: 200 },
-  suggestItem: { padding: 10, borderBottomWidth: 1 },
-  suggestName: { fontWeight: "700", textAlign: "right", fontSize: 13 },
-  suggestMeta: { fontSize: 11, textAlign: "right", marginTop: 2 },
-  suggestEmpty: { padding: 10, textAlign: "right", fontSize: 12 },
-  primary: { padding: 14, borderRadius: 10 },
-  primaryText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  disabled: { opacity: 0.5 },
-  cancelBtn: { padding: 14, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  cancelBtnText: { fontWeight: '700' },                                                                                                         
-  list: { gap: 8, marginTop: 4 },
-  histRow: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  histActions: { flexDirection: "row", gap: 6, alignItems: "center" },
-  iconBtn: { paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8, minWidth: 36, alignItems: "center" },
-  histInfo: { flex: 1, alignItems: "flex-end", paddingRight: 10 },
-  histName: { fontWeight: "700", fontSize: 14, textAlign: "right" },
-  histMeta: { fontSize: 11, marginTop: 2, textAlign: "right", fontWeight: "600" },                                                              
-  histDate: { fontSize: 10, marginTop: 2, textAlign: "right" },
-  histRight: { alignItems: "flex-start", minWidth: 80 },
-  histAmount: { fontWeight: "800", fontSize: 15, textAlign: "left" },                                                                         
-});
+const fromCurrency = (c: Cashbox | null) => c?.currency_code || "YER"; const toCurrency = (c: Cashbox | null) => c?.currency_code || "YER";
+const s = StyleSheet.create({ container: { padding: 12, paddingBottom: 40 }, back: { paddingVertical: 10, fontWeight: "700" }, title: { fontSize: 22, fontWeight: "800", marginBottom: 12 }, label: { textAlign: "right", marginTop: 10, marginBottom: 4, fontSize: 12 }, input: { borderWidth: 1, borderRadius: 8, padding: 11, fontSize: 14 }, suggest: { maxHeight: 210, borderWidth: 1, borderRadius: 8 }, item: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#e2e8f0" }, name: { textAlign: "right", fontWeight: "700" }, currency: { textAlign: "center", fontWeight: "800", padding: 12 }, preview: { textAlign: "right", padding: 12, fontWeight: "700" }, buttons: { flexDirection: "row", gap: 10, marginTop: 16 }, primary: { flex: 1, padding: 14, borderRadius: 10 }, primaryText: { color: "#fff", textAlign: "center", fontWeight: "700" }, cancel: { padding: 14, borderRadius: 10, backgroundColor: "#e2e8f0" }, section: { fontSize: 17, fontWeight: "800", marginTop: 22, marginBottom: 8 }, history: { borderWidth: 1, borderRadius: 10, padding: 12, flexDirection: "row", marginBottom: 8 }, actions: { flexDirection: "row", gap: 10, alignItems: "center" }, info: { flex: 1, alignItems: "flex-end", paddingRight: 10 } });
