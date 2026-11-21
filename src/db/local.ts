@@ -7,6 +7,7 @@ export const db = drizzle(sqlite);
 export async function initializeLocalDatabase() {
   await sqlite.execAsync(`
     PRAGMA journal_mode = WAL;
+    PRAGMA foreign_keys = ON;
     CREATE TABLE IF NOT EXISTS items (id TEXT PRIMARY KEY NOT NULL, sku TEXT NOT NULL UNIQUE, name TEXT NOT NULL, item_type TEXT NOT NULL, unit TEXT NOT NULL, stock_quantity REAL NOT NULL DEFAULT 0, average_cost REAL NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS warehouses (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, warehouse_type TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS product_boms (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, finished_item_id TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1, output_quantity REAL NOT NULL DEFAULT 1, output_unit TEXT NOT NULL, effective_from TEXT NOT NULL, is_active INTEGER NOT NULL DEFAULT 1);
@@ -14,21 +15,21 @@ export async function initializeLocalDatabase() {
     CREATE TABLE IF NOT EXISTS stock_receipts (id TEXT PRIMARY KEY NOT NULL, receipt_no TEXT NOT NULL UNIQUE, source_name TEXT, warehouse_id TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'draft', sync_status TEXT NOT NULL DEFAULT 'pending', total_cost REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS stock_receipt_lines (id TEXT PRIMARY KEY NOT NULL, receipt_id TEXT NOT NULL, item_id TEXT NOT NULL, quantity REAL NOT NULL, unit TEXT NOT NULL, unit_cost REAL NOT NULL);
     CREATE TABLE IF NOT EXISTS stock_movements (id TEXT PRIMARY KEY NOT NULL, source_type TEXT NOT NULL, source_id TEXT NOT NULL, item_id TEXT NOT NULL, warehouse_id TEXT NOT NULL, movement_type TEXT NOT NULL, quantity_in REAL NOT NULL DEFAULT 0, quantity_out REAL NOT NULL DEFAULT 0, planned_quantity REAL NOT NULL DEFAULT 0, waste_quantity REAL NOT NULL DEFAULT 0, unit_cost REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS customers (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT, address TEXT, balance REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS suppliers (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT, address TEXT, balance REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS cashboxes (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, parent_id TEXT, cashbox_type TEXT NOT NULL, balance REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS invoices (id TEXT PRIMARY KEY NOT NULL, invoice_no TEXT NOT NULL UNIQUE, invoice_type TEXT NOT NULL, party_id TEXT, party_name TEXT, status TEXT NOT NULL DEFAULT 'posted', subtotal REAL NOT NULL, tax REAL NOT NULL DEFAULT 0, total REAL NOT NULL, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS customers (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT, address TEXT, category TEXT, parent_account_code TEXT, balance REAL NOT NULL DEFAULT 0, balance_yer REAL NOT NULL DEFAULT 0, balance_sar REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER);
+    CREATE TABLE IF NOT EXISTS suppliers (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT, address TEXT, category TEXT, parent_account_code TEXT, balance REAL NOT NULL DEFAULT 0, balance_yer REAL NOT NULL DEFAULT 0, balance_sar REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER);
+    CREATE TABLE IF NOT EXISTS cashboxes (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, parent_id TEXT, account_id TEXT, account_code TEXT, cashbox_type TEXT NOT NULL, currency_code TEXT NOT NULL DEFAULT 'YER', balance REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, is_active INTEGER NOT NULL DEFAULT 1);
+    CREATE TABLE IF NOT EXISTS invoices (id TEXT PRIMARY KEY NOT NULL, invoice_no TEXT NOT NULL UNIQUE, invoice_type TEXT NOT NULL, party_id TEXT, party_name TEXT, status TEXT NOT NULL DEFAULT 'posted', subtotal REAL NOT NULL, tax REAL NOT NULL DEFAULT 0, total REAL NOT NULL, created_at INTEGER NOT NULL, currency_code TEXT NOT NULL DEFAULT 'YER', exchange_rate REAL NOT NULL DEFAULT 1, payment_type TEXT, cashbox_id TEXT, sales_rep_id TEXT, sales_rep_name TEXT, commission_rate REAL NOT NULL DEFAULT 0, commission_amount REAL NOT NULL DEFAULT 0, discount_type TEXT, discount_value REAL NOT NULL DEFAULT 0, discount_amount REAL NOT NULL DEFAULT 0);
     CREATE TABLE IF NOT EXISTS invoice_lines (id TEXT PRIMARY KEY NOT NULL, invoice_id TEXT NOT NULL, item_id TEXT NOT NULL, description TEXT NOT NULL, quantity REAL NOT NULL, unit_price REAL NOT NULL, line_total REAL NOT NULL);
-    CREATE TABLE IF NOT EXISTS vouchers (id TEXT PRIMARY KEY NOT NULL, voucher_no TEXT NOT NULL UNIQUE, voucher_type TEXT NOT NULL, cashbox_id TEXT NOT NULL, party_name TEXT, amount REAL NOT NULL, description TEXT, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS vouchers (id TEXT PRIMARY KEY NOT NULL, voucher_no TEXT NOT NULL UNIQUE, voucher_type TEXT NOT NULL, cashbox_id TEXT NOT NULL, party_name TEXT, amount REAL NOT NULL, description TEXT, created_at INTEGER NOT NULL, party_type TEXT DEFAULT 'none', party_id TEXT, currency_code TEXT NOT NULL DEFAULT 'YER', exchange_rate REAL NOT NULL DEFAULT 1, party_amount REAL);
     CREATE TABLE IF NOT EXISTS journal_entries (id TEXT PRIMARY KEY NOT NULL, entry_no TEXT NOT NULL UNIQUE, description TEXT NOT NULL, total_debit REAL NOT NULL, total_credit REAL NOT NULL, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS journal_lines (id TEXT PRIMARY KEY NOT NULL, entry_id TEXT NOT NULL, account_code TEXT NOT NULL, account_name TEXT NOT NULL, debit REAL NOT NULL DEFAULT 0, credit REAL NOT NULL DEFAULT 0);
-    CREATE TABLE IF NOT EXISTS account_transfers (id TEXT PRIMARY KEY NOT NULL, transfer_no TEXT NOT NULL UNIQUE, from_account TEXT NOT NULL, to_account TEXT NOT NULL, amount REAL NOT NULL, description TEXT, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS account_transfers (id TEXT PRIMARY KEY NOT NULL, transfer_no TEXT NOT NULL UNIQUE, from_account TEXT NOT NULL, to_account TEXT NOT NULL, from_cashbox_id TEXT, to_cashbox_id TEXT, amount REAL NOT NULL, original_amount REAL, description TEXT, created_at INTEGER NOT NULL, from_currency TEXT NOT NULL DEFAULT 'YER', to_currency TEXT NOT NULL DEFAULT 'YER', exchange_rate REAL NOT NULL DEFAULT 1);
     CREATE TABLE IF NOT EXISTS accounts (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, account_type TEXT NOT NULL, parent_code TEXT, balance REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS currencies (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, symbol TEXT NOT NULL, exchange_rate REAL NOT NULL DEFAULT 1, is_base INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS sales_reps (id TEXT PRIMARY KEY NOT NULL, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT, commission_rate REAL NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS purchase_returns (id TEXT PRIMARY KEY NOT NULL, return_no TEXT NOT NULL UNIQUE, invoice_id TEXT NOT NULL, invoice_no TEXT NOT NULL, supplier_id TEXT, supplier_name TEXT, total REAL NOT NULL, refund_type TEXT NOT NULL, cashbox_id TEXT, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS purchase_returns (id TEXT PRIMARY KEY NOT NULL, return_no TEXT NOT NULL UNIQUE, invoice_id TEXT NOT NULL, invoice_no TEXT NOT NULL, supplier_id TEXT, supplier_name TEXT, total REAL NOT NULL, refund_type TEXT NOT NULL, cashbox_id TEXT, currency_code TEXT NOT NULL DEFAULT 'YER', exchange_rate REAL NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS purchase_return_lines (id TEXT PRIMARY KEY NOT NULL, return_id TEXT NOT NULL, item_id TEXT NOT NULL, item_name TEXT NOT NULL, quantity REAL NOT NULL, unit_price REAL NOT NULL, line_total REAL NOT NULL);
-    CREATE TABLE IF NOT EXISTS sales_returns (id TEXT PRIMARY KEY NOT NULL, return_no TEXT NOT NULL UNIQUE, invoice_id TEXT NOT NULL, invoice_no TEXT NOT NULL, customer_id TEXT, customer_name TEXT, total REAL NOT NULL, refund_type TEXT NOT NULL, cashbox_id TEXT, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS sales_returns (id TEXT PRIMARY KEY NOT NULL, return_no TEXT NOT NULL UNIQUE, invoice_id TEXT NOT NULL, invoice_no TEXT NOT NULL, customer_id TEXT, customer_name TEXT, total REAL NOT NULL, refund_type TEXT NOT NULL, cashbox_id TEXT, currency_code TEXT NOT NULL DEFAULT 'YER', exchange_rate REAL NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS sales_return_lines (id TEXT PRIMARY KEY NOT NULL, return_id TEXT NOT NULL, item_id TEXT NOT NULL, item_name TEXT NOT NULL, quantity REAL NOT NULL, unit_price REAL NOT NULL, line_total REAL NOT NULL);
     CREATE TABLE IF NOT EXISTS sync_queue (id INTEGER PRIMARY KEY AUTOINCREMENT, operation_id TEXT NOT NULL UNIQUE, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, operation_type TEXT NOT NULL, payload TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, last_error TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
   `);
@@ -65,6 +66,22 @@ export async function initializeLocalDatabase() {
     "ALTER TABLE account_transfers ADD COLUMN exchange_rate REAL DEFAULT 1",
     "ALTER TABLE account_transfers ADD COLUMN original_amount REAL",
     "ALTER TABLE cashboxes ADD COLUMN currency_code TEXT DEFAULT 'YER'",
+    "ALTER TABLE customers ADD COLUMN balance_yer REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE customers ADD COLUMN balance_sar REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE customers ADD COLUMN updated_at INTEGER",
+    "ALTER TABLE suppliers ADD COLUMN balance_yer REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE suppliers ADD COLUMN balance_sar REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE suppliers ADD COLUMN updated_at INTEGER",
+    "ALTER TABLE cashboxes ADD COLUMN account_id TEXT",
+    "ALTER TABLE cashboxes ADD COLUMN account_code TEXT",
+    "ALTER TABLE cashboxes ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE vouchers ADD COLUMN party_amount REAL",
+    "ALTER TABLE account_transfers ADD COLUMN from_cashbox_id TEXT",
+    "ALTER TABLE account_transfers ADD COLUMN to_cashbox_id TEXT",
+    "ALTER TABLE sales_returns ADD COLUMN currency_code TEXT DEFAULT 'YER'",
+    "ALTER TABLE sales_returns ADD COLUMN exchange_rate REAL DEFAULT 1",
+    "ALTER TABLE purchase_returns ADD COLUMN currency_code TEXT DEFAULT 'YER'",
+    "ALTER TABLE purchase_returns ADD COLUMN exchange_rate REAL DEFAULT 1",
   ]) {
     try {
       await sqlite.execAsync(migration);
@@ -72,6 +89,91 @@ export async function initializeLocalDatabase() {
       /* العمود موجود مسبقاً */
     }
   }
+
+  await sqlite.execAsync(`
+    UPDATE customers
+    SET balance_yer = balance
+    WHERE COALESCE(balance_yer, 0) = 0
+      AND COALESCE(balance, 0) <> 0;
+
+    UPDATE suppliers
+    SET balance_yer = balance
+    WHERE COALESCE(balance_yer, 0) = 0
+      AND COALESCE(balance, 0) <> 0;
+
+    UPDATE account_transfers
+    SET original_amount = amount
+    WHERE original_amount IS NULL;
+
+    UPDATE account_transfers
+    SET from_currency = 'YER'
+    WHERE from_currency IS NULL OR from_currency = '';
+
+    UPDATE account_transfers
+    SET to_currency = 'YER'
+    WHERE to_currency IS NULL OR to_currency = '';
+
+    UPDATE account_transfers
+    SET exchange_rate = 1
+    WHERE exchange_rate IS NULL OR exchange_rate <= 0;
+
+    UPDATE invoices
+    SET currency_code = 'YER'
+    WHERE currency_code IS NULL OR currency_code = '';
+
+    UPDATE invoices
+    SET exchange_rate = 1
+    WHERE exchange_rate IS NULL OR exchange_rate <= 0;
+
+    UPDATE vouchers
+    SET currency_code = 'YER'
+    WHERE currency_code IS NULL OR currency_code = '';
+
+    UPDATE vouchers
+    SET exchange_rate = 1
+    WHERE exchange_rate IS NULL OR exchange_rate <= 0;
+  `);
+
+  await sqlite.execAsync(`
+    CREATE INDEX IF NOT EXISTS idx_customers_balance_yer
+      ON customers(balance_yer);
+
+    CREATE INDEX IF NOT EXISTS idx_customers_balance_sar
+      ON customers(balance_sar);
+
+    CREATE INDEX IF NOT EXISTS idx_suppliers_balance_yer
+      ON suppliers(balance_yer);
+
+    CREATE INDEX IF NOT EXISTS idx_suppliers_balance_sar
+      ON suppliers(balance_sar);
+
+    CREATE INDEX IF NOT EXISTS idx_cashboxes_currency
+      ON cashboxes(currency_code);
+
+    CREATE INDEX IF NOT EXISTS idx_invoices_cashbox_date
+      ON invoices(cashbox_id, created_at);
+
+    CREATE INDEX IF NOT EXISTS idx_invoices_party_date
+      ON invoices(party_id, created_at);
+
+    CREATE INDEX IF NOT EXISTS idx_vouchers_cashbox_date
+      ON vouchers(cashbox_id, created_at);
+
+    CREATE INDEX IF NOT EXISTS idx_vouchers_party_date
+      ON vouchers(party_id, created_at);
+
+    CREATE INDEX IF NOT EXISTS idx_transfers_from_cashbox_date
+      ON account_transfers(from_cashbox_id, created_at);
+
+    CREATE INDEX IF NOT EXISTS idx_transfers_to_cashbox_date
+      ON account_transfers(to_cashbox_id, created_at);
+
+    CREATE INDEX IF NOT EXISTS idx_invoice_lines_invoice
+      ON invoice_lines(invoice_id);
+
+    CREATE INDEX IF NOT EXISTS idx_stock_movements_source
+      ON stock_movements(source_type, source_id);
+  `);
 
   // 🗑️ حذف البيانات التجريبية القديمة
   await sqlite.execAsync(`
