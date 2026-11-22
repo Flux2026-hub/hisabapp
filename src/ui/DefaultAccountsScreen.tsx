@@ -19,6 +19,16 @@ export default function DefaultAccountsScreen({ onBack }: { onBack: () => void }
   const [cogsLabel, setCogsLabel] = useState("");
   const [commissionAccount, setCommissionAccount] = useState("");
   const [commissionLabel, setCommissionLabel] = useState("");
+  const [customerAccount, setCustomerAccount] = useState("");
+  const [customerLabel, setCustomerLabel] = useState("");
+  const [supplierAccount, setSupplierAccount] = useState("");
+  const [supplierLabel, setSupplierLabel] = useState("");
+  const [purchaseAccount, setPurchaseAccount] = useState("");
+  const [purchaseLabel, setPurchaseLabel] = useState("");
+  const [salesReturnAccount, setSalesReturnAccount] = useState("");
+  const [salesReturnLabel, setSalesReturnLabel] = useState("");
+  const [purchaseReturnAccount, setPurchaseReturnAccount] = useState("");
+  const [purchaseReturnLabel, setPurchaseReturnLabel] = useState("");
 
   const [showPicker, setShowPicker] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
@@ -37,6 +47,16 @@ export default function DefaultAccountsScreen({ onBack }: { onBack: () => void }
         setCogsLabel(accs.find((a) => a.code === defaults.cogsAccount)?.name || "");
         setCommissionAccount(defaults.commissionAccount || "");
         setCommissionLabel(accs.find((a) => a.code === defaults.commissionAccount)?.name || "");
+        setCustomerAccount(defaults.customerAccount || "");
+        setCustomerLabel(accs.find((a) => a.code === defaults.customerAccount)?.name || "");
+        setSupplierAccount(defaults.supplierAccount || "");
+        setSupplierLabel(accs.find((a) => a.code === defaults.supplierAccount)?.name || "");
+        setPurchaseAccount(defaults.purchaseAccount || "");
+        setPurchaseLabel(accs.find((a) => a.code === defaults.purchaseAccount)?.name || "");
+        setSalesReturnAccount(defaults.salesReturnAccount || "");
+        setSalesReturnLabel(accs.find((a) => a.code === defaults.salesReturnAccount)?.name || "");
+        setPurchaseReturnAccount(defaults.purchaseReturnAccount || "");
+        setPurchaseReturnLabel(accs.find((a) => a.code === defaults.purchaseReturnAccount)?.name || "");
       }
     } catch (e) { Alert.alert("خطأ", "تعذر تحميل الحسابات"); }
   };
@@ -57,6 +77,11 @@ export default function DefaultAccountsScreen({ onBack }: { onBack: () => void }
         salesRevenueAccount: salesRevenueAccount || undefined,
         cogsAccount: cogsAccount || undefined,
         commissionAccount: commissionAccount || undefined,
+        customerAccount: customerAccount || undefined,
+        supplierAccount: supplierAccount || undefined,
+        purchaseAccount: purchaseAccount || undefined,
+        salesReturnAccount: salesReturnAccount || undefined,
+        purchaseReturnAccount: purchaseReturnAccount || undefined,
       });
       Alert.alert("نجاح", "تم حفظ الحسابات الافتراضية بنجاح!");
     } catch (e) {
@@ -116,6 +141,11 @@ export default function DefaultAccountsScreen({ onBack }: { onBack: () => void }
         {renderPicker("حساب إيرادات المبيعات (Sales Revenue)", salesRevenueAccount, salesRevenueLabel, (c, l) => { setSalesRevenueAccount(c); setSalesRevenueLabel(l); }, "sales")}
         {renderPicker("حساب تكلفة المبيعات (COGS)", cogsAccount, cogsLabel, (c, l) => { setCogsAccount(c); setCogsLabel(l); }, "cogs")}
         {renderPicker("حساب عمولات المناديب (Commission)", commissionAccount, commissionLabel, (c, l) => { setCommissionAccount(c); setCommissionLabel(l); }, "commission")}
+        {renderPicker("حساب العملاء", customerAccount, customerLabel, (c, l) => { setCustomerAccount(c); setCustomerLabel(l); }, "customer")}
+        {renderPicker("حساب الموردين", supplierAccount, supplierLabel, (c, l) => { setSupplierAccount(c); setSupplierLabel(l); }, "supplier")}
+        {renderPicker("حساب المشتريات", purchaseAccount, purchaseLabel, (c, l) => { setPurchaseAccount(c); setPurchaseLabel(l); }, "purchase")}
+        {renderPicker("حساب مردودات المبيعات", salesReturnAccount, salesReturnLabel, (c, l) => { setSalesReturnAccount(c); setSalesReturnLabel(l); }, "salesReturn")}
+        {renderPicker("حساب مردودات المشتريات", purchaseReturnAccount, purchaseReturnLabel, (c, l) => { setPurchaseReturnAccount(c); setPurchaseReturnLabel(l); }, "purchaseReturn")}
 
         <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={[styles.primary, { backgroundColor: colors.orange }]} onPress={save} disabled={saving}>
           <Text style={styles.primaryText}>{saving ? "جارٍ الحفظ..." : "حفظ الإعدادات"}</Text>

@@ -19,5 +19,10 @@ export const defaultAccounts = sqliteTable("default_accounts", {
   salesRevenueAccount: text("sales_revenue_account"),
   cogsAccount: text("cogs_account"),
   commissionAccount: text("commission_account"),
+  customerAccount: text("customer_account"),
+  supplierAccount: text("supplier_account"),
+  purchaseAccount: text("purchase_account"),
+  salesReturnAccount: text("sales_return_account"),
+  purchaseReturnAccount: text("purchase_return_account"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull()
 });

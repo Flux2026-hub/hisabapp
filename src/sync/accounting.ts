@@ -1,4 +1,4 @@
-import { db } from "../db/local";
+import { db, sqlite } from "../db/local";
 import { syncQueue } from "../db/schema";
 import { accountTransfers, accounts, cashboxes, currencies, customers, invoices, invoiceLines, journalEntries, journalLines, suppliers, vouchers } from "../db/accounting-schema";
 import { items } from "../db/schema";
@@ -53,27 +53,103 @@ import { defaultAccounts } from "../db/accounting-schema";
 
 export async function getDefaultAccounts() {
   const rows = await db.select().from(defaultAccounts).limit(1);
-  return rows[0] ?? { 
-    id: "default", 
-    inventoryAccount: null, 
-    salesRevenueAccount: null, 
-    cogsAccount: null, 
-    commissionAccount: null 
+  return rows[0] ?? {
+    id: "default",
+    inventoryAccount: null,
+    salesRevenueAccount: null,
+    cogsAccount: null,
+    commissionAccount: null,
+    customerAccount: null,
+    supplierAccount: null,
+    purchaseAccount: null,
+    salesReturnAccount: null,
+    purchaseReturnAccount: null,
   };
 }
 
-export async function saveDefaultAccounts(input: { 
-  inventoryAccount?: string; 
-  salesRevenueAccount?: string; 
-  cogsAccount?: string; 
-  commissionAccount?: string 
+const defaultAccountTypes: Record<string, string[]> = {
+  inventoryAccount: ["asset"],
+  salesRevenueAccount: ["revenue"],
+  cogsAccount: ["expense"],
+  commissionAccount: ["expense"],
+  customerAccount: ["asset"],
+  supplierAccount: ["liability"],
+  purchaseAccount: ["expense", "asset"],
+  salesReturnAccount: ["revenue", "expense"],
+  purchaseReturnAccount: ["revenue", "liability"],
+};
+
+export async function saveDefaultAccounts(input: {
+  inventoryAccount?: string;
+  salesRevenueAccount?: string;
+  cogsAccount?: string;
+  commissionAccount?: string;
+  customerAccount?: string;
+  supplierAccount?: string;
+  purchaseAccount?: string;
+  salesReturnAccount?: string;
+  purchaseReturnAccount?: string;
 }) {
+  const cleaned = Object.fromEntries(
+    Object.entries(input).map(([key, value]) => [
+      key,
+      typeof value === "string" ? value.trim() : value,
+    ])
+  ) as typeof input;
+
+  const selectedCodes = Object.values(cleaned).filter(
+    (value): value is string => Boolean(value)
+  );
+
+  if (new Set(selectedCodes).size !== selectedCodes.length) {
+    throw new Error("لا يمكن استخدام الحساب نفسه لأكثر من وظيفة افتراضية");
+  }
+
+  const selectedAccounts = selectedCodes.length
+    ? await db.select().from(accounts)
+    : [];
+
+  const byCode = new Map(
+    selectedAccounts.map((account) => [account.code, account])
+  );
+
+  for (const [field, code] of Object.entries(cleaned)) {
+    if (!code) continue;
+
+    const account = byCode.get(code);
+    if (!account) {
+      throw new Error(`الحساب ${code} غير موجود في دليل الحسابات`);
+    }
+
+    const allowedTypes = defaultAccountTypes[field];
+    if (allowedTypes && !allowedTypes.includes(account.accountType)) {
+      throw new Error(`نوع الحساب ${account.name} غير مناسب لهذه الوظيفة`);
+    }
+  }
+
   const now = new Date();
   const current = await db.select().from(defaultAccounts).limit(1);
-  if (current.length) {
-    await db.update(defaultAccounts).set(input).where(eq(defaultAccounts.id, "default"));
-  } else {
-    await db.insert(defaultAccounts).values({ id: "default", ...input, createdAt: now });
-  }
-  await queue("default_accounts", "default", current.length ? "update" : "create", input, now);
+
+  await sqlite.withTransactionAsync(async () => {
+    if (current.length) {
+      await db
+        .update(defaultAccounts)
+        .set(cleaned)
+        .where(eq(defaultAccounts.id, "default"));
+    } else {
+      await db.insert(defaultAccounts).values({
+        id: "default",
+        ...cleaned,
+        createdAt: now,
+      });
+    }
+
+    await queue(
+      "default_accounts",
+      "default",
+      current.length ? "update" : "create",
+      cleaned,
+      now
+    );
+  });
 }
