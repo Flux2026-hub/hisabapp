@@ -3,10 +3,11 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { sqlite } from "../db/local";
+import { postCashboxTransfer, removeJournalPosting } from "../utils/accountingPostings";
 import { useTheme } from "./ThemeContext";
 
 type Cashbox = { id: string; code: string; name: string; balance: number; currency_code: string };
-type Transfer = { id: string; transfer_no: string; from_account: string; to_account: string; amount: number; from_currency: string | null; to_currency: string | null; exchange_rate: number | null; description: string | null; created_at: number };
+type Transfer = { id: string; transfer_no: string; from_cashbox_id: string | null; to_cashbox_id: string | null; from_account: string; to_account: string; amount: number; from_currency: string | null; to_currency: string | null; exchange_rate: number | null; description: string | null; created_at: number };
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 const n = (v: unknown, d = 0) => Number.isFinite(Number(v)) ? Number(v) : d;
 const localDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -33,7 +34,7 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
     } catch (e) { Alert.alert("تعذر التحميل", String(e)); }
   };
   const loadHistory = async () => {
-    const rows: any[] = await sqlite.getAllAsync(`SELECT id,transfer_no,from_account,to_account,amount,from_currency,to_currency,exchange_rate,description,created_at FROM account_transfers ORDER BY created_at DESC LIMIT 20`);
+    const rows: any[] = await sqlite.getAllAsync(`SELECT id,transfer_no,from_cashbox_id,to_cashbox_id,from_account,to_account,amount,from_currency,to_currency,exchange_rate,description,created_at FROM account_transfers ORDER BY created_at DESC LIMIT 20`);
     setHistory((rows || []) as Transfer[]);
   };
   const fromList = useMemo(() => { const q = fromSearch.trim().toLowerCase(); return cashboxes.filter(c => !q || `${c.name} ${c.code} ${c.currency_code}`.toLowerCase().includes(q)); }, [cashboxes, fromSearch]);
@@ -48,27 +49,32 @@ export default function TransfersScreen({ onBack }: { onBack: () => void }) {
       const source = n(amount), r = different ? n(rate) : 1, target = source * r;
       if (!positive(source) || (different && !positive(r))) throw new Error("المبلغ وسعر الصرف يجب أن يكونا أكبر من صفر");
       const when = new Date(`${date}T00:00:00`).getTime(); if (!Number.isFinite(when)) throw new Error("التاريخ غير صحيح");
+      const transferId = editingId || newId();
       await sqlite.withTransactionAsync(async () => {
         if (editingId) {
           const old: any = await sqlite.getFirstAsync(`SELECT * FROM account_transfers WHERE id=?`, [editingId]); if (!old) throw new Error("التحويل غير موجود");
-          const oldFrom: any = await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [old.from_account]);
-          const oldTo: any = await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [old.to_account]); if (!oldFrom || !oldTo) throw new Error("تعذر العثور على الصناديق القديمة");
+          const oldFrom: any = old.from_cashbox_id ? await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE id=?`, [old.from_cashbox_id]) : await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [old.from_account]);
+          const oldTo: any = old.to_cashbox_id ? await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE id=?`, [old.to_cashbox_id]) : await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [old.to_account]); if (!oldFrom || !oldTo) throw new Error("تعذر العثور على الصناديق القديمة");
           const oldRate = old.from_currency === old.to_currency ? 1 : n(old.exchange_rate, 1);
           await sqlite.runAsync(`UPDATE cashboxes SET balance=balance+? WHERE id=?`, [n(old.amount), oldFrom.id]);
           await sqlite.runAsync(`UPDATE cashboxes SET balance=balance-? WHERE id=?`, [n(old.amount) * oldRate, oldTo.id]);
-          await sqlite.runAsync(`UPDATE account_transfers SET from_account=?,to_account=?,amount=?,original_amount=?,description=?,created_at=?,from_currency=?,to_currency=?,exchange_rate=? WHERE id=?`, [from.name, to.name, source, source, description.trim(), when, from.currency_code, to.currency_code, r, editingId]);
+          const current: any = await sqlite.getFirstAsync(`SELECT balance FROM cashboxes WHERE id=?`, [from.id]);
+          if (n(current?.balance) < source) throw new Error(`الرصيد غير كافٍ: ${n(current?.balance).toFixed(2)} ${from.currency_code}`);
+          await removeJournalPosting("cashbox_transfer", editingId);
+          await sqlite.runAsync(`UPDATE account_transfers SET from_cashbox_id=?,to_cashbox_id=?,from_account=?,to_account=?,amount=?,original_amount=?,description=?,created_at=?,from_currency=?,to_currency=?,exchange_rate=? WHERE id=?`, [from.id, to.id, from.name, to.name, source, source, description.trim(), when, from.currency_code, to.currency_code, r, editingId]);
         } else {
           const current: any = await sqlite.getFirstAsync(`SELECT balance FROM cashboxes WHERE id=?`, [from.id]); if (n(current?.balance) < source) throw new Error(`الرصيد غير كافٍ: ${n(current?.balance).toFixed(2)} ${from.currency_code}`);
-          await sqlite.runAsync(`INSERT INTO account_transfers (id,transfer_no,from_account,to_account,amount,original_amount,description,created_at,from_currency,to_currency,exchange_rate) VALUES (?,?,?,?,?,?,?,?,?,?,?)`, [newId(), await nextNo(), from.name, to.name, source, source, description.trim(), when, from.currency_code, to.currency_code, r]);
+          await sqlite.runAsync(`INSERT INTO account_transfers (id,transfer_no,from_cashbox_id,to_cashbox_id,from_account,to_account,amount,original_amount,description,created_at,from_currency,to_currency,exchange_rate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, [transferId, await nextNo(), from.id, to.id, from.name, to.name, source, source, description.trim(), when, from.currency_code, to.currency_code, r]);
         }
         await sqlite.runAsync(`UPDATE cashboxes SET balance=balance-? WHERE id=? AND currency_code=?`, [source, from.id, from.currency_code]);
         await sqlite.runAsync(`UPDATE cashboxes SET balance=balance+? WHERE id=? AND currency_code=?`, [target, to.id, to.currency_code]);
+        await postCashboxTransfer(transferId, from.id, to.id, source, target, from.currency_code, to.currency_code, when);
       });
       Alert.alert("تم بنجاح", "تم حفظ التحويل وتحديث الأرصدة"); reset(); await loadData();
     } catch (e) { Alert.alert("تعذر التنفيذ", String(e)); } finally { setSaving(false); }
   };
-  const edit = (h: Transfer) => { const f = cashboxes.find(c => c.name === h.from_account), t = cashboxes.find(c => c.name === h.to_account); if (!f || !t) return Alert.alert("تعذر التعديل", "الصناديق غير موجودة"); setEditingId(h.id); setFrom(f); setTo(t); setFromSearch(f.name); setToSearch(t.name); setAmount(String(h.amount)); setRate(String(h.exchange_rate || 1)); setDescription(h.description || ""); setDate(localDate(new Date(h.created_at))); };
-  const remove = (id: string) => Alert.alert("تأكيد الحذف", "سيتم عكس أثر التحويل على الأرصدة", [{ text: "إلغاء", style: "cancel" }, { text: "حذف", style: "destructive", onPress: async () => { try { await sqlite.withTransactionAsync(async () => { const h: any = await sqlite.getFirstAsync(`SELECT * FROM account_transfers WHERE id=?`, [id]); if (!h) throw new Error("التحويل غير موجود"); const f: any = await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [h.from_account]); const t: any = await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [h.to_account]); if (!f || !t) throw new Error("الصناديق غير موجودة"); const rr = h.from_currency === h.to_currency ? 1 : n(h.exchange_rate, 1); await sqlite.runAsync(`UPDATE cashboxes SET balance=balance+? WHERE id=?`, [n(h.amount), f.id]); await sqlite.runAsync(`UPDATE cashboxes SET balance=balance-? WHERE id=?`, [n(h.amount) * rr, t.id]); await sqlite.runAsync(`DELETE FROM account_transfers WHERE id=?`, [id]); }); reset(); await loadData(); } catch (e) { Alert.alert("تعذر الحذف", String(e)); } } }]);
+  const edit = (h: Transfer) => { const f = cashboxes.find(c => c.id === h.from_cashbox_id) || cashboxes.find(c => c.name === h.from_account), t = cashboxes.find(c => c.id === h.to_cashbox_id) || cashboxes.find(c => c.name === h.to_account); if (!f || !t) return Alert.alert("تعذر التعديل", "الصناديق غير موجودة"); setEditingId(h.id); setFrom(f); setTo(t); setFromSearch(f.name); setToSearch(t.name); setAmount(String(h.amount)); setRate(String(h.exchange_rate || 1)); setDescription(h.description || ""); setDate(localDate(new Date(h.created_at))); };
+  const remove = (id: string) => Alert.alert("تأكيد الحذف", "سيتم عكس أثر التحويل على الأرصدة", [{ text: "إلغاء", style: "cancel" }, { text: "حذف", style: "destructive", onPress: async () => { try { await sqlite.withTransactionAsync(async () => { const h: any = await sqlite.getFirstAsync(`SELECT * FROM account_transfers WHERE id=?`, [id]); if (!h) throw new Error("التحويل غير موجود"); const f: any = h.from_cashbox_id ? await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE id=?`, [h.from_cashbox_id]) : await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [h.from_account]); const t: any = h.to_cashbox_id ? await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE id=?`, [h.to_cashbox_id]) : await sqlite.getFirstAsync(`SELECT id FROM cashboxes WHERE name=? LIMIT 1`, [h.to_account]); if (!f || !t) throw new Error("الصناديق غير موجودة"); const rr = h.from_currency === h.to_currency ? 1 : n(h.exchange_rate, 1); await sqlite.runAsync(`UPDATE cashboxes SET balance=balance+? WHERE id=?`, [n(h.amount), f.id]); await sqlite.runAsync(`UPDATE cashboxes SET balance=balance-? WHERE id=?`, [n(h.amount) * rr, t.id]); await removeJournalPosting("cashbox_transfer", id); await sqlite.runAsync(`DELETE FROM account_transfers WHERE id=?`, [id]); }); reset(); await loadData(); } catch (e) { Alert.alert("تعذر الحذف", String(e)); } } }]);
   return <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
     <Pressable onPress={onBack}><Text style={[s.back, { color: colors.blue }]}>‹ العودة</Text></Pressable><Text style={[s.title, { color: colors.text }]}>التحويلات بين الصناديق</Text>
     <Text style={[s.label, { color: colors.textMuted }]}>من صندوق</Text><TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} value={fromSearch} onChangeText={x => { setFromSearch(x); setShowFrom(true); if (from && x !== from.name) setFrom(null); }} onFocus={() => setShowFrom(true)} onBlur={() => setTimeout(() => setShowFrom(false), 200)} placeholder="ابحث عن الصندوق المصدر" placeholderTextColor={colors.textMuted} textAlign="right" />
