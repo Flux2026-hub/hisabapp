@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import BrandBanner from "./components/BrandBanner";
 import { getDefaultAccounts, saveDefaultAccounts, listAccounts } from "../sync/accounting";
@@ -31,7 +31,7 @@ export default function DefaultAccountsScreen({ onBack }: { onBack: () => void }
   const [purchaseReturnLabel, setPurchaseReturnLabel] = useState("");
 
   const [showPicker, setShowPicker] = useState<string | null>(null);
-  const [searchText, setSearchText] = useState("");
+  const [searchTexts, setSearchTexts] = useState<Record<string, string>>({});
 
   const load = async () => {
     try {
@@ -63,12 +63,6 @@ export default function DefaultAccountsScreen({ onBack }: { onBack: () => void }
 
   useEffect(() => { void load(); }, []);
 
-  const filteredAccounts = useMemo(() => {
-    if (!searchText.trim()) return accounts;
-    const q = searchText.toLowerCase();
-    return accounts.filter((a) => `${a.code ?? ""} ${a.name ?? ""}`.toLowerCase().includes(q));
-  }, [accounts, searchText]);
-
   const save = async () => {
     setSaving(true);
     try {
@@ -91,28 +85,60 @@ export default function DefaultAccountsScreen({ onBack }: { onBack: () => void }
     }
   };
 
-  const renderPicker = (title: string, currentCode: string, currentLabel: string, onSelect: (code: string, label: string) => void, pickerKey: string) => {
+  const renderPicker = (
+    title: string,
+    currentCode: string,
+    currentLabel: string,
+    onSelect: (code: string, label: string) => void,
+    pickerKey: string
+  ) => {
     const isShowing = showPicker === pickerKey;
+    const searchText = searchTexts[pickerKey] ?? "";
+
+    const filtered = !searchText.trim()
+      ? accounts
+      : accounts.filter((a) =>
+          `${a.code ?? ""} ${a.name ?? ""}`.toLowerCase().includes(searchText.toLowerCase())
+        );
+
     return (
       <View style={{ marginBottom: 15 }}>
         <Text style={[styles.label, { color: colors.textMuted }]}>{title}</Text>
         <TextInput
           style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
           value={isShowing ? searchText : currentLabel}
-          onChangeText={(t) => { setSearchText(t); setShowPicker(pickerKey); }}
-          onFocus={() => { setSearchText(""); setShowPicker(pickerKey); }}
-          onBlur={() => setTimeout(() => setShowPicker(null), 200)}
+          onChangeText={(t) => {
+            setSearchTexts((prev) => ({ ...prev, [pickerKey]: t }));
+            setShowPicker(pickerKey);
+          }}
+          onFocus={() => {
+            setSearchTexts((prev) => ({ ...prev, [pickerKey]: "" }));
+            setShowPicker(pickerKey);
+          }}
+          onBlur={() => setShowPicker(null)}
           placeholder="ابحث عن الحساب..."
           placeholderTextColor={colors.textMuted}
           textAlign="right"
         />
         {isShowing && (
-          <ScrollView style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]} nestedScrollEnabled keyboardShouldPersistTaps="always">
-            {filteredAccounts.length === 0 ? (
+          <ScrollView
+            style={[styles.suggestBox, { maxHeight: 200, backgroundColor: colors.surface, borderColor: colors.border }]}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="always"
+          >
+            {filtered.length === 0 ? (
               <Text style={[styles.suggestEmpty, { color: colors.textMuted }]}>لا توجد حسابات مطابقة</Text>
             ) : (
-              filteredAccounts.map((a) => (
-                <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} key={a.code} style={[styles.suggestItem, { borderBottomColor: colors.bg }]} onPressIn={() => { onSelect(a.code, a.name); setShowPicker(null); }}>
+              filtered.map((a) => (
+                <Pressable
+                  android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+                  key={a.code}
+                  style={[styles.suggestItem, { borderBottomColor: colors.bg }]}
+                  onPress={() => {
+                    onSelect(a.code, a.name);
+                    setShowPicker(null);
+                  }}
+                >
                   <Text style={[styles.suggestName, { color: colors.text }]}>{a.name}</Text>
                   <Text style={[styles.suggestMeta, { color: colors.textMuted }]}>{a.code}</Text>
                 </Pressable>
@@ -126,7 +152,10 @@ export default function DefaultAccountsScreen({ onBack }: { onBack: () => void }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="always"
+      >
         <Pressable android_ripple={{ color: "rgba(0,0,0,0.1)" }} style={styles.back} onPress={onBack}>
           <Text style={[styles.backText, { color: colors.blue }]}>‹ العودة إلى الوحدات المحاسبية</Text>
         </Pressable>
